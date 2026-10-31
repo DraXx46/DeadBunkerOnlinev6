@@ -1708,12 +1708,12 @@ function buildWalls(z0,z1,inMat,outMat,hosp){
   const mtx=new THREE.Matrix4(); const mats=Array.isArray(inMat)?inMat:[inMat]; const wgeo=new THREE.BoxGeometry(S,WH,S);
   const buckets=mats.map(()=>[]); for(const c of inner){ const h=((c[0]*73856093)^(c[1]*19349663))>>>0; buckets[(h+(h>>7))%mats.length].push(c); }
   mats.forEach((mt,k)=>{ const list=buckets[k]; if(!list.length) return; const walls=new THREE.InstancedMesh(wgeo,mt,list.length); walls.frustumCulled=true;
-    list.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),WH/2,cx(z)); walls.setMatrixAt(i,mtx); }); ROOT.add(walls); });
+    list.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),WH/2,cx(z)); walls.setMatrixAt(i,mtx); }); walls.computeBoundingSphere(); ROOT.add(walls); });
   // Close the new upper gap without resizing/moving existing walls or doors.
   const upperCells=inner.concat(doors.filter(d=>d.map===(hosp?'hosp':'bunker')).flatMap(d=>d.cells));
   for(let z=z0;z<=z1;z++) for(let x=0;x<MW;x++) if(at(x,z)==='W'||at(x,z)==='v') upperCells.push([x,z]);
   if(upperCells.length){ const caps=new THREE.InstancedMesh(new THREE.BoxGeometry(S,ROOM_CEIL-WH,S),mats[0],upperCells.length);
-    caps.frustumCulled=true; upperCells.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),(WH+ROOM_CEIL)/2,cx(z)); caps.setMatrixAt(i,mtx); }); ROOT.add(caps); }
+    caps.frustumCulled=true; upperCells.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),(WH+ROOM_CEIL)/2,cx(z)); caps.setMatrixAt(i,mtx); }); caps.computeBoundingSphere(); ROOT.add(caps); }
   const bgeo=new THREE.BoxGeometry(S,1,S); bgeo.translate(0,0.5,0);
   const ruins=new THREE.InstancedMesh(bgeo,outMat,Math.max(1,outer.length)); ruins.frustumCulled=true; ruins.count=outer.length;
   const sc=new THREE.Vector3(), q=new THREE.Quaternion(), p=new THREE.Vector3();
@@ -5796,12 +5796,12 @@ const BASE_PR=Math.min(window.devicePixelRatio||1,isTouch?1.3:1.75);
 const NORMAL_CAMERA_FAR=camera.far;
 const NORMAL_FOG_DENSITY=scene.fog.density;
 function applyRenderProfile(){
-  // Potato PC lowers GPU pixel workload without changing gameplay/network simulation.
+  // Potato PC reduces GPU pixel workload without changing the map's lighting,
+  // fog, camera range, gameplay, or network simulation.
   const pixelRatio=CFG.potato?Math.min(BASE_PR*CFG.quality,0.58):BASE_PR*CFG.quality;
   renderer.setPixelRatio(pixelRatio);
-  camera.far=CFG.potato?105:NORMAL_CAMERA_FAR;
+  camera.far=NORMAL_CAMERA_FAR;
   camera.updateProjectionMatrix();
-  if(scene.fog&&scene.fog.isFogExp2) scene.fog.density=CFG.potato?0.065:NORMAL_FOG_DENSITY;
   if(renderer.shadowMap) renderer.shadowMap.enabled=!CFG.potato;
   resize();
 }

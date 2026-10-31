@@ -697,6 +697,7 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
     <div class="setp" data-st="video" hidden>
       <label class="sl"><span>Campo de visão</span><input type="range" data-k="fov" data-fmt="deg" min="60" max="110" step="1"><output></output></label>
       <label class="sl"><span>Resolução</span><input type="range" data-k="quality" data-fmt="pct" min="0.5" max="1" step="0.05"><output></output></label>
+      <button type="button" class="sw" role="switch" data-k="potato"><span>Modo Potato PC (máximo desempenho)</span><i></i></button>
       <label class="sl"><span>Brilho</span><input type="range" data-k="bright" data-fmt="pct" min="0.7" max="1.6" step="0.05"><output></output></label>
       <button type="button" class="sw" role="switch" data-k="bob"><span>Balanço da câmera ao andar</span><i></i></button>
       <label class="sl"><span>Tremor de tela</span><input type="range" data-k="shakeAmt" data-fmt="pct" min="0" max="2" step="0.05"><output></output></label>
@@ -1706,15 +1707,15 @@ function buildWalls(z0,z1,inMat,outMat,hosp){
   }
   const mtx=new THREE.Matrix4(); const mats=Array.isArray(inMat)?inMat:[inMat]; const wgeo=new THREE.BoxGeometry(S,WH,S);
   const buckets=mats.map(()=>[]); for(const c of inner){ const h=((c[0]*73856093)^(c[1]*19349663))>>>0; buckets[(h+(h>>7))%mats.length].push(c); }
-  mats.forEach((mt,k)=>{ const list=buckets[k]; if(!list.length) return; const walls=new THREE.InstancedMesh(wgeo,mt,list.length); walls.frustumCulled=false;
+  mats.forEach((mt,k)=>{ const list=buckets[k]; if(!list.length) return; const walls=new THREE.InstancedMesh(wgeo,mt,list.length); walls.frustumCulled=true;
     list.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),WH/2,cx(z)); walls.setMatrixAt(i,mtx); }); ROOT.add(walls); });
   // Close the new upper gap without resizing/moving existing walls or doors.
   const upperCells=inner.concat(doors.filter(d=>d.map===(hosp?'hosp':'bunker')).flatMap(d=>d.cells));
   for(let z=z0;z<=z1;z++) for(let x=0;x<MW;x++) if(at(x,z)==='W'||at(x,z)==='v') upperCells.push([x,z]);
   if(upperCells.length){ const caps=new THREE.InstancedMesh(new THREE.BoxGeometry(S,ROOM_CEIL-WH,S),mats[0],upperCells.length);
-    caps.frustumCulled=false; upperCells.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),(WH+ROOM_CEIL)/2,cx(z)); caps.setMatrixAt(i,mtx); }); ROOT.add(caps); }
+    caps.frustumCulled=true; upperCells.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),(WH+ROOM_CEIL)/2,cx(z)); caps.setMatrixAt(i,mtx); }); ROOT.add(caps); }
   const bgeo=new THREE.BoxGeometry(S,1,S); bgeo.translate(0,0.5,0);
-  const ruins=new THREE.InstancedMesh(bgeo,outMat,Math.max(1,outer.length)); ruins.frustumCulled=false; ruins.count=outer.length;
+  const ruins=new THREE.InstancedMesh(bgeo,outMat,Math.max(1,outer.length)); ruins.frustumCulled=true; ruins.count=outer.length;
   const sc=new THREE.Vector3(), q=new THREE.Quaternion(), p=new THREE.Vector3();
   outer.forEach(([x,z,both],i)=>{ let top; if(hosp) top=both?7.0+rand(0,.35):3.5+rand(0,.25); else top=(x===29||x===26)?rand(5.2,6.2):rand(3.8,7.5); const base=both?WH:0; p.set(cx(x),base,cx(z)); sc.set(1,top-base,1); mtx.compose(p,q,sc); ruins.setMatrixAt(i,mtx); });
   ROOT.add(ruins);
@@ -2205,7 +2206,7 @@ function buildStreet(){
   // sandbag walls + barbed wire
   const bag=new THREE.BoxGeometry(0.62,0.26,0.36);
   const rows=[[33,13,'x'],[34,13,'x'],[35,13,'x'],[38,9,'x'],[39,9,'x'],[41,15,'z'],[41,16,'z'],[41,17,'z']];
-  const bags=new THREE.InstancedMesh(bag,M.sand,rows.length*12); bags.frustumCulled=false; const dm=new THREE.Object3D(); let bi=0;
+  const bags=new THREE.InstancedMesh(bag,M.sand,rows.length*12); bags.frustumCulled=true; const dm=new THREE.Object3D(); let bi=0;
   for(const [x,z,axis] of rows){ for(let lvl=0;lvl<4;lvl++) for(let k=0;k<3;k++){ const o=(k-1)*0.62+(lvl%2?0.31:0)-0.15; dm.rotation.set(0,0,0); if(axis==='x') dm.position.set(cx(x)+o,0.13+lvl*0.25,cx(z)+rand(-.05,.05)); else { dm.position.set(cx(x)+rand(-.05,.05),0.13+lvl*0.25,cx(z)+o); dm.rotation.y=Math.PI/2; } dm.rotation.z=rand(-.06,.06); dm.scale.set(1,rand(.85,1.1),1); dm.updateMatrix(); bags.setMatrixAt(bi++,dm.matrix); } }
   ROOT.add(bags);
   mkWire(cx(32)+0.2,cx(13)-0.2,cx(36)-0.2,cx(13)-0.2,1.15); mkWire(cx(37)+0.2,cx(9)-0.1,cx(40)-0.2,cx(9)-0.1,1.15); mkWire(cx(41)+0.1,cx(14)+0.2,cx(41)+0.1,cx(18)-0.2,1.15);
@@ -5781,7 +5782,7 @@ function drawDoom(rawDt){
 }
 
 /* ================= SETTINGS ================= */
-const CFG_DEF={vol:0.7,music:0.6,sfx:1,voice:1,ui:0.8,sens:1,adsSens:0.85,invY:false,fov:72,quality:1,bright:1,bob:true,shake:true,shakeAmt:1,fps:false,hitm:true,
+const CFG_DEF={vol:0.7,music:0.6,sfx:1,voice:1,ui:0.8,sens:1,adsSens:0.85,invY:false,fov:72,quality:1,potato:false,bright:1,bob:true,shake:true,shakeAmt:1,fps:false,hitm:true,
   xs:{style:'cruz',col:'#f0ece0',size:9,thick:2,gap:0,alpha:0.9,outline:true,dot:false,dyn:true}};
 const CFG=JSON.parse(JSON.stringify(CFG_DEF));
 (function loadCfg(){
@@ -5792,6 +5793,19 @@ const CFG=JSON.parse(JSON.stringify(CFG_DEF));
   if(d&&d.shake===false&&typeof d.shakeAmt!=='number') CFG.shakeAmt=0;
 })();
 const BASE_PR=Math.min(window.devicePixelRatio||1,isTouch?1.3:1.75);
+const NORMAL_CAMERA_FAR=camera.far;
+const NORMAL_FOG_DENSITY=scene.fog.density;
+function applyRenderProfile(){
+  // Potato PC lowers GPU pixel workload without changing gameplay/network simulation.
+  const pixelRatio=CFG.potato?Math.min(BASE_PR*CFG.quality,0.58):BASE_PR*CFG.quality;
+  renderer.setPixelRatio(pixelRatio);
+  camera.far=CFG.potato?105:NORMAL_CAMERA_FAR;
+  camera.updateProjectionMatrix();
+  if(scene.fog&&scene.fog.isFogExp2) scene.fog.density=CFG.potato?0.065:NORMAL_FOG_DENSITY;
+  if(renderer.shadowMap) renderer.shadowMap.enabled=!CFG.potato;
+  resize();
+}
+
 function cfgGet(path){ const p=path.split('.'); let o=CFG; for(const k of p) o=o[k]; return o; }
 function cfgPut(path,v){ const p=path.split('.'); let o=CFG; for(let i=0;i<p.length-1;i++) o=o[p[i]]; o[p[p.length-1]]=v; }
 function saveCfg(){ store.set('bdm_cfg',JSON.stringify(CFG)); }
@@ -5805,7 +5819,7 @@ function applyCfg(path){
   if(all||path==='voice') Snd.setBus('voice',CFG.voice);
   if(all||path==='ui') Snd.setBus('ui',CFG.ui);
   if(all||path==='fov'){ CHEAT.fov=CFG.fov; if(G.state!=='playing'||P.ads<0.05){ camera.fov=CFG.fov; camera.updateProjectionMatrix(); } }
-  if(all||path==='quality'){ renderer.setPixelRatio(BASE_PR*CFG.quality); resize(); }
+  if(all||path==='quality'||path==='potato') applyRenderProfile();
   if(all||path==='bright') canvas.style.filter=Math.abs(CFG.bright-1)>0.01?`brightness(${CFG.bright})`:'';
   if(all||path==='fps'){ CHEAT.showFps=CFG.fps; $('#fpsbox').hidden=!CFG.fps; }
   if(all||path==='hitm') document.body.classList.toggle('nohitm',!CFG.hitm);

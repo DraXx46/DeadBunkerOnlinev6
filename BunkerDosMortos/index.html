@@ -1707,15 +1707,15 @@ function buildWalls(z0,z1,inMat,outMat,hosp){
   }
   const mtx=new THREE.Matrix4(); const mats=Array.isArray(inMat)?inMat:[inMat]; const wgeo=new THREE.BoxGeometry(S,WH,S);
   const buckets=mats.map(()=>[]); for(const c of inner){ const h=((c[0]*73856093)^(c[1]*19349663))>>>0; buckets[(h+(h>>7))%mats.length].push(c); }
-  mats.forEach((mt,k)=>{ const list=buckets[k]; if(!list.length) return; const walls=new THREE.InstancedMesh(wgeo,mt,list.length); walls.frustumCulled=true;
+  mats.forEach((mt,k)=>{ const list=buckets[k]; if(!list.length) return; const walls=new THREE.InstancedMesh(wgeo,mt,list.length); walls.frustumCulled=false;
     list.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),WH/2,cx(z)); walls.setMatrixAt(i,mtx); }); walls.computeBoundingSphere(); ROOT.add(walls); });
   // Close the new upper gap without resizing/moving existing walls or doors.
   const upperCells=inner.concat(doors.filter(d=>d.map===(hosp?'hosp':'bunker')).flatMap(d=>d.cells));
   for(let z=z0;z<=z1;z++) for(let x=0;x<MW;x++) if(at(x,z)==='W'||at(x,z)==='v') upperCells.push([x,z]);
   if(upperCells.length){ const caps=new THREE.InstancedMesh(new THREE.BoxGeometry(S,ROOM_CEIL-WH,S),mats[0],upperCells.length);
-    caps.frustumCulled=true; upperCells.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),(WH+ROOM_CEIL)/2,cx(z)); caps.setMatrixAt(i,mtx); }); caps.computeBoundingSphere(); ROOT.add(caps); }
+    caps.frustumCulled=false; upperCells.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),(WH+ROOM_CEIL)/2,cx(z)); caps.setMatrixAt(i,mtx); }); caps.computeBoundingSphere(); ROOT.add(caps); }
   const bgeo=new THREE.BoxGeometry(S,1,S); bgeo.translate(0,0.5,0);
-  const ruins=new THREE.InstancedMesh(bgeo,outMat,Math.max(1,outer.length)); ruins.frustumCulled=true; ruins.count=outer.length;
+  const ruins=new THREE.InstancedMesh(bgeo,outMat,Math.max(1,outer.length)); ruins.frustumCulled=false; ruins.count=outer.length;
   const sc=new THREE.Vector3(), q=new THREE.Quaternion(), p=new THREE.Vector3();
   outer.forEach(([x,z,both],i)=>{ let top; if(hosp) top=both?7.0+rand(0,.35):3.5+rand(0,.25); else top=(x===29||x===26)?rand(5.2,6.2):rand(3.8,7.5); const base=both?WH:0; p.set(cx(x),base,cx(z)); sc.set(1,top-base,1); mtx.compose(p,q,sc); ruins.setMatrixAt(i,mtx); });
   ROOT.add(ruins);
@@ -2206,7 +2206,7 @@ function buildStreet(){
   // sandbag walls + barbed wire
   const bag=new THREE.BoxGeometry(0.62,0.26,0.36);
   const rows=[[33,13,'x'],[34,13,'x'],[35,13,'x'],[38,9,'x'],[39,9,'x'],[41,15,'z'],[41,16,'z'],[41,17,'z']];
-  const bags=new THREE.InstancedMesh(bag,M.sand,rows.length*12); bags.frustumCulled=true; const dm=new THREE.Object3D(); let bi=0;
+  const bags=new THREE.InstancedMesh(bag,M.sand,rows.length*12); bags.frustumCulled=false; const dm=new THREE.Object3D(); let bi=0;
   for(const [x,z,axis] of rows){ for(let lvl=0;lvl<4;lvl++) for(let k=0;k<3;k++){ const o=(k-1)*0.62+(lvl%2?0.31:0)-0.15; dm.rotation.set(0,0,0); if(axis==='x') dm.position.set(cx(x)+o,0.13+lvl*0.25,cx(z)+rand(-.05,.05)); else { dm.position.set(cx(x)+rand(-.05,.05),0.13+lvl*0.25,cx(z)+o); dm.rotation.y=Math.PI/2; } dm.rotation.z=rand(-.06,.06); dm.scale.set(1,rand(.85,1.1),1); dm.updateMatrix(); bags.setMatrixAt(bi++,dm.matrix); } }
   ROOT.add(bags);
   mkWire(cx(32)+0.2,cx(13)-0.2,cx(36)-0.2,cx(13)-0.2,1.15); mkWire(cx(37)+0.2,cx(9)-0.1,cx(40)-0.2,cx(9)-0.1,1.15); mkWire(cx(41)+0.1,cx(14)+0.2,cx(41)+0.1,cx(18)-0.2,1.15);

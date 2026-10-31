@@ -1,0 +1,24 @@
+BUNKER DOS MORTOS — V5: END GAME + CONVERSAS COOPERATIVAS
+
+MUDANÇAS DE PROGRESSÃO
+- Portas comuns agora custam 2,35x o preço-base.
+- Portas que dependem do objetivo principal custam 3x o preço-base.
+- Recompensas de pontos por abates foram ajustadas para 74% da pontuação calculada.
+- Reparar janelas deixou de ser uma fonte grande de dinheiro: 5 pontos por reparo, com limite de 200 pontos de reparo por rodada.
+- As primeiras rodadas têm mais zumbis e as rodadas avançadas crescem mais.
+- O limite de zumbis ativos subiu de 30 para 34.
+- A contra-horda dos objetivos finais ficou maior.
+
+DIÁLOGOS COOPERATIVOS
+- Há perfis de conversa para Recruta, Conde/Condessa, Helena, Moreira, Tomás, Iara e V.I.K.T.O.R.
+- Cada perfil possui quatro falas de abertura e quatro respostas; em uma cena, cada personagem selecionado fala quatro vezes.
+- As falas citam o personagem do parceiro pelo nome/apelido, com humor, sarcasmo e palavrões de acordo com a personalidade.
+- O anfitrião seleciona sempre uma dupla. Com três jogadores, o terceiro apenas ouve e nunca é inserido na conversa.
+- Todos os jogadores recebem as falas pelo sistema de eventos da partida.
+- A legenda identifica os dois personagens e indica PRESENCIAL ou RÁDIO conforme a distância do personagem que fala.
+- As vozes usam a síntese de fala disponível no navegador, com perfis de tom/velocidade por personagem; o modo rádio recebe sinais sonoros de comunicação.
+
+VALIDAÇÃO
+- JavaScript inline validado com `node --check`.
+- Verificação estática confirmou 7 perfis, 4 falas de abertura e 4 respostas por perfil, pareamento de apenas duas pessoas e retransmissão do evento de voz.
+- Recomenda-se testar uma partida online com dois e três jogadores para ajustar a frequência das conversas e o balanceamento das portas conforme a experiência real.

@@ -1,0 +1,46 @@
+BUNKER DOS MORTOS — ATUALIZAÇÃO DE PROGRESSÃO (v4)
+
+O QUE MUDOU
+
+1. ECONOMIA
+- Portas dos mapas agora custam aproximadamente 70% a mais.
+- Recompensas comuns de pontos foram reduzidas em 18%.
+- Preços de armas, perks e máquinas foram mantidos para preservar suas relações de custo.
+
+2. MAIS PRESSÃO NAS RODADAS
+- Mais zumbis desde as primeiras rodadas.
+- Mais inimigos podem ficar ativos ao mesmo tempo.
+- O intervalo de surgimento foi reduzido para deixar as hordas mais constantes.
+- O Hospício tem mais infectados corredores.
+
+3. OBJETIVOS POR MAPA
+BUNKER DOS MORTOS
+- Encontre 3 fusíveis nas alas A, B e C.
+- Volte ao painel elétrico e ligue a energia.
+- O portão da rua exige os fusíveis e a energia restaurada.
+- Abrir o setor externo dispara uma contraofensiva com um inimigo pesado.
+
+HOSPÍCIO VALE NEGRO
+- Encontre 3 prontuários nas alas do hospital.
+- Os documentos revelam o código 742.
+- Use o código para liberar o portão do pátio.
+- Abrir o pátio dispara uma horda especial liderada pelo Paciente Zero.
+
+FAZENDA SANTA LUZIA
+- Encontre o medalhão, o frasco de sangue e a página do diário.
+- As três peças liberam o alçapão.
+- Abrir o alçapão desperta uma horda especial liderada pelo Açougueiro.
+- O túnel só pode ser aberto depois que a horda for eliminada.
+
+4. HUD DE OBJETIVOS
+- Um painel no canto superior esquerdo mostra o objetivo atual e o progresso.
+- Os itens de missão brilham e flutuam para ajudar a localizá-los.
+- Interaja com os itens usando a tecla E (ou o botão USAR no toque).
+
+COMO JOGAR
+- Extraia a pasta inteira.
+- No Windows, execute Jogar.bat.
+- Mantenha a janela preta aberta enquanto joga.
+
+OBSERVAÇÃO
+Esta atualização foi validada por checagem de sintaxe do JavaScript e revisão estática dos pontos de integração. Recomenda-se testar cada mapa em uma sessão normal no Chrome/Edge e ajustar os valores de economia/dificuldade conforme o ritmo desejado.

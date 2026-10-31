@@ -1,0 +1,4 @@
+BUNKER DOS MORTOS v6
+
+Leia primeiro o arquivo LEIA-ME_V6.txt para ver os requisitos, como iniciar localmente,
+e como publicar o multiplayer para jogar pela internet.

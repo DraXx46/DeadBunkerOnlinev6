@@ -1,0 +1,106 @@
+BUNKER DOS MORTOS v6 — MULTIPLAYER ONLINE INDEPENDENTE
+=====================================================
+
+O QUE TEM NESTA VERSAO
+----------------------
+- Nome de jogador (sem senha) salvo no navegador e exibido sobre os personagens remotos.
+- Criacao de sala com escolha de mapa, limite de 2 a 4 jogadores e dificuldade.
+- Codigo de convite de 5 caracteres.
+- Entrada em sala por codigo.
+- Lobby seguro especifico para cada mapa, com movimentacao livre e objetos interativos.
+- Lista de jogadores, estado de pronto e inicio da partida pelo anfitriao.
+- Servidor Node.js com WebSocket. Nao depende mais da sala do Claude.
+- O mesmo endereco do site serve o jogo e o servidor multiplayer.
+
+REQUISITOS PARA EXECUTAR LOCALMENTE
+-----------------------------------
+- Windows 10/11.
+- Node.js 20 ou superior: https://nodejs.org/
+- Conexao com a internet na primeira execucao para instalar a dependencia 'ws'.
+
+TESTAR NO SEU PROPRIO PC
+------------------------
+1. Extraia todos os arquivos do ZIP para uma pasta.
+2. Instale o Node.js 20 ou superior, caso ainda nao tenha.
+3. De dois cliques em Jogar.bat.
+4. O script instala a dependencia do servidor (na primeira vez), inicia o servidor e abre:
+   http://localhost:3000
+5. No menu, abra Cooperativo Online, digite seu nome e crie uma sala.
+
+Para testar duas conexoes no mesmo PC, abra o endereco em uma segunda janela anonima
+ou em outro navegador e entre com o codigo da primeira sala.
+
+IMPORTANTE: localhost so e acessivel no proprio computador. Para jogar com alguem
+em outra rede, publique o projeto em um servidor publico conforme as instrucoes abaixo.
+
+PUBLICAR NA INTERNET COM RENDER (PARA JOGAR EM REDES DIFERENTES)
+-----------------------------------------------------------------
+O projeto ja inclui render.yaml, package.json e server.js.
+
+1. Extraia o ZIP.
+2. Crie um repositorio vazio no GitHub.
+3. Instale o GitHub Desktop: https://desktop.github.com/
+4. Clone o repositorio vazio para o computador.
+5. Copie TODO o conteudo da pasta BunkerDosMortos extraida para dentro da pasta clonada.
+   O index.html, package.json, server.js e render.yaml devem ficar na raiz do repositorio.
+6. No GitHub Desktop, faca Commit e depois Push/Publish para enviar os arquivos.
+7. Entre em https://render.com/ e conecte sua conta GitHub.
+8. No painel Render, escolha New + > Web Service e selecione o repositorio.
+9. Configure:
+      Runtime / Language: Node
+      Build Command: npm install
+      Start Command: npm start
+      Instance Type: Free (bom para os primeiros testes)
+10. Crie o servico e aguarde o primeiro deploy terminar.
+11. Abra a URL publica fornecida pelo Render. Ela sera parecida com:
+      https://nome-do-seu-jogo.onrender.com
+12. Voce e seu parceiro devem abrir EXATAMENTE a mesma URL.
+
+FLUXO DE JOGO ONLINE
+--------------------
+ANFITRIAO:
+1. Abre Cooperativo Online.
+2. Digita o nome.
+3. Escolhe mapa, numero maximo de jogadores e dificuldade.
+4. Clica em Criar sala e abrir lobby.
+5. Compartilha o codigo mostrado no canto superior da tela.
+6. Aguarda os outros jogadores entrarem e ficarem prontos.
+7. Clica em Iniciar partida.
+
+CONVIDADO:
+1. Abre a mesma URL publica.
+2. Digita o proprio nome.
+3. Cola o codigo em Entrar com codigo.
+4. Explora o lobby e clica em Estou pronto.
+5. Aguarda o anfitriao iniciar.
+
+OBSERVACOES IMPORTANTES
+-----------------------
+- Nome e identificacao visual apenas: ainda nao existe conta, senha, verificacao de identidade
+  ou recuperacao de nome.
+- As salas sao temporarias. Se o anfitriao sair ou perder a conexao, a sala e encerrada.
+- O anfitriao e responsavel pela simulacao principal da partida. Se ele desconectar, os demais
+  jogadores precisam voltar ao menu.
+- A versao atual e destinada a testes com amigos (ate 4 jogadores), nao a um lancamento publico.
+- No plano gratuito do Render, o servico pode dormir apos 15 minutos sem receber requisicoes
+  ou mensagens WebSocket. A proxima conexao pode demorar cerca de um minuto para acorda-lo.
+  Enquanto a pagina estiver conectada, o jogo envia mensagens keepalive periodicas.
+- Para jogar em redes diferentes, NAO compartilhe http://localhost:3000. Compartilhe a URL
+  publica do Render.
+
+SOLUCAO DE PROBLEMAS
+--------------------
+- Se Jogar.bat disser que Node nao existe, instale Node.js 20+ e abra o arquivo de novo.
+- Se a tela online disser que o servidor esta desconectado, confira o deploy do Render e
+  atualize a pagina.
+- Se o primeiro acesso ao Render demorar, espere o servico terminar de iniciar e atualize.
+- Se o navegador nao permitir olhar ao redor, clique dentro da area do jogo para ativar o mouse.
+- Se a porta 3000 ja estiver ocupada no PC, feche o outro servidor ou altere PORT no ambiente.
+
+ARQUIVOS IMPORTANTES
+--------------------
+index.html     Jogo e interface.
+server.js      Servidor HTTP + salas WebSocket.
+package.json   Dependencia e comando de inicializacao.
+render.yaml    Modelo de configuracao do Render.
+Jogar.bat      Inicializacao local para Windows.

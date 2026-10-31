@@ -697,7 +697,6 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
     <div class="setp" data-st="video" hidden>
       <label class="sl"><span>Campo de visão</span><input type="range" data-k="fov" data-fmt="deg" min="60" max="110" step="1"><output></output></label>
       <label class="sl"><span>Resolução</span><input type="range" data-k="quality" data-fmt="pct" min="0.5" max="1" step="0.05"><output></output></label>
-      <button type="button" class="sw" role="switch" data-k="potato"><span>Modo Potato PC (máximo desempenho)</span><i></i></button>
       <label class="sl"><span>Brilho</span><input type="range" data-k="bright" data-fmt="pct" min="0.7" max="1.6" step="0.05"><output></output></label>
       <button type="button" class="sw" role="switch" data-k="bob"><span>Balanço da câmera ao andar</span><i></i></button>
       <label class="sl"><span>Tremor de tela</span><input type="range" data-k="shakeAmt" data-fmt="pct" min="0" max="2" step="0.05"><output></output></label>
@@ -1708,12 +1707,12 @@ function buildWalls(z0,z1,inMat,outMat,hosp){
   const mtx=new THREE.Matrix4(); const mats=Array.isArray(inMat)?inMat:[inMat]; const wgeo=new THREE.BoxGeometry(S,WH,S);
   const buckets=mats.map(()=>[]); for(const c of inner){ const h=((c[0]*73856093)^(c[1]*19349663))>>>0; buckets[(h+(h>>7))%mats.length].push(c); }
   mats.forEach((mt,k)=>{ const list=buckets[k]; if(!list.length) return; const walls=new THREE.InstancedMesh(wgeo,mt,list.length); walls.frustumCulled=false;
-    list.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),WH/2,cx(z)); walls.setMatrixAt(i,mtx); }); walls.computeBoundingSphere(); ROOT.add(walls); });
+    list.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),WH/2,cx(z)); walls.setMatrixAt(i,mtx); }); ROOT.add(walls); });
   // Close the new upper gap without resizing/moving existing walls or doors.
   const upperCells=inner.concat(doors.filter(d=>d.map===(hosp?'hosp':'bunker')).flatMap(d=>d.cells));
   for(let z=z0;z<=z1;z++) for(let x=0;x<MW;x++) if(at(x,z)==='W'||at(x,z)==='v') upperCells.push([x,z]);
   if(upperCells.length){ const caps=new THREE.InstancedMesh(new THREE.BoxGeometry(S,ROOM_CEIL-WH,S),mats[0],upperCells.length);
-    caps.frustumCulled=false; upperCells.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),(WH+ROOM_CEIL)/2,cx(z)); caps.setMatrixAt(i,mtx); }); caps.computeBoundingSphere(); ROOT.add(caps); }
+    caps.frustumCulled=false; upperCells.forEach(([x,z],i)=>{ mtx.makeTranslation(cx(x),(WH+ROOM_CEIL)/2,cx(z)); caps.setMatrixAt(i,mtx); }); ROOT.add(caps); }
   const bgeo=new THREE.BoxGeometry(S,1,S); bgeo.translate(0,0.5,0);
   const ruins=new THREE.InstancedMesh(bgeo,outMat,Math.max(1,outer.length)); ruins.frustumCulled=false; ruins.count=outer.length;
   const sc=new THREE.Vector3(), q=new THREE.Quaternion(), p=new THREE.Vector3();
@@ -5782,7 +5781,7 @@ function drawDoom(rawDt){
 }
 
 /* ================= SETTINGS ================= */
-const CFG_DEF={vol:0.7,music:0.6,sfx:1,voice:1,ui:0.8,sens:1,adsSens:0.85,invY:false,fov:72,quality:1,potato:false,bright:1,bob:true,shake:true,shakeAmt:1,fps:false,hitm:true,
+const CFG_DEF={vol:0.7,music:0.6,sfx:1,voice:1,ui:0.8,sens:1,adsSens:0.85,invY:false,fov:72,quality:1,bright:1,bob:true,shake:true,shakeAmt:1,fps:false,hitm:true,
   xs:{style:'cruz',col:'#f0ece0',size:9,thick:2,gap:0,alpha:0.9,outline:true,dot:false,dyn:true}};
 const CFG=JSON.parse(JSON.stringify(CFG_DEF));
 (function loadCfg(){
@@ -5793,19 +5792,6 @@ const CFG=JSON.parse(JSON.stringify(CFG_DEF));
   if(d&&d.shake===false&&typeof d.shakeAmt!=='number') CFG.shakeAmt=0;
 })();
 const BASE_PR=Math.min(window.devicePixelRatio||1,isTouch?1.3:1.75);
-const NORMAL_CAMERA_FAR=camera.far;
-const NORMAL_FOG_DENSITY=scene.fog.density;
-function applyRenderProfile(){
-  // Potato PC reduces GPU pixel workload without changing the map's lighting,
-  // fog, camera range, gameplay, or network simulation.
-  const pixelRatio=CFG.potato?Math.min(BASE_PR*CFG.quality,0.58):BASE_PR*CFG.quality;
-  renderer.setPixelRatio(pixelRatio);
-  camera.far=NORMAL_CAMERA_FAR;
-  camera.updateProjectionMatrix();
-  if(renderer.shadowMap) renderer.shadowMap.enabled=!CFG.potato;
-  resize();
-}
-
 function cfgGet(path){ const p=path.split('.'); let o=CFG; for(const k of p) o=o[k]; return o; }
 function cfgPut(path,v){ const p=path.split('.'); let o=CFG; for(let i=0;i<p.length-1;i++) o=o[p[i]]; o[p[p.length-1]]=v; }
 function saveCfg(){ store.set('bdm_cfg',JSON.stringify(CFG)); }
@@ -5819,7 +5805,7 @@ function applyCfg(path){
   if(all||path==='voice') Snd.setBus('voice',CFG.voice);
   if(all||path==='ui') Snd.setBus('ui',CFG.ui);
   if(all||path==='fov'){ CHEAT.fov=CFG.fov; if(G.state!=='playing'||P.ads<0.05){ camera.fov=CFG.fov; camera.updateProjectionMatrix(); } }
-  if(all||path==='quality'||path==='potato') applyRenderProfile();
+  if(all||path==='quality'){ renderer.setPixelRatio(BASE_PR*CFG.quality); resize(); }
   if(all||path==='bright') canvas.style.filter=Math.abs(CFG.bright-1)>0.01?`brightness(${CFG.bright})`:'';
   if(all||path==='fps'){ CHEAT.showFps=CFG.fps; $('#fpsbox').hidden=!CFG.fps; }
   if(all||path==='hitm') document.body.classList.toggle('nohitm',!CFG.hitm);

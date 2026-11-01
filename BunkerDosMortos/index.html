@@ -3337,19 +3337,34 @@ async function loadGunPack(){
     }
     if(!gltf||!bin) throw new Error('Estrutura GLB incompleta');
     const bv=gltf.bufferViews||[], ac=gltf.accessors||[];
+    // GLB accessors podem usar índices de 32 bits e atributos inteiros normalizados.
+    // O parser antigo tratava qualquer tipo diferente de FLOAT/USHORT como BYTE,
+    // corrompendo principalmente malhas cujos índices são UNSIGNED_INT (5125).
     const accessor=(idx)=>{
-      const a=ac[idx], v=bv[a.bufferView], comps=({SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16})[a.type]||1;
-      const bytesPer= a.componentType===5126?4:(a.componentType===5123?2:1);
-      const start=(v.byteOffset||0)+(a.byteOffset||0), stride=v.byteStride||comps*bytesPer;
-      const C=a.componentType===5126?Float32Array:(a.componentType===5123?Uint16Array:Uint8Array);
-      if(stride===comps*bytesPer) return new C(bin.slice(start,start+a.count*comps*bytesPer));
-      const out=new C(a.count*comps);
-      const src=new DataView(bin);
-      for(let i=0;i<a.count;i++) for(let j=0;j<comps;j++){
-        const p=start+i*stride+j*bytesPer, q=i*comps+j;
-        out[q]=a.componentType===5126?src.getFloat32(p,true):(a.componentType===5123?src.getUint16(p,true):src.getUint8(p));
+      const a=ac[idx], v=bv[a.bufferView];
+      if(!a||!v) throw new Error('Accessor GLB inválido: '+idx);
+      const comps=({SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16})[a.type]||1;
+      const types={
+        5120:{bytes:1,get:(d,p)=>d.getInt8(p),C:Int8Array},
+        5121:{bytes:1,get:(d,p)=>d.getUint8(p),C:Uint8Array},
+        5122:{bytes:2,get:(d,p)=>d.getInt16(p,true),C:Int16Array},
+        5123:{bytes:2,get:(d,p)=>d.getUint16(p,true),C:Uint16Array},
+        5125:{bytes:4,get:(d,p)=>d.getUint32(p,true),C:Uint32Array},
+        5126:{bytes:4,get:(d,p)=>d.getFloat32(p,true),C:Float32Array}
+      };
+      const t=types[a.componentType];
+      if(!t) throw new Error('Tipo de accessor GLB não suportado: '+a.componentType);
+      const start=(v.byteOffset||0)+(a.byteOffset||0), stride=v.byteStride||comps*t.bytes;
+      const view=new DataView(bin), count=a.count*comps;
+      const raw=new t.C(count);
+      for(let i=0;i<a.count;i++) for(let j=0;j<comps;j++)
+        raw[i*comps+j]=t.get(view,start+i*stride+j*t.bytes);
+      if(a.normalized&&a.componentType!==5126){
+        const out=new Float32Array(count), max=({5120:127,5121:255,5122:32767,5123:65535})[a.componentType];
+        for(let i=0;i<count;i++) out[i]=a.componentType===5120||a.componentType===5122?Math.max(raw[i]/max,-1):raw[i]/max;
+        return out;
       }
-      return out;
+      return raw;
     };
     let palette=null;
     if(gltf.images&&gltf.images.length&&gltf.images[0].bufferView!=null){
@@ -3399,11 +3414,17 @@ async function loadGunPack(){
       for(const c of n.children||[]) obj.add(makeNode(c,false));
       return obj;
     };
+    const normalizeNodeName=s=>String(s||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
     const nameIndex=new Map();
-    (gltf.nodes||[]).forEach((n,i)=>{if(n.name) nameIndex.set(n.name,i);});
+    (gltf.nodes||[]).forEach((n,i)=>{
+      if(n.name) nameIndex.set(normalizeNodeName(n.name),i);
+      // Alguns exportadores colocam o nome do modelo no mesh, não no node.
+      if(n.mesh!=null&&gltf.meshes[n.mesh]&&gltf.meshes[n.mesh].name&&!nameIndex.has(normalizeNodeName(gltf.meshes[n.mesh].name)))
+        nameIndex.set(normalizeNodeName(gltf.meshes[n.mesh].name),i);
+    });
     for(const [id,def] of Object.entries(GUN_ASSET_MAP)){
-      const idx=nameIndex.get(def.node);
-      if(idx==null){console.warn('[Bunker] Modelo não encontrado:',def.node);continue;}
+      const idx=nameIndex.get(normalizeNodeName(def.node));
+      if(idx==null){console.warn('[Bunker] Modelo não encontrado no GLB:',def.node,'| disponíveis:',Array.from(nameIndex.keys()).join(', '));continue;}
       const model=makeNode(idx,true);
       model.updateMatrixWorld(true);
       const bounds=new THREE.Box3().setFromObject(model), size=bounds.getSize(new THREE.Vector3()), center=bounds.getCenter(new THREE.Vector3());

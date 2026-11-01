@@ -3051,7 +3051,7 @@ const WEAPONS={
   mg42:{name:'RPD',model:'mg42',sil:'rpd',snd:'lmg',dmg:72,head:2.5,mag:125,reserve:500,rpm:1100,auto:true,reload:5,spread:0.03,recoil:0.006,pen:2,box:true},
   ptrs:{name:'Barrett M107',model:'ptrs',sil:'barrett',snd:'sniper',dmg:650,head:4,mag:5,reserve:60,rpm:70,auto:false,reload:3,spread:0.001,recoil:0.06,pen:4,box:true,zoom:38},
   python:{name:'Blazeson & Julius 357',model:'python',sil:'bj357',snd:'revolver',dmg:190,head:2.5,mag:6,reserve:84,rpm:220,auto:false,reload:2.5,spread:0.01,recoil:0.03,pen:2,box:true},
-  doom:{name:'AA-12',model:'db',sil:'aa12',snd:'doom',dmg:34,pellets:20,head:1.3,mag:2,reserve:40,rpm:40,auto:false,reload:1.5,spread:0.1,recoil:0.05,pen:1,range:17,box:true,boxW:0.6,sprite:true,fixedMag:true},
+  doom:{name:'AA-12',model:'doom',sil:'aa12',snd:'doom',dmg:34,pellets:20,head:1.3,mag:2,reserve:40,rpm:40,auto:false,reload:1.5,spread:0.1,recoil:0.05,pen:1,range:17,box:true,boxW:0.6,sprite:true,fixedMag:true},
   ray:{name:'RARAN Prototype 1130',model:'ray',sil:'raran',snd:'ray',dmg:1000,splash:2.4,head:1,mag:20,reserve:160,rpm:180,auto:false,reload:2.4,spread:0.004,recoil:0.012,pen:1,box:true,proj:true,boxW:0.45},
 };
 const UPNAME={m1911:'Glock 17 Fúria',kar98k:'Mosin-Nagant Fúria',garand:'SKS Fúria',db:'XMA-10 Fúria',thompson:'H&K UMP45 Fúria',mp40:'H&K MP7 Fúria',ppsh:'KRISS Vector Fúria',stg44:'AK-556 Fúria',trench:'S12P8 Fúria',bar:'RPK-556 Fúria',mg42:'RPD Fúria',ptrs:'Barrett M107 Fúria',python:'Blazeson & Julius 357 Fúria',doom:'AA-12 Fúria',ray:'RARAN 1130 Fúria'};
@@ -3232,6 +3232,25 @@ function buildGunProcedural(id,tier){
       for(const sx of [-0.012,0.012]) box(0.006,0.018,0.012,m.steel,sx,0.03,0.0,-0.4);
       guard(-0.03,0.01,-0.012); trig(-0.012,-0.026);
       muzzle=0.72; fore=0.26; foreY=-0.04; sight=0.032; break; }
+    case 'doom':{
+      // AA-12 de reserva: arma automática de cano único, distinta da XMA-10 dupla.
+      tube(0.015,0.015,0.68,m.steel,0.62,0.008);
+      tube(0.022,0.022,0.22,m.ribs,0.48,0.008);
+      tube(0.009,0.009,0.12,m.black,0.91,0.008);
+      box(0.066,0.075,0.32,m.steel,0,-0.006,-0.38);
+      box(0.052,0.085,0.19,m.black,0,-0.015,-0.53);
+      box(0.052,0.13,0.09,m.park,0,-0.09,-0.32);
+      prof([[-0.055,-0.02],[0.17,-0.02],[0.18,-0.065],[0.08,-0.09],[-0.05,-0.07]],0.044,m.park);
+      prof([[-0.04,-0.04],[0.015,-0.04],[0.005,-0.16],[-0.052,-0.15],[-0.06,-0.09,-0.04,-0.04]],0.034,m.ribs);
+      // Carregador de tambor e guarda-mão da AA-12.
+      const drum=new THREE.CylinderGeometry(0.072,0.072,0.075,24);
+      drum.rotateZ(Math.PI/2); add(drum,m.black,0,-0.105,-0.16);
+      const drumCap=new THREE.CylinderGeometry(0.055,0.055,0.08,20);
+      drumCap.rotateZ(Math.PI/2); add(drumCap,m.steel,0,-0.105,-0.16);
+      for(let i=0;i<7;i++) box(0.008,0.008,0.014,m.black,0.025*Math.cos(i*Math.PI/3.5),-0.105+0.025*Math.sin(i*Math.PI/3.5),-0.16);
+      for(let i=0;i<5;i++) box(0.004,0.022,0.045,m.black,0,-0.005,-(0.44+i*0.035));
+      sightF(0.87,0.038); guard(-0.015,0.035,-0.04); trig(0.018,-0.052);
+      muzzle=0.96; fore=0.34; foreY=-0.025; sight=0.045; break; }
     case 'bar':{
       prof([[-0.06,-0.036],[0.32,-0.036],[0.32,0.02],[0.18,0.03],[-0.06,0.03]],0.046,m.park);
       prof([[-0.06,-0.004],[-0.12,-0.03],[-0.38,-0.04],[-0.39,-0.15],[-0.2,-0.13,-0.09,-0.08],[-0.06,-0.05]],0.044,m.wood);
@@ -3536,10 +3555,33 @@ async function loadGunPack(){
       points.forEach(p=>{const d=p.clone().sub(mean).dot(axis);min=Math.min(min,d);max=Math.max(max,d);});
       return {center:mean,axis,length:max-min,size};
     };
+    const resolvedEntries=Object.entries(GUN_ASSET_MAP).map(([id,def])=>({id,def,resolved:resolveModelNode(def.node)}));
+    const isAncestor=(ancestor,child)=>{
+      let p=parentLists[child]?.[0], seen=new Set();
+      while(p!=null&&!seen.has(p)){
+        if(p===ancestor) return true;
+        seen.add(p); p=parentLists[p]?.[0];
+      }
+      return false;
+    };
+    const overlapping=new Set();
+    for(let i=0;i<resolvedEntries.length;i++){
+      const a=resolvedEntries[i];
+      if(a.resolved.idx==null) continue;
+      for(let j=i+1;j<resolvedEntries.length;j++){
+        const b=resolvedEntries[j];
+        if(b.resolved.idx==null) continue;
+        if(a.resolved.idx===b.resolved.idx||isAncestor(a.resolved.idx,b.resolved.idx)||isAncestor(b.resolved.idx,a.resolved.idx)){
+          overlapping.add(a.id); overlapping.add(b.id);
+          console.error('[Bunker] Sobreposição na hierarquia do Arsenal:',a.id,'('+a.def.node+') e',b.id,'('+b.def.node+'). Ambos serão enviados à reserva para impedir duplicação.');
+        }
+      }
+    }
     const usedNodes=new Map();
     const fitGunModel=(id,idx,targetLength)=>{
       const previous=usedNodes.get(idx);
       if(previous) throw new Error('o mesmo nó já foi usado por '+previous);
+      if((parentLists[idx]||[]).length>1) throw new Error('nó compartilhado por mais de um pai; transformação ambígua');
       const rig=new THREE.Group();
       rig.name='ArsenalRig_'+id;
       rig.matrix.copy(parentLinearMatrix(idx)); rig.matrixAutoUpdate=false;
@@ -3560,8 +3602,12 @@ async function loadGunPack(){
       return {weapon:id,node:asset.userData.sourceNode,length:shape.length.toFixed(3),target:targetLength,scale:scale.toFixed(4),status:'OK'};
     };
 
-    for(const [id,def] of Object.entries(GUN_ASSET_MAP)){
-      const resolved=resolveModelNode(def.node);
+    for(const entry of resolvedEntries){
+      const {id,def,resolved}=entry;
+      if(overlapping.has(id)){
+        GUN_ASSET_REPORT.push({weapon:id,node:def.node,status:'FALHOU: sobreposição de hierarquia'});
+        continue;
+      }
       if(resolved.idx==null){
         GUN_ASSET_REPORT.push({weapon:id,node:def.node,status:'FALHOU: '+resolved.reason});
         console.warn('[Bunker] Modelo GLB indisponível para '+id+': '+def.node+' ('+resolved.reason+'). Usando reserva.');
@@ -3596,7 +3642,7 @@ function buildGun(id,tier){
   const asset=GUN_ASSETS[id];
   if(!asset) return buildGunProcedural(id,tier);
   const g=new THREE.Group(); g.add(asset.clone(true));
-  const len=GUN_ASSET_MAP[id].length;
+  const len=GUN_ASSET_MAP[id]?.length||0.8;
   g.userData={muzzle:-len*0.49,fore:-len*0.22,foreY:-0.035,sight:0.035};
   return g;
 }

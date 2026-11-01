@@ -3321,29 +3321,31 @@ const GUN_ASSET_MAP={
   ray:{node:'RARAN Prototype 1130',length:0.60}
 };
 const GUN_ASSETS={};
+const GUN_ASSET_REPORT=[];
 async function loadGunPack(){
   try{
-    const response=await fetch('./Arsenal.glb',{cache:'force-cache'});
+    const response=await fetch('./Arsenal.glb',{cache:'no-cache'});
     if(!response.ok) throw new Error('Arsenal.glb não encontrado ('+response.status+')');
     const bytes=await response.arrayBuffer();
+    if(bytes.byteLength<20) throw new Error('Arsenal.glb está vazio ou incompleto');
     const dv=new DataView(bytes);
     if(dv.getUint32(0,true)!==0x46546c67) throw new Error('Arquivo GLB inválido');
+    if(dv.getUint32(4,true)>bytes.byteLength) throw new Error('Cabeçalho GLB informa tamanho maior que o arquivo');
     let off=12, gltf=null, bin=null;
-    while(off<bytes.byteLength){
+    while(off+8<=bytes.byteLength){
       const len=dv.getUint32(off,true), type=dv.getUint32(off+4,true); off+=8;
+      if(off+len>bytes.byteLength) throw new Error('Chunk GLB ultrapassa o tamanho do arquivo');
       if(type===0x4e4f534a) gltf=JSON.parse(new TextDecoder().decode(new Uint8Array(bytes,off,len)));
       else if(type===0x004e4942) bin=bytes.slice(off,off+len);
       off+=len;
     }
     if(!gltf||!bin) throw new Error('Estrutura GLB incompleta');
-    const bv=gltf.bufferViews||[], ac=gltf.accessors||[];
-    // GLB accessors podem usar índices de 32 bits e atributos inteiros normalizados.
-    // O parser antigo tratava qualquer tipo diferente de FLOAT/USHORT como BYTE,
-    // corrompendo principalmente malhas cujos índices são UNSIGNED_INT (5125).
+    const nodes=gltf.nodes||[], bv=gltf.bufferViews||[], ac=gltf.accessors||[], meshes=gltf.meshes||[];
     const accessor=(idx)=>{
-      const a=ac[idx], v=bv[a.bufferView];
-      if(!a||!v) throw new Error('Accessor GLB inválido: '+idx);
-      const comps=({SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16})[a.type]||1;
+      const a=ac[idx];
+      if(!a||a.bufferView==null||!bv[a.bufferView]) throw new Error('Accessor GLB inválido: '+idx);
+      const v=bv[a.bufferView];
+      const comps=({SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT2:4,MAT3:9,MAT4:16})[a.type]||1;
       const types={
         5120:{bytes:1,get:(d,p)=>d.getInt8(p),C:Int8Array},
         5121:{bytes:1,get:(d,p)=>d.getUint8(p),C:Uint8Array},
@@ -3355,13 +3357,13 @@ async function loadGunPack(){
       const t=types[a.componentType];
       if(!t) throw new Error('Tipo de accessor GLB não suportado: '+a.componentType);
       const start=(v.byteOffset||0)+(a.byteOffset||0), stride=v.byteStride||comps*t.bytes;
-      const view=new DataView(bin), count=a.count*comps;
-      const raw=new t.C(count);
+      const view=new DataView(bin), raw=new t.C(a.count*comps);
+      if(start<0||start+(a.count-1)*stride+comps*t.bytes>bin.byteLength) throw new Error('Accessor fora dos limites: '+idx);
       for(let i=0;i<a.count;i++) for(let j=0;j<comps;j++)
         raw[i*comps+j]=t.get(view,start+i*stride+j*t.bytes);
       if(a.normalized&&a.componentType!==5126){
-        const out=new Float32Array(count), max=({5120:127,5121:255,5122:32767,5123:65535})[a.componentType];
-        for(let i=0;i<count;i++) out[i]=a.componentType===5120||a.componentType===5122?Math.max(raw[i]/max,-1):raw[i]/max;
+        const out=new Float32Array(raw.length), max=({5120:127,5121:255,5122:32767,5123:65535})[a.componentType];
+        for(let i=0;i<raw.length;i++) out[i]=a.componentType===5120||a.componentType===5122?Math.max(raw[i]/max,-1):raw[i]/max;
         return out;
       }
       return raw;
@@ -3372,105 +3374,222 @@ async function loadGunPack(){
       const blob=new Blob([bin.slice(start,start+v.byteLength)],{type:gltf.images[0].mimeType||'image/png'});
       const url=URL.createObjectURL(blob), img=new Image();
       await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url;});
-      palette=new THREE.Texture(img); palette.flipY=false; palette.encoding=THREE.sRGBEncoding; palette.needsUpdate=true;
-      URL.revokeObjectURL(url);
+      palette=new THREE.Texture(img); palette.flipY=false;
+      if('colorSpace' in palette&&THREE.SRGBColorSpace) palette.colorSpace=THREE.SRGBColorSpace;
+      else if('encoding' in palette&&THREE.sRGBEncoding) palette.encoding=THREE.sRGBEncoding;
+      palette.needsUpdate=true; URL.revokeObjectURL(url);
     }
     const materials=(gltf.materials||[]).map(m=>{
       const p=m.pbrMetallicRoughness||{}, factor=p.baseColorFactor||[1,1,1,1];
       const opt={color:new THREE.Color(factor[0],factor[1],factor[2]),side:THREE.DoubleSide,shininess:38};
       if(p.baseColorTexture&&palette) opt.map=palette;
       if(m.alphaMode==='BLEND'){opt.transparent=true;opt.opacity=factor[3];}
+      if(m.alphaMode==='MASK') opt.alphaTest=m.alphaCutoff==null?0.5:m.alphaCutoff;
       if(m.emissiveFactor) opt.emissive=new THREE.Color(m.emissiveFactor[0],m.emissiveFactor[1],m.emissiveFactor[2]);
       return new THREE.MeshPhongMaterial(opt);
     });
     const meshCache=new Map();
     const buildMesh=(mi)=>{
       if(meshCache.has(mi)) return meshCache.get(mi);
-      const def=gltf.meshes[mi], group=new THREE.Group(); group.name=def.name||'mesh';
+      const def=meshes[mi];
+      if(!def) throw new Error('Mesh GLB inválido: '+mi);
+      const group=new THREE.Group(); group.name=def.name||'mesh_'+mi;
       for(const prim of def.primitives||[]){
         const geo=new THREE.BufferGeometry(), attrs=prim.attributes||{};
         if(attrs.POSITION!=null) geo.setAttribute('position',new THREE.BufferAttribute(accessor(attrs.POSITION),3));
         if(attrs.NORMAL!=null) geo.setAttribute('normal',new THREE.BufferAttribute(accessor(attrs.NORMAL),3));
         if(attrs.TEXCOORD_0!=null) geo.setAttribute('uv',new THREE.BufferAttribute(accessor(attrs.TEXCOORD_0),2));
+        if(attrs.COLOR_0!=null){
+          const color=accessor(attrs.COLOR_0), itemSize=ac[attrs.COLOR_0].type==='VEC4'?4:3;
+          geo.setAttribute('color',new THREE.BufferAttribute(color,itemSize));
+        }
         if(prim.indices!=null) geo.setIndex(new THREE.BufferAttribute(accessor(prim.indices),1));
-        geo.computeBoundingSphere();
-        const mat=materials[prim.material]||new THREE.MeshPhongMaterial({color:0x888888});
+        if(!geo.getAttribute('position')) continue;
+        if(!geo.getAttribute('normal')) geo.computeVertexNormals();
+        geo.computeBoundingBox(); geo.computeBoundingSphere();
+        const mat=materials[prim.material]||new THREE.MeshPhongMaterial({color:0x888888,side:THREE.DoubleSide});
         const mesh=new THREE.Mesh(geo,mat); mesh.castShadow=true; mesh.receiveShadow=true; group.add(mesh);
       }
       meshCache.set(mi,group); return group;
     };
-    const makeNode=(idx,isRoot)=>{
-      const n=gltf.nodes[idx], obj=new THREE.Group(); obj.name=n.name||('node_'+idx);
+    const makeNode=(idx,isRoot=false)=>{
+      const n=nodes[idx];
+      if(!n) throw new Error('Nó GLB inválido: '+idx);
+      const obj=new THREE.Group(); obj.name=n.name||('node_'+idx);
       if(n.matrix){
         const mat=new THREE.Matrix4().fromArray(n.matrix);
         mat.decompose(obj.position,obj.quaternion,obj.scale);
-      } else {
+      }else{
         if(n.translation) obj.position.fromArray(n.translation);
         if(n.rotation) obj.quaternion.set(n.rotation[0],n.rotation[1],n.rotation[2],n.rotation[3]);
         if(n.scale) obj.scale.fromArray(n.scale);
       }
-      if(isRoot) obj.position.set(0,0,0); // discard the pack's display-grid placement
+      if(isRoot) obj.position.set(0,0,0);
       if(n.mesh!=null) obj.add(buildMesh(n.mesh).clone(true));
       for(const c of n.children||[]) obj.add(makeNode(c,false));
       return obj;
     };
-    const normalizeNodeName=s=>String(s||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
-    const nameIndex=new Map();
-    (gltf.nodes||[]).forEach((n,i)=>{
-      if(n.name) nameIndex.set(normalizeNodeName(n.name),i);
-      // Alguns exportadores colocam o nome do modelo no mesh, não no node.
-      if(n.mesh!=null&&gltf.meshes[n.mesh]&&gltf.meshes[n.mesh].name&&!nameIndex.has(normalizeNodeName(gltf.meshes[n.mesh].name)))
-        nameIndex.set(normalizeNodeName(gltf.meshes[n.mesh].name),i);
-    });
-    const usedNodes=new Set();
-    const fitGunModel=(id,idx,length)=>{
-      const model=makeNode(idx,true);
-      model.updateMatrixWorld(true);
-      const bounds=new THREE.Box3().setFromObject(model);
-      const size=bounds.getSize(new THREE.Vector3()), center=bounds.getCenter(new THREE.Vector3());
-      // Os modelos do pack podem vir com eixos diferentes; prioriza Z, mas
-      // evita escala infinita em modelos cujo comprimento foi exportado noutro eixo.
-      const sourceLength=size.z>0.001?size.z:Math.max(size.x,size.y,size.z);
-      const scale=length/Math.max(0.001,sourceLength);
-      model.scale.setScalar(scale);
-      model.position.set(-center.x*scale,-center.y*scale-0.04,-center.z*scale);
-      model.userData.muzzle=-length*0.49;
-      GUN_ASSETS[id]=model;
-      usedNodes.add(idx);
-    };
-    for(const [id,def] of Object.entries(GUN_ASSET_MAP)){
-      const idx=nameIndex.get(normalizeNodeName(def.node));
-      if(idx==null){console.warn('[Bunker] Modelo não encontrado no GLB:',def.node);continue;}
-      fitGunModel(id,idx,def.length);
-    }
 
-    // Aproveita também armas de fogo adicionais do GLB que não estejam na
-    // tabela manual. Nós de facas/armas brancas são deliberadamente ignorados.
-    const meleeName=/(knife|knives|melee|sword|katana|machete|dagger|bayonet|axe|hatchet|tomahawk|faca|facas|espada)/i;
-    const sceneRoots=(gltf.scenes||[])[gltf.scene||0]?.nodes||[];
-    const hasMesh=(idx,seen=new Set())=>{
-      if(seen.has(idx)) return false;
-      seen.add(idx);
-      const n=gltf.nodes[idx];
-      return n&&(n.mesh!=null||(n.children||[]).some(c=>hasMesh(c,seen)));
+    // Reconstrói o caminho de pais até cada arma. As posições dos pais são
+    // descartadas (eram usadas para espalhar as miniaturas no catálogo GLB),
+    // mas rotação e escala dos pais são preservadas.
+    const parentLists=nodes.map(()=>[]);
+    nodes.forEach((n,parent)=>(n.children||[]).forEach(child=>{
+      if(parentLists[child]) parentLists[child].push(parent);
+    }));
+    const nodeLocalMatrix=(n)=>{
+      if(n.matrix) return new THREE.Matrix4().fromArray(n.matrix);
+      const p=new THREE.Vector3().fromArray(n.translation||[0,0,0]);
+      const q=new THREE.Quaternion().fromArray(n.rotation||[0,0,0,1]);
+      const sc=new THREE.Vector3().fromArray(n.scale||[1,1,1]);
+      return new THREE.Matrix4().compose(p,q,sc);
     };
-    const candidates=sceneRoots.filter(idx=>{
-      const n=gltf.nodes[idx];
-      const meshName=n?.mesh!=null?gltf.meshes[n.mesh]?.name||'':'';
-      const label=(n?.name||'')+' '+meshName;
-      return n&&hasMesh(idx)&&!meleeName.test(label)&&!usedNodes.has(idx);
+    const parentLinearMatrix=(idx)=>{
+      const chain=[], seen=new Set(); let p=parentLists[idx]?.[0];
+      while(p!=null){
+        if(seen.has(p)) throw new Error('Ciclo na hierarquia GLB perto do nó '+idx);
+        seen.add(p); chain.push(p); p=parentLists[p]?.[0];
+      }
+      chain.reverse();
+      const matrix=new THREE.Matrix4();
+      for(const parent of chain){
+        const local=nodeLocalMatrix(nodes[parent]);
+        local.setPosition(0,0,0);
+        matrix.multiply(local);
+      }
+      return matrix;
+    };
+
+    const scene=(gltf.scenes||[])[gltf.scene||0];
+    if(!scene) throw new Error('GLB não possui cena ativa');
+    const reachable=new Set();
+    const markReachable=(idx)=>{
+      if(reachable.has(idx)||!nodes[idx]) return;
+      reachable.add(idx); (nodes[idx].children||[]).forEach(markReachable);
+    };
+    (scene.nodes||[]).forEach(markReachable);
+
+    const normalizeNodeName=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+    const nodeNames=new Map(), meshNames=new Map();
+    const addName=(map,name,idx)=>{
+      if(!name) return;
+      const key=normalizeNodeName(name), list=map.get(key)||[];
+      if(!list.includes(idx)) list.push(idx);
+      map.set(key,list);
+    };
+    nodes.forEach((n,i)=>{
+      addName(nodeNames,n.name,i);
+      if(n.mesh!=null) addName(meshNames,meshes[n.mesh]?.name,i);
     });
-    const remaining=Object.keys(WEAPONS).filter(id=>!GUN_ASSETS[id]);
-    for(let i=0;i<Math.min(remaining.length,candidates.length);i++){
-      const id=remaining[i], idx=candidates[i];
-      const def=GUN_ASSET_MAP[id];
-      const length=def?.length||((WEAPONS[id]?.snd==='pistol')?0.34:(WEAPONS[id]?.snd==='rifle'||WEAPONS[id]?.snd==='lmg')?1.0:(WEAPONS[id]?.snd==='shotgun')?0.92:0.78);
-      console.warn('[Bunker] Associando modelo extra do Arsenal automaticamente:',gltf.nodes[idx]?.name||gltf.meshes[gltf.nodes[idx]?.mesh]?.name||('node '+idx),'->',id);
-      fitGunModel(id,idx,length);
+    const resolveModelNode=(name)=>{
+      const key=normalizeNodeName(name);
+      const exact=(nodeNames.get(key)||[]).filter(i=>reachable.has(i));
+      const mesh=(meshNames.get(key)||[]).filter(i=>reachable.has(i));
+      const matches=exact.length?exact:mesh;
+      if(matches.length!==1) return {idx:null,reason:matches.length?'nome duplicado no GLB':'nó não encontrado na cena'};
+      return {idx:matches[0],reason:''};
+    };
+    const meleeName=/(knife|knives|melee|sword|katana|machete|dagger|bayonet|axe|hatchet|tomahawk|faca|facas|espada)/i;
+    const sourceNodeFor=(idx)=>{
+      const n=nodes[idx]; const label=(n?.name||'')+' '+(n?.mesh!=null?meshes[n.mesh]?.name||'':'');
+      return !meleeName.test(label);
+    };
+    const computeModelAxis=(root)=>{
+      root.updateMatrixWorld(true);
+      const points=[];
+      root.traverse(obj=>{
+        const attr=obj.isMesh&&obj.geometry&&obj.geometry.getAttribute('position');
+        if(!attr) return;
+        const step=Math.max(1,Math.ceil(attr.count/1400));
+        for(let i=0;i<attr.count;i+=step){
+          const k=i*attr.itemSize;
+          points.push(new THREE.Vector3(attr.array[k],attr.array[k+1],attr.array[k+2]).applyMatrix4(obj.matrixWorld));
+        }
+      });
+      if(points.length<8) throw new Error('modelo sem geometria suficiente');
+      const mean=new THREE.Vector3();
+      points.forEach(p=>mean.add(p)); mean.multiplyScalar(1/points.length);
+      const cov=[[0,0,0],[0,0,0],[0,0,0]];
+      points.forEach(p=>{
+        const x=p.x-mean.x,y=p.y-mean.y,z=p.z-mean.z;
+        cov[0][0]+=x*x; cov[0][1]+=x*y; cov[0][2]+=x*z;
+        cov[1][0]+=x*y; cov[1][1]+=y*y; cov[1][2]+=y*z;
+        cov[2][0]+=x*z; cov[2][1]+=y*z; cov[2][2]+=z*z;
+      });
+      const bounds=new THREE.Box3().setFromPoints(points), size=bounds.getSize(new THREE.Vector3());
+      let axis=size.x>=size.y&&size.x>=size.z?new THREE.Vector3(1,0,0):size.y>=size.z?new THREE.Vector3(0,1,0):new THREE.Vector3(0,0,1);
+      for(let i=0;i<18;i++){
+        const next=new THREE.Vector3(
+          cov[0][0]*axis.x+cov[0][1]*axis.y+cov[0][2]*axis.z,
+          cov[1][0]*axis.x+cov[1][1]*axis.y+cov[1][2]*axis.z,
+          cov[2][0]*axis.x+cov[2][1]*axis.y+cov[2][2]*axis.z
+        );
+        if(next.lengthSq()<1e-14) break;
+        axis.copy(next.normalize());
+      }
+      // Mantém uma convenção consistente: o cano aponta para o sentido
+      // negativo do eixo principal, igual aos modelos nativos do jogo.
+      const components=[Math.abs(axis.x),Math.abs(axis.y),Math.abs(axis.z)];
+      const dominant=components.indexOf(Math.max(...components));
+      if(axis.getComponent(dominant)>0) axis.negate();
+      let min=Infinity,max=-Infinity;
+      points.forEach(p=>{const d=p.clone().sub(mean).dot(axis);min=Math.min(min,d);max=Math.max(max,d);});
+      return {center:mean,axis,length:max-min,size};
+    };
+    const usedNodes=new Map();
+    const fitGunModel=(id,idx,targetLength)=>{
+      const previous=usedNodes.get(idx);
+      if(previous) throw new Error('o mesmo nó já foi usado por '+previous);
+      const rig=new THREE.Group();
+      rig.name='ArsenalRig_'+id;
+      rig.matrix.copy(parentLinearMatrix(idx)); rig.matrixAutoUpdate=false;
+      rig.add(makeNode(idx,true));
+      const shape=computeModelAxis(rig);
+      if(!Number.isFinite(shape.length)||shape.length<0.025) throw new Error('comprimento inválido no GLB');
+      const scale=targetLength/shape.length;
+      if(!Number.isFinite(scale)||scale<0.0001||scale>10000) throw new Error('escala fora do intervalo seguro');
+      const align=new THREE.Quaternion().setFromUnitVectors(shape.axis,new THREE.Vector3(0,0,-1));
+      const asset=new THREE.Group(); asset.name='Arsenal_'+id; asset.add(rig);
+      asset.quaternion.copy(align);
+      asset.scale.setScalar(scale);
+      asset.position.copy(shape.center).applyQuaternion(align).multiplyScalar(-scale);
+      asset.updateMatrixWorld(true);
+      asset.userData={sourceNode:nodes[idx].name||meshes[nodes[idx].mesh]?.name||('node_'+idx),sourceIndex:idx,sourceLength:shape.length,normalizedLength:targetLength};
+      GUN_ASSETS[id]=asset;
+      usedNodes.set(idx,id);
+      return {weapon:id,node:asset.userData.sourceNode,length:shape.length.toFixed(3),target:targetLength,scale:scale.toFixed(4),status:'OK'};
+    };
+
+    for(const [id,def] of Object.entries(GUN_ASSET_MAP)){
+      const resolved=resolveModelNode(def.node);
+      if(resolved.idx==null){
+        GUN_ASSET_REPORT.push({weapon:id,node:def.node,status:'FALHOU: '+resolved.reason});
+        console.warn('[Bunker] Modelo GLB indisponível para '+id+': '+def.node+' ('+resolved.reason+'). Usando reserva.');
+        continue;
+      }
+      if(!sourceNodeFor(resolved.idx)){
+        GUN_ASSET_REPORT.push({weapon:id,node:def.node,status:'IGNORADO: modelo de combate corpo a corpo'});
+        console.warn('[Bunker] Modelo de combate corpo a corpo ignorado: '+def.node);
+        continue;
+      }
+      try{
+        GUN_ASSET_REPORT.push(fitGunModel(id,resolved.idx,def.length));
+      }catch(err){
+        GUN_ASSET_REPORT.push({weapon:id,node:def.node,status:'FALHOU: '+err.message});
+        console.warn('[Bunker] Falha ao preparar '+id+' ('+def.node+'): '+err.message);
+      }
     }
-    console.info('[Bunker] Arsenal 3D carregado:',Object.keys(GUN_ASSETS).length,'de',Object.keys(WEAPONS).length,'armas de fogo; facas preservadas.');
+    const expected=Object.keys(WEAPONS);
+    const mapped=expected.filter(id=>!!GUN_ASSETS[id]);
+    const missing=expected.filter(id=>!GUN_ASSETS[id]);
+    const uniqueSources=new Set(Object.values(GUN_ASSETS).map(g=>g.userData.sourceIndex));
+    if(uniqueSources.size!==mapped.length) throw new Error('validação de duplicidade falhou: dois itens usam o mesmo nó GLB');
+    console.table(GUN_ASSET_REPORT);
+    console.info('[Bunker] Auditoria do Arsenal:',mapped.length+'/'+expected.length+' armas com modelos 3D únicos.',missing.length?'Reservas procedurais: '+missing.join(', '):'Todas as armas possuem modelo 3D próprio.');
   }catch(err){
-    console.warn('[Bunker] Não foi possível carregar Arsenal.glb; usando modelos de reserva.',err);
+    console.error('[Bunker] Erro ao carregar/auditar Arsenal.glb:',err);
+    Object.keys(GUN_ASSETS).forEach(id=>delete GUN_ASSETS[id]);
+    GUN_ASSET_REPORT.length=0;
   }
 }
 function buildGun(id,tier){

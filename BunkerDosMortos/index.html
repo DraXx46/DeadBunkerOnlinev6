@@ -3422,19 +3422,53 @@ async function loadGunPack(){
       if(n.mesh!=null&&gltf.meshes[n.mesh]&&gltf.meshes[n.mesh].name&&!nameIndex.has(normalizeNodeName(gltf.meshes[n.mesh].name)))
         nameIndex.set(normalizeNodeName(gltf.meshes[n.mesh].name),i);
     });
-    for(const [id,def] of Object.entries(GUN_ASSET_MAP)){
-      const idx=nameIndex.get(normalizeNodeName(def.node));
-      if(idx==null){console.warn('[Bunker] Modelo não encontrado no GLB:',def.node,'| disponíveis:',Array.from(nameIndex.keys()).join(', '));continue;}
+    const usedNodes=new Set();
+    const fitGunModel=(id,idx,length)=>{
       const model=makeNode(idx,true);
       model.updateMatrixWorld(true);
-      const bounds=new THREE.Box3().setFromObject(model), size=bounds.getSize(new THREE.Vector3()), center=bounds.getCenter(new THREE.Vector3());
-      const scale=def.length/Math.max(0.001,size.z);
+      const bounds=new THREE.Box3().setFromObject(model);
+      const size=bounds.getSize(new THREE.Vector3()), center=bounds.getCenter(new THREE.Vector3());
+      // Os modelos do pack podem vir com eixos diferentes; prioriza Z, mas
+      // evita escala infinita em modelos cujo comprimento foi exportado noutro eixo.
+      const sourceLength=size.z>0.001?size.z:Math.max(size.x,size.y,size.z);
+      const scale=length/Math.max(0.001,sourceLength);
       model.scale.setScalar(scale);
       model.position.set(-center.x*scale,-center.y*scale-0.04,-center.z*scale);
-      model.userData.muzzle=-def.length*0.49;
+      model.userData.muzzle=-length*0.49;
       GUN_ASSETS[id]=model;
+      usedNodes.add(idx);
+    };
+    for(const [id,def] of Object.entries(GUN_ASSET_MAP)){
+      const idx=nameIndex.get(normalizeNodeName(def.node));
+      if(idx==null){console.warn('[Bunker] Modelo não encontrado no GLB:',def.node);continue;}
+      fitGunModel(id,idx,def.length);
     }
-    console.info('[Bunker] Arsenal 3D carregado:',Object.keys(GUN_ASSETS).length,'armas');
+
+    // Aproveita também armas de fogo adicionais do GLB que não estejam na
+    // tabela manual. Nós de facas/armas brancas são deliberadamente ignorados.
+    const meleeName=/(knife|knives|melee|sword|katana|machete|dagger|bayonet|axe|hatchet|tomahawk|faca|facas|espada)/i;
+    const sceneRoots=(gltf.scenes||[])[gltf.scene||0]?.nodes||[];
+    const hasMesh=(idx,seen=new Set())=>{
+      if(seen.has(idx)) return false;
+      seen.add(idx);
+      const n=gltf.nodes[idx];
+      return n&&(n.mesh!=null||(n.children||[]).some(c=>hasMesh(c,seen)));
+    };
+    const candidates=sceneRoots.filter(idx=>{
+      const n=gltf.nodes[idx];
+      const meshName=n?.mesh!=null?gltf.meshes[n.mesh]?.name||'':'';
+      const label=(n?.name||'')+' '+meshName;
+      return n&&hasMesh(idx)&&!meleeName.test(label)&&!usedNodes.has(idx);
+    });
+    const remaining=Object.keys(WEAPONS).filter(id=>!GUN_ASSETS[id]);
+    for(let i=0;i<Math.min(remaining.length,candidates.length);i++){
+      const id=remaining[i], idx=candidates[i];
+      const def=GUN_ASSET_MAP[id];
+      const length=def?.length||((WEAPONS[id]?.snd==='pistol')?0.34:(WEAPONS[id]?.snd==='rifle'||WEAPONS[id]?.snd==='lmg')?1.0:(WEAPONS[id]?.snd==='shotgun')?0.92:0.78);
+      console.warn('[Bunker] Associando modelo extra do Arsenal automaticamente:',gltf.nodes[idx]?.name||gltf.meshes[gltf.nodes[idx]?.mesh]?.name||('node '+idx),'->',id);
+      fitGunModel(id,idx,length);
+    }
+    console.info('[Bunker] Arsenal 3D carregado:',Object.keys(GUN_ASSETS).length,'de',Object.keys(WEAPONS).length,'armas de fogo; facas preservadas.');
   }catch(err){
     console.warn('[Bunker] Não foi possível carregar Arsenal.glb; usando modelos de reserva.',err);
   }

@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dead Bunker — Editor de Viewmodel</title>
+<style>
+:root{color-scheme:light;--ink:#20242a;--muted:#68717d;--line:#d9dee5;--panel:#f6f7f9;--accent:#bd3028;--accent2:#8f201b;--ok:#237a4b}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink);background:#eef0f3}
+button,select,input{font:inherit}button{border:1px solid var(--line);background:white;border-radius:9px;padding:9px 12px;cursor:pointer;color:var(--ink);font-weight:650}button:hover{border-color:#9ca6b2;background:#fafbfc}button.primary{background:var(--accent);color:white;border-color:var(--accent)}button.primary:hover{background:var(--accent2)}button:disabled{opacity:.45;cursor:not-allowed}
+#app{height:100%;display:grid;grid-template-rows:64px 1fr;min-height:600px}.top{display:flex;align-items:center;gap:16px;padding:0 20px;background:#20242a;color:white;border-bottom:3px solid var(--accent)}.brand{font-weight:850;letter-spacing:.04em}.brand small{display:block;font-size:10px;letter-spacing:.18em;color:#b6bec8;font-weight:600;margin-top:3px}.top .spacer{flex:1}.load-status{font-size:12px;color:#d1d7de;max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.top button{font-size:12px;padding:8px 10px}
+main{min-height:0;display:grid;grid-template-columns:minmax(440px,1fr) 440px;gap:12px;padding:12px}.preview-panel,.editor-panel{background:white;border:1px solid var(--line);border-radius:13px;min-height:0;overflow:hidden}.preview-panel{display:grid;grid-template-rows:52px 1fr 54px}.preview-head{display:flex;align-items:center;padding:0 15px;gap:10px;border-bottom:1px solid var(--line)}.preview-head strong{font-size:14px}.pill{font-size:11px;border-radius:20px;padding:5px 9px;background:#eef1f4;color:#59616b}.pill.ok{background:#e7f4eb;color:var(--ok)}#stage{position:relative;min-height:300px;background:#fff;overflow:hidden}#stage canvas{display:block;width:100%;height:100%}.crosshair{display:none;position:absolute;left:50%;top:50%;width:28px;height:28px;transform:translate(-50%,-50%);pointer-events:none;opacity:.65}.crosshair:before,.crosshair:after{content:"";position:absolute;background:#222}.crosshair:before{height:1px;width:26px;left:1px;top:13px}.crosshair:after{width:1px;height:26px;left:13px;top:1px}.crosshair.show{display:block}.stage-hint{position:absolute;bottom:12px;left:14px;color:#77808a;font-size:11px;background:#ffffffc9;padding:5px 8px;border-radius:6px;pointer-events:none}.preview-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 13px;border-top:1px solid var(--line)}.preview-foot .group{display:flex;gap:6px;align-items:center}.preview-foot button{font-size:12px;padding:7px 10px}.preview-foot button.active{background:#252a31;color:white;border-color:#252a31}
+.editor-panel{display:grid;grid-template-rows:auto auto 1fr auto}.weapon-nav{padding:14px;border-bottom:1px solid var(--line)}.navline{display:flex;align-items:center;gap:8px}.navline select{min-width:0;flex:1;padding:10px;border:1px solid var(--line);border-radius:9px;background:white;font-weight:750}.weapon-title{display:flex;align-items:center;gap:8px;margin-top:10px}.weapon-title h1{font-size:18px;margin:0}.weapon-sub{font-size:11px;color:var(--muted);margin-top:3px}.progress{height:5px;background:#edf0f3;border-radius:8px;margin-top:12px;overflow:hidden}.progress>div{height:100%;width:0;background:var(--ok);transition:width .2s}.progress-meta{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:6px}
+.modebar{display:flex;gap:7px;padding:10px 14px;border-bottom:1px solid var(--line);background:#fbfcfd}.modebar button{flex:1;font-size:12px;padding:8px}.modebar button.active{background:#252a31;color:white;border-color:#252a31}.controls{overflow:auto;padding:12px 14px 20px}.section{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}.section summary{list-style:none;cursor:pointer;padding:11px 12px;font-size:12px;font-weight:800;background:#f7f8fa;display:flex;justify-content:space-between;align-items:center}.section summary::-webkit-details-marker{display:none}.section summary:after{content:'＋';color:#7c8590;font-size:15px}.section[open] summary:after{content:'−'}.section .inside{padding:10px 11px 7px}.row-control{display:grid;grid-template-columns:102px minmax(80px,1fr) 66px;gap:8px;align-items:center;margin-bottom:9px}.row-control label{font-size:11px;color:#4f5863}.row-control input[type=range]{width:100%;accent-color:var(--accent)}.row-control input[type=number]{width:66px;border:1px solid var(--line);border-radius:6px;padding:5px 4px;text-align:right;font-size:11px}.mini-note{color:var(--muted);font-size:10px;line-height:1.45;margin:2px 0 9px}.footer-actions{border-top:1px solid var(--line);padding:11px 13px;display:flex;gap:7px;flex-wrap:wrap;background:#fbfcfd}.footer-actions button{font-size:11px;flex:1}.footer-actions .wide{flex-basis:100%}.hidden{display:none!important}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#20242a;color:white;padding:10px 14px;border-radius:9px;font-size:12px;opacity:0;transition:opacity .18s;pointer-events:none;z-index:20}#toast.show{opacity:1}.file-input{display:none}
+@media(max-width:1050px){#app{height:auto;min-height:100%;grid-template-rows:auto auto}.top{min-height:60px;flex-wrap:wrap;padding:10px 14px}.load-status{display:none}main{grid-template-columns:1fr;grid-template-rows:minmax(430px,60vh) auto}.editor-panel{min-height:660px}}
+@media(max-width:600px){main{padding:7px;gap:8px}.top{gap:8px}.brand{font-size:13px}.preview-panel{grid-template-rows:44px minmax(300px,46vh) 50px}.editor-panel{min-height:700px}.row-control{grid-template-columns:88px minmax(70px,1fr) 60px}.row-control input[type=number]{width:60px}.footer-actions button{min-width:43%}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="brand">DEAD BUNKER <small>VIEWMODEL WORKSHOP · FERRAMENTA DE AJUSTE</small></div>
+    <div class="spacer"></div>
+    <div class="load-status" id="loadStatus">Aguardando Arsenal.glb…</div>
+    <button id="loadRepo">Carregar Arsenal do jogo</button>
+    <button id="loadLocal">Abrir Arsenal.glb</button>
+    <input class="file-input" id="fileInput" type="file" accept=".glb,model/gltf-binary">
+    <input class="file-input" id="importInput" type="file" accept=".json,application/json">
+  </header>
+  <main>
+    <section class="preview-panel">
+      <div class="preview-head"><strong>Prévia em primeira pessoa</strong><span id="modelBadge" class="pill">sem modelo</span><span class="spacer"></span><span class="pill">FOV 58° · mãos do jogo</span></div>
+      <div id="stage"><div id="crosshair" class="crosshair"></div><div class="stage-hint">Fundo branco · personagem olhando para frente · ajuste os controles ao lado</div></div>
+      <div class="preview-foot">
+        <div class="group"><button id="hipMode" class="active">Quadril</button><button id="adsMode">Mirando (ADS)</button></div>
+        <div class="group"><button id="resetCamera">Centralizar câmera</button></div>
+      </div>
+    </section>
+    <section class="editor-panel">
+      <div class="weapon-nav">
+        <div class="navline"><button id="prevWeapon" title="Arma anterior">←</button><select id="weaponSelect" aria-label="Selecionar arma"></select><button id="nextWeapon" title="Próxima arma">→</button></div>
+        <div class="weapon-title"><div><h1 id="weaponName">Carregue o Arsenal</h1><div class="weapon-sub" id="weaponMeta">15 armas de fogo · facas não incluídas</div></div><span class="spacer"></span><span class="pill" id="doneBadge">Pendente</span></div>
+        <div class="progress"><div id="progressFill"></div></div><div class="progress-meta"><span id="progressText">0 de 15 concluídas</span><span id="weaponIndex">1 / 15</span></div>
+      </div>
+      <div class="modebar"><button id="modeWeapon" class="active">Arma</button><button id="modeHands">Mãos</button><button id="modeHip">Posição</button><button id="modeAds">Mira / ADS</button></div>
+      <div class="controls" id="controls"></div>
+      <div class="footer-actions">
+        <button id="resetWeapon">Restaurar esta arma</button>
+        <button id="markNext" class="primary">Salvar e próxima →</button>
+        <button id="exportJson" class="wide">Exportar ajustes (.json)</button>
+        <button id="copyJson">Copiar JSON</button><button id="importJson">Importar progresso</button>
+        <button id="resetAll">Zerar todos os ajustes</button>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="toast"></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const REPO_URL='https://raw.githubusercontent.com/DraXx46/DeadBunkerOnlinev6/main/BunkerDosMortos/Arsenal.glb';
+const STORAGE_KEY='deadbunker_viewmodel_editor_v1';
+const WEAPONS=[
+  {id:'m1911',name:'Glock 17',node:'G-17',length:.27},
+  {id:'kar98k',name:'Mosin-Nagant',node:'Mosin Nagat',length:1.12},
+  {id:'garand',name:'SKS',node:'SKS',length:.98},
+  {id:'db',name:'XMA-10',node:'XMA-10',length:.98},
+  {id:'thompson',name:'H&K UMP45',node:'H&K UMP45',length:.78},
+  {id:'mp40',name:'H&K MP7',node:'H&K MP7',length:.68},
+  {id:'ppsh',name:'KRISS Vector',node:'KRISS VECTOR',length:.76},
+  {id:'stg44',name:'AK-556',node:'AK-556',length:.94},
+  {id:'trench',name:'S12P8',node:'S12P8',length:.98},
+  {id:'bar',name:'RPK-556',node:'RPK-556',length:1.02},
+  {id:'mg42',name:'RPD',node:'RPD',length:1.00},
+  {id:'ptrs',name:'Barrett M107',node:'Barret M107',length:1.18},
+  {id:'python',name:'Blazeson & Julius 357',node:'Blazeson & Julius 357',length:.34},
+  {id:'doom',name:'AA-12',node:'AA-12',length:.88},
+  {id:'ray',name:'RARAN Prototype 1130',node:'RARAN Prototype 1130',length:.60}
+];
+const $=id=>document.getElementById(id);
+const v3=(x=0,y=0,z=0)=>[x,y,z];
+function defaults(w){
+ const fore=-w.length*.22;
+ return {
+  weapon:{position:v3(),rotation:v3(),scale:1},
+  hands:{
+   right:{position:[.004,-.072,.03],rotation:[-0.9,.1,-.15],scale:1},
+   left:{position:fore>-.03?[-.028,-.085,.035]:[-.012,-.035,fore],rotation:fore>-.03?[-.8,-.5,.5]:[-1,-.4,.5],scale:1}
+  },
+  hip:{position:[.13,-.122,-.33],rotation:[.02,.06,-.2]},
+  ads:{x:0,sightHeight:.035,z:-.27,rotation:[0,0,0]},
+  done:false
+ };
+}
+let config=Object.fromEntries(WEAPONS.map(w=>[w.id,defaults(w)]));
+let currentIndex=0, previewMode='hip', editTab='weapon', gltfRoot=null, normalizedModels=new Map(), currentModel=null;
+let renderer,scene,camera,holder,weaponRoot,handRight,handLeft,reticle,stageObserver;
+let lastFrame=0;
+const loader=new GLTFLoader();
+
+function toast(message){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),2400);}
+function normalizeName(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');}
+function saveLocal(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({version:1,config,currentIndex,previewMode,editTab}));}catch(e){}}
+function deepMerge(base,source){if(Array.isArray(base))return Array.isArray(source)?source.slice(0,base.length):base.slice();if(base&&typeof base==='object'){const out={...base};if(source&&typeof source==='object')for(const k of Object.keys(base))if(k in source)out[k]=deepMerge(base[k],source[k]);return out;}return typeof source==='number'&&Number.isFinite(source)?source:base;}
+try{const stored=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(stored?.config){for(const w of WEAPONS)if(stored.config[w.id])config[w.id]=deepMerge(defaults(w),stored.config[w.id]);currentIndex=Math.max(0,Math.min(WEAPONS.length-1,stored.currentIndex||0));previewMode=stored.previewMode==='ads'?'ads':'hip';editTab=['weapon','hands','hip','ads'].includes(stored.editTab)?stored.editTab:'weapon';}}catch(e){}
+
+function init3D(){
+ const stage=$('stage');scene=new THREE.Scene();scene.background=new THREE.Color(0xffffff);
+ camera=new THREE.PerspectiveCamera(58,1,.01,20);camera.position.set(0,0,0);camera.lookAt(0,0,-1);
+ renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;stage.appendChild(renderer.domElement);
+ scene.add(new THREE.HemisphereLight(0xffffff,0xd8dce2,2.0));
+ const key=new THREE.DirectionalLight(0xffffff,2.3);key.position.set(-1.5,2.5,1.5);key.castShadow=true;scene.add(key);
+ const fill=new THREE.DirectionalLight(0xffffff,1.2);fill.position.set(2,1,-2);scene.add(fill);
+ const rim=new THREE.DirectionalLight(0xffffff,.65);rim.position.set(-2,.2,-3);scene.add(rim);
+ // Piso branco muito discreto, para dar referência de profundidade sem competir com a arma.
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0xffffff,roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.set(0,-1.15,-3);floor.receiveShadow=true;scene.add(floor);
+ holder=new THREE.Group();scene.add(holder);weaponRoot=new THREE.Group();holder.add(weaponRoot);
+ handRight=makeHand(false);handLeft=makeHand(true);holder.add(handRight,handLeft);
+ const resize=()=>{const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};
+ stageObserver=new ResizeObserver(resize);stageObserver.observe(stage);resize();
+ const loop=now=>{requestAnimationFrame(loop);const dt=Math.min(.05,(now-lastFrame)/1000||0);lastFrame=now;renderer.render(scene,camera);};requestAnimationFrame(loop);
+}
+function makeHand(left){
+ const sx=left?-1:1,h=new THREE.Group();
+ const skin=new THREE.MeshStandardMaterial({color:0x46483e,roughness:.9}),leather=new THREE.MeshStandardMaterial({color:0x252720,roughness:.85}),sleeveMat=new THREE.MeshStandardMaterial({color:0x4d5534,roughness:1}),cuffMat=new THREE.MeshStandardMaterial({color:0x696b5d,roughness:.9});
+ const palm=new THREE.Mesh(new THREE.BoxGeometry(.058,.068,.026),skin);h.add(palm);
+ const back=new THREE.Mesh(new THREE.SphereGeometry(.031,12,8),skin);back.scale.set(1,1.12,.42);back.position.set(0,.002,.009);h.add(back);
+ const pad=new THREE.Mesh(new THREE.BoxGeometry(.06,.017,.012),leather);pad.position.set(0,.027,.012);h.add(pad);
+ const palmPad=new THREE.Mesh(new THREE.BoxGeometry(.05,.045,.006),leather);palmPad.position.set(0,-.006,-.014);h.add(palmPad);
+ const FL=[.9,1,.96,.78];
+ for(let i=0;i<4;i++){
+  let parent=new THREE.Group();parent.position.set((-.021+i*.014)*sx,.032,.001);h.add(parent);
+  const L=[.025,.018,.015].map(v=>v*FL[i]);
+  for(let k=0;k<3;k++){
+   const seg=new THREE.Group();seg.rotation.x=-[1.2,.95,.7][k];parent.add(seg);const r=.0074-k*.0007;
+   const bone=new THREE.Mesh(new THREE.CylinderGeometry(.95,1,1,8),skin);bone.scale.set(r,L[k],r);bone.position.y=L[k]/2;seg.add(bone);
+   const joint=new THREE.Mesh(new THREE.SphereGeometry(r*1.04,8,6),k===0?leather:skin);seg.add(joint);
+   const next=new THREE.Group();next.position.y=L[k];seg.add(next);parent=next;
+  }
+  const tip=new THREE.Mesh(new THREE.SphereGeometry(.0062,8,6),skin);parent.add(tip);
+ }
+ const thumb=new THREE.Group();thumb.position.set(-.03*sx,-.01,-.006);thumb.rotation.set(-.7,0,.75*sx);h.add(thumb);let parent=thumb;
+ for(let k=0;k<2;k++){const seg=new THREE.Group();seg.rotation.x=k?-.5:0;parent.add(seg);const r=.0085-k*.001,L=k?.018:.024;const bone=new THREE.Mesh(new THREE.CylinderGeometry(.95,1,1,8),skin);bone.scale.set(r,L,r);bone.position.y=L/2;seg.add(bone);const joint=new THREE.Mesh(new THREE.SphereGeometry(r,8,6),skin);seg.add(joint);const next=new THREE.Group();next.position.y=L;seg.add(next);parent=next;}
+ const tip=new THREE.Mesh(new THREE.SphereGeometry(.007,8,6),skin);parent.add(tip);
+ const cuff=new THREE.Mesh(new THREE.CylinderGeometry(.036,.04,.05,14),cuffMat);cuff.position.y=-.055;h.add(cuff);
+ const sleeve=new THREE.Mesh(new THREE.CylinderGeometry(.037,.045,.42,14),sleeveMat);sleeve.position.y=-.27;h.add(sleeve);
+ if(left){const watch=new THREE.Mesh(new THREE.BoxGeometry(.03,.016,.045),leather);watch.position.set(0,-.03,.04);h.add(watch);}
+ h.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+ return h;
+}
+
+function buildNormalizedModel(weapon){
+ if(normalizedModels.has(weapon.id))return normalizedModels.get(weapon.id).clone(true);
+ if(!gltfRoot)throw new Error('Carregue o Arsenal.glb primeiro.');
+ const nameKey=normalizeName(weapon.node),nodeMatches=[],meshMatches=[];
+ gltfRoot.traverse(obj=>{if(!obj.isMesh&&normalizeName(obj.name)===nameKey)nodeMatches.push(obj);});
+ if(nodeMatches.length!==1){gltfRoot.traverse(obj=>{if(obj.isMesh&&normalizeName(obj.name)===nameKey)meshMatches.push(obj);});}
+ const matches=nodeMatches.length===1?nodeMatches:nodeMatches.length===0?meshMatches:[];
+ if(matches.length!==1)throw new Error(matches.length?'Nome duplicado no GLB: '+weapon.node:'Modelo não encontrado no GLB: '+weapon.node);
+ const source=matches[0],ancestors=[];let p=source.parent;
+ while(p&&p!==gltfRoot){ancestors.push(p);p=p.parent;}ancestors.reverse();
+ const parentMatrix=new THREE.Matrix4();
+ for(const ancestor of ancestors){ancestor.updateMatrix();const m=ancestor.matrix.clone();m.setPosition(0,0,0);parentMatrix.multiply(m);}
+ const rig=new THREE.Group();rig.matrix.copy(parentMatrix);rig.matrixAutoUpdate=false;
+ const clone=source.clone(true);clone.position.set(0,0,0);rig.add(clone);rig.updateMatrixWorld(true);
+ const points=[];rig.traverse(obj=>{if(!obj.isMesh||!obj.geometry?.getAttribute('position'))return;const attr=obj.geometry.getAttribute('position'),step=Math.max(1,Math.ceil(attr.count/1400));for(let i=0;i<attr.count;i+=step)points.push(new THREE.Vector3().fromBufferAttribute(attr,i).applyMatrix4(obj.matrixWorld));});
+ if(points.length<8)throw new Error('Geometria insuficiente em '+weapon.node);
+ const mean=new THREE.Vector3();points.forEach(point=>mean.add(point));mean.multiplyScalar(1/points.length);
+ const cov=[[0,0,0],[0,0,0],[0,0,0]];
+ points.forEach(point=>{const x=point.x-mean.x,y=point.y-mean.y,z=point.z-mean.z;cov[0][0]+=x*x;cov[0][1]+=x*y;cov[0][2]+=x*z;cov[1][0]+=x*y;cov[1][1]+=y*y;cov[1][2]+=y*z;cov[2][0]+=x*z;cov[2][1]+=y*z;cov[2][2]+=z*z;});
+ const bounds=new THREE.Box3().setFromPoints(points),size=bounds.getSize(new THREE.Vector3());
+ let axis=size.x>=size.y&&size.x>=size.z?new THREE.Vector3(1,0,0):size.y>=size.z?new THREE.Vector3(0,1,0):new THREE.Vector3(0,0,1);
+ for(let i=0;i<18;i++){const next=new THREE.Vector3(cov[0][0]*axis.x+cov[0][1]*axis.y+cov[0][2]*axis.z,cov[1][0]*axis.x+cov[1][1]*axis.y+cov[1][2]*axis.z,cov[2][0]*axis.x+cov[2][1]*axis.y+cov[2][2]*axis.z);if(next.lengthSq()<1e-14)break;axis.copy(next.normalize());}
+ const components=[Math.abs(axis.x),Math.abs(axis.y),Math.abs(axis.z)],dominant=components.indexOf(Math.max(...components));if(axis.getComponent(dominant)>0)axis.negate();
+ let min=Infinity,max=-Infinity;points.forEach(point=>{const d=point.clone().sub(mean).dot(axis);min=Math.min(min,d);max=Math.max(max,d);});
+ const sourceLength=max-min;if(!Number.isFinite(sourceLength)||sourceLength<.025)throw new Error('Comprimento inválido em '+weapon.node);
+ const scale=weapon.length/sourceLength,align=new THREE.Quaternion().setFromUnitVectors(axis,new THREE.Vector3(0,0,-1));
+ const asset=new THREE.Group();asset.add(rig);asset.quaternion.copy(align);asset.scale.setScalar(scale);asset.position.copy(mean).applyQuaternion(align).multiplyScalar(-scale);asset.updateMatrixWorld(true);
+ asset.userData={sourceNode:weapon.node,sourceLength,scale};normalizedModels.set(weapon.id,asset);return asset.clone(true);
+}
+
+function activeSettings(){return config[WEAPONS[currentIndex].id];}
+function refreshWeaponList(){const select=$('weaponSelect');select.innerHTML='';WEAPONS.forEach((w,i)=>{const option=document.createElement('option');option.value=w.id;option.textContent=String(i+1).padStart(2,'0')+' · '+w.name;select.appendChild(option);});select.value=WEAPONS[currentIndex].id;}
+function updateHeader(){const w=WEAPONS[currentIndex],s=activeSettings(),done=WEAPONS.filter(x=>config[x.id].done).length;$('weaponName').textContent=w.name;$('weaponMeta').textContent='Modelo no GLB: '+w.node+' · comprimento de referência: '+w.length.toFixed(2)+' m';$('doneBadge').textContent=s.done?'Concluída':'Pendente';$('doneBadge').className='pill'+(s.done?' ok':'');$('progressText').textContent=done+' de '+WEAPONS.length+' concluídas';$('progressFill').style.width=(done/WEAPONS.length*100)+'%';$('weaponIndex').textContent=(currentIndex+1)+' / '+WEAPONS.length;}
+function updateModeButtons(){ $('hipMode').classList.toggle('active',previewMode==='hip');$('adsMode').classList.toggle('active',previewMode==='ads');$('crosshair').classList.toggle('show',previewMode==='ads');$('modeWeapon').classList.toggle('active',editTab==='weapon');$('modeHands').classList.toggle('active',editTab==='hands');$('modeHip').classList.toggle('active',editTab==='hip');$('modeAds').classList.toggle('active',editTab==='ads');}
+function updatePreview(){
+ if(!holder)return;const s=activeSettings();
+ const pos=previewMode==='hip'?s.hip.position:[s.ads.x,-(s.ads.sightHeight+.004),s.ads.z];
+ const rot=previewMode==='hip'?s.hip.rotation:s.ads.rotation;
+ holder.position.fromArray(pos);holder.rotation.set(...rot.map(THREE.MathUtils.degToRad));
+ weaponRoot.position.fromArray(s.weapon.position);weaponRoot.rotation.set(...s.weapon.rotation.map(THREE.MathUtils.degToRad));weaponRoot.scale.setScalar(s.weapon.scale);
+ handRight.position.fromArray(s.hands.right.position);handRight.rotation.set(...s.hands.right.rotation.map(THREE.MathUtils.degToRad));handRight.scale.setScalar(s.hands.right.scale);
+ handLeft.position.fromArray(s.hands.left.position);handLeft.rotation.set(...s.hands.left.rotation.map(THREE.MathUtils.degToRad));handLeft.scale.setScalar(s.hands.left.scale);
+}
+function controlRow(path,label,min,max,step,value,unit=''){
+ const id='ctrl_'+path.replaceAll('.','_');return `<div class="row-control"><label for="${id}">${label}${unit?' ('+unit+')':''}</label><input id="${id}" data-path="${path}" type="range" min="${min}" max="${max}" step="${step}" value="${value}"><input aria-label="${label}" data-number-path="${path}" type="number" min="${min}" max="${max}" step="${step}" value="${Number(value).toFixed(3)}"></div>`;
+}
+function section(title,inside,open=false){return `<details class="section" ${open?'open':''}><summary>${title}</summary><div class="inside">${inside}</div></details>`;}
+function renderControls(){
+ const s=activeSettings();let html='';
+ if(editTab==='weapon'){
+  html+=`<p class="mini-note">Ajuste a arma em relação às mãos. A escala é uniforme para manter as proporções do modelo 3D.</p>`;
+  html+=section('Posição local da arma',controlRow('weapon.position.0','Horizontal X',-.3,.3,.002,s.weapon.position[0],'m')+controlRow('weapon.position.1','Vertical Y',-.3,.3,.002,s.weapon.position[1],'m')+controlRow('weapon.position.2','Profundidade Z',-.3,.3,.002,s.weapon.position[2],'m'),true);
+  html+=section('Rotação da arma',controlRow('weapon.rotation.0','Rotação X',-180,180,1,s.weapon.rotation[0],'°')+controlRow('weapon.rotation.1','Rotação Y',-180,180,1,s.weapon.rotation[1],'°')+controlRow('weapon.rotation.2','Rotação Z',-180,180,1,s.weapon.rotation[2],'°'),true);
+  html+=section('Escala uniforme',controlRow('weapon.scale','Tamanho',.5,1.8,.005,s.weapon.scale,'×'),true);
+ }else if(editTab==='hands'){
+  html+=`<p class="mini-note">As mãos são construídas com a mesma geometria procedural usada no Dead Bunker. Ajuste cada mão separadamente para encaixar no punho e no guarda-mão.</p>`;
+  for(const side of ['right','left']){const h=s.hands[side],label=side==='right'?'Mão direita · gatilho':'Mão esquerda · apoio';let rows='';['position','rotation'].forEach(group=>{const v=h[group];const names=group==='position'?['X','Y','Z']:['Rot. X','Rot. Y','Rot. Z'];v.forEach((value,i)=>rows+=controlRow(`hands.${side}.${group}.${i}`,names[i],group==='position'?-.35:-180,group==='position'?.35:180,group==='position'?.002:1,value,group==='position'?'m':'°'));});rows+=controlRow(`hands.${side}.scale`,'Escala',.6,1.4,.005,h.scale,'×');html+=section(label,rows,side==='right');}
+ }else if(editTab==='hip'){
+  html+=`<p class="mini-note">Esta é a posição de repouso/tiro sem mirar (hipfire). Os valores são relativos à câmera em primeira pessoa, como no jogo.</p>`;
+  html+=section('Posição do viewmodel',controlRow('hip.position.0','Horizontal X',-.25,.35,.002,s.hip.position[0],'m')+controlRow('hip.position.1','Vertical Y',-.4,.15,.002,s.hip.position[1],'m')+controlRow('hip.position.2','Distância Z',-.8,-.12,.002,s.hip.position[2],'m'),true);
+  html+=section('Rotação do viewmodel',controlRow('hip.rotation.0','Rotação X',-60,60,1,s.hip.rotation[0],'°')+controlRow('hip.rotation.1','Rotação Y',-60,60,1,s.hip.rotation[1],'°')+controlRow('hip.rotation.2','Rotação Z',-60,60,1,s.hip.rotation[2],'°'),true);
+ }else{
+  html+=`<p class="mini-note">Troque para “Mirando (ADS)” na prévia para enxergar a linha da mira. Ajuste a altura da alça/massa e o alinhamento final da arma.</p>`;
+  html+=section('Alinhamento da mira (ADS)',controlRow('ads.x','Horizontal X',-.15,.15,.001,s.ads.x,'m')+controlRow('ads.sightHeight','Altura da mira',0,.15,.001,s.ads.sightHeight,'m')+controlRow('ads.z','Distância Z',-.7,-.1,.002,s.ads.z,'m'),true);
+  html+=section('Rotação durante a mira',controlRow('ads.rotation.0','Rotação X',-45,45,1,s.ads.rotation[0],'°')+controlRow('ads.rotation.1','Rotação Y',-45,45,1,s.ads.rotation[1],'°')+controlRow('ads.rotation.2','Rotação Z',-45,45,1,s.ads.rotation[2],'°'),true);
+ }
+ $('controls').innerHTML=html;
+ $('controls').querySelectorAll('[data-path]').forEach(input=>input.addEventListener('input',()=>setControl(input.dataset.path,input.value)));
+ $('controls').querySelectorAll('[data-number-path]').forEach(input=>input.addEventListener('change',()=>setControl(input.dataset.numberPath,input.value)));
+}
+function setControl(path,raw){const value=Number(raw);if(!Number.isFinite(value))return;const parts=path.split('.');let target=activeSettings();for(let i=0;i<parts.length-1;i++)target=target[parts[i]];const last=parts[parts.length-1];if(Array.isArray(target))target[Number(last)]=value;else target[last]=value;const range=$('controls').querySelector(`[data-path="${path}"]`),number=$('controls').querySelector(`[data-number-path="${path}"]`);if(range)range.value=value;if(number)number.value=value.toFixed(3);updatePreview();saveLocal();}
+function setTab(tab){editTab=tab;updateModeButtons();renderControls();saveLocal();}
+function selectWeapon(index){currentIndex=(index+WEAPONS.length)%WEAPONS.length;const weapon=WEAPONS[currentIndex];$('weaponSelect').value=weapon.id;loadCurrentModel();updateHeader();renderControls();updatePreview();saveLocal();}
+function loadCurrentModel(){const weapon=WEAPONS[currentIndex];try{if(currentModel)weaponRoot.remove(currentModel);currentModel=buildNormalizedModel(weapon);weaponRoot.add(currentModel);$('modelBadge').textContent='modelo 3D carregado';$('modelBadge').className='pill ok';$('loadStatus').textContent='Arsenal carregado · 15 modelos mapeados';}catch(e){$('modelBadge').textContent='modelo indisponível';$('modelBadge').className='pill';$('loadStatus').textContent=e.message;console.error(e);}updatePreview();}
+function exportObject(){return {format:'DeadBunkerViewmodelConfig',version:1,generatedAt:new Date().toISOString(),project:'DraXx46/DeadBunkerOnlinev6',instructions:'Aplicar estes valores por weapon id no viewmodel do jogo. Posições em metros/unidades do viewmodel; rotações em graus. A transformação hip/ads atua no gunHolder; weapon atua no modelo dentro do holder; hands atua nas mãos dentro do holder.',weapons:Object.fromEntries(WEAPONS.map(w=>{const s=config[w.id];return [w.id,{name:w.name,sourceNode:w.node,normalizedLength:w.length,weapon:{position:s.weapon.position,rotationDeg:s.weapon.rotation,scale:s.weapon.scale},rightHand:{position:s.hands.right.position,rotationDeg:s.hands.right.rotation,scale:s.hands.right.scale},leftHand:{position:s.hands.left.position,rotationDeg:s.hands.left.rotation,scale:s.hands.left.scale},hip:{position:s.hip.position,rotationDeg:s.hip.rotation},ads:{position:[s.ads.x,-(s.ads.sightHeight+.004),s.ads.z],rotationDeg:s.ads.rotation,sightHeight:s.ads.sightHeight},completed:s.done}];}))};}
+function downloadJSON(){const data=JSON.stringify(exportObject(),null,2),blob=new Blob([data],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='DeadBunker-viewmodel-ajustes.json';a.click();URL.revokeObjectURL(url);toast('Arquivo JSON exportado.');}
+async function copyJSON(){const text=JSON.stringify(exportObject(),null,2);try{await navigator.clipboard.writeText(text);toast('JSON copiado para a área de transferência.');}catch(e){downloadJSON();toast('Clipboard bloqueado; baixei o JSON como alternativa.');}}
+function restoreCurrent(){const w=WEAPONS[currentIndex];config[w.id]=defaults(w);updateHeader();renderControls();updatePreview();saveLocal();toast('Ajustes desta arma restaurados.');}
+function restoreAll(){if(!confirm('Apagar todos os ajustes das 15 armas?'))return;config=Object.fromEntries(WEAPONS.map(w=>[w.id,defaults(w)]));selectWeapon(0);toast('Todos os ajustes foram zerados.');}
+function markNext(){const w=WEAPONS[currentIndex];config[w.id].done=true;saveLocal();updateHeader();if(currentIndex<WEAPONS.length-1)selectWeapon(currentIndex+1);else{downloadJSON();toast('Todas as armas foram concluídas! JSON exportado.');}}
+function importJSONFile(file){const reader=new FileReader();reader.onload=()=>{try{const doc=JSON.parse(reader.result);const incoming=doc.weapons||doc.config;if(!incoming)throw new Error('JSON sem objeto weapons/config.');for(const w of WEAPONS){const v=incoming[w.id];if(!v)continue;const base=defaults(w);const translated={weapon:v.weapon?{position:v.weapon.position,rotation:v.weapon.rotationDeg||v.weapon.rotation,scale:v.weapon.scale}:undefined,hands:{right:v.rightHand?{position:v.rightHand.position,rotation:v.rightHand.rotationDeg||v.rightHand.rotation,scale:v.rightHand.scale}:undefined,left:v.leftHand?{position:v.leftHand.position,rotation:v.leftHand.rotationDeg||v.leftHand.rotation,scale:v.leftHand.scale}:undefined},hip:v.hip?{position:v.hip.position,rotation:v.hip.rotationDeg||v.hip.rotation}:undefined,ads:v.ads?{x:v.ads.position?.[0]??v.ads.x,sightHeight:v.ads.sightHeight??Math.max(0,-(v.ads.position?.[1]??-.039)-.004),z:v.ads.position?.[2]??v.ads.z,rotation:v.ads.rotationDeg||v.ads.rotation}:undefined,done:!!v.completed};config[w.id]=deepMerge(base,translated);}selectWeapon(currentIndex);toast('Progresso importado com sucesso.');}catch(e){toast('Não consegui importar: '+e.message);}};reader.readAsText(file);}
+
+async function parseGLB(buffer){return await new Promise((resolve,reject)=>loader.parse(buffer,'',resolve,reject));}
+async function loadArrayBuffer(buffer,label){$('loadStatus').textContent='Carregando '+label+'…';$('modelBadge').textContent='carregando';try{const gltf=await parseGLB(buffer);gltfRoot=gltf.scene;if(!gltfRoot)throw new Error('GLB não contém uma cena principal.');normalizedModels.clear();let ok=0,errors=[];for(const w of WEAPONS){try{buildNormalizedModel(w);ok++;}catch(e){errors.push(w.id+': '+e.message);}}selectWeapon(currentIndex);$('loadStatus').textContent=ok+' de '+WEAPONS.length+' modelos lidos'+(errors.length?' · '+errors.length+' pendência(s)':'');if(errors.length)console.warn('Modelos que não foram identificados:',errors);if(ok===0)throw new Error('Nenhum modelo foi identificado. Confira se este é o Arsenal.glb do jogo.');toast(ok+' modelos reconhecidos no Arsenal.glb.');}catch(e){$('loadStatus').textContent='Falha ao carregar Arsenal.glb';$('modelBadge').textContent='erro';console.error(e);toast(e.message);}}
+async function loadRepo(){try{const response=await fetch(REPO_URL,{cache:'no-store'});if(!response.ok)throw new Error('GitHub respondeu '+response.status);await loadArrayBuffer(await response.arrayBuffer(),'Arsenal.glb do GitHub');}catch(e){$('loadStatus').textContent='Não consegui buscar do GitHub — use Abrir Arsenal.glb';toast(e.message);}}
+
+$('loadRepo').addEventListener('click',loadRepo);$('loadLocal').addEventListener('click',()=>$('fileInput').click());$('fileInput').addEventListener('change',e=>{const file=e.target.files?.[0];if(file)file.arrayBuffer().then(buffer=>loadArrayBuffer(buffer,file.name));});
+$('prevWeapon').addEventListener('click',()=>selectWeapon(currentIndex-1));$('nextWeapon').addEventListener('click',()=>selectWeapon(currentIndex+1));$('weaponSelect').addEventListener('change',e=>selectWeapon(WEAPONS.findIndex(w=>w.id===e.target.value)));
+$('hipMode').addEventListener('click',()=>{previewMode='hip';updateModeButtons();updatePreview();saveLocal();});$('adsMode').addEventListener('click',()=>{previewMode='ads';updateModeButtons();updatePreview();saveLocal();});
+$('modeWeapon').addEventListener('click',()=>setTab('weapon'));$('modeHands').addEventListener('click',()=>setTab('hands'));$('modeHip').addEventListener('click',()=>setTab('hip'));$('modeAds').addEventListener('click',()=>setTab('ads'));
+$('resetCamera').addEventListener('click',()=>{camera.position.set(0,0,0);camera.rotation.set(0,0,0);camera.fov=58;camera.updateProjectionMatrix();toast('Câmera centralizada.');});
+$('resetWeapon').addEventListener('click',restoreCurrent);$('markNext').addEventListener('click',markNext);$('exportJson').addEventListener('click',downloadJSON);$('copyJson').addEventListener('click',copyJSON);$('resetAll').addEventListener('click',restoreAll);$('importJson').addEventListener('click',()=>$('importInput').click());$('importInput').addEventListener('change',e=>{const file=e.target.files?.[0];if(file)importJSONFile(file);e.target.value='';});
+
+init3D();refreshWeaponList();updateHeader();updateModeButtons();renderControls();
+// Restaura o modelo selecionado automaticamente quando a ferramenta é aberta.
+loadRepo();
+</script>
+</body>
+</html>

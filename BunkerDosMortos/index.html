@@ -4065,6 +4065,7 @@ function objectiveDoorCheck(d){
 }
 function objectiveDescription(map=CUR){
   const count=mapObjectiveCount(map);
+  if(map==='sandbox') return ['MODO DE TESTES','Use a parede de armas, Caixa Misteriosa, vantagens, Afiador, armadilhas e teleportes. O console permite criar hordas e testar os visuais dos zumbis.','SANDBOX · SEM OBJETIVO DE CAMPANHA'];
   if(map==='bunker'){
     if(count<3) return ['RESTAURE A ENERGIA','Encontre os três fusíveis espalhados pelas alas do bunker.',`FUSÍVEIS ${count}/3 · A, B e C`];
     if(!G.power) return ['RESTAURE A ENERGIA','Volte ao painel elétrico e religue o sistema.','FUSÍVEIS 3/3 · PAINEL DE ENERGIA'];

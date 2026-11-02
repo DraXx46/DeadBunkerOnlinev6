@@ -1248,7 +1248,8 @@ function fittedProp(name,x,y,z,ry,width,height,depth,rx){
 /* ================= MAP =================
    One grid holds both maps: the bunker in rows 0-23, the asylum (hospital) in rows 24-56.
    Each map's meshes live in their own group; only the chosen map is visible. */
-const S=2, WH=3.2, ROOM_CEIL=3.85, EYE_HEIGHT=1.50, MW=48, MH=137;
+const S=2, WH=3.2, ROOM_CEIL=3.85, EYE_HEIGHT=1.50, MW=48;
+const FARM_END=136, SANDBOX_START=139, SANDBOX_END=154, MH=SANDBOX_END+1;
 const cx=c=>c*S+S/2;
 const grid=[], roomOf=[];
 for(let z=0;z<MH;z++){ grid.push(new Array(MW).fill('#')); roomOf.push(new Array(MW).fill(null)); }
@@ -1257,7 +1258,7 @@ const at=(x,z)=>inB(x,z)?grid[z][x]:'#';
 function carve(x0,z0,x1,z1,ch,r){ for(let z=z0;z<=z1;z++) for(let x=x0;x<=x1;x++){ grid[z][x]=ch; if(r) roomOf[z][x]=r; } }
 const OUTR=new Set(['E','L','FY','FK']);
 const HX=3, HZ=27, HSPLIT=24;
-const mapAtRow=z=>z>=57?'farm':z>=HSPLIT?'hosp':'bunker';
+const mapAtRow=z=>z>=SANDBOX_START?'sandbox':z>=57?'farm':z>=HSPLIT?'hosp':'bunker';
 const hx=x=>x+HX, hz=z=>z+HZ;
 const set=(x,z,c)=>{ grid[z][x]=c; };
 /* ---- per-cell floor and ceiling heights: the farm has a two-storey mansion, a cellar and a lab under the woods.
@@ -1271,6 +1272,13 @@ function rampH(r,x,z){ const a=r.axis==='z'?z:x; return r.h0+(r.h1-r.h0)*Math.mi
 function floorAt(x,z){ const cX=Math.floor(x/S), cZ=Math.floor(z/S); if(cX<0||cZ<0||cX>=MW||cZ>=MH) return 0; const i=cZ*MW+cX; const r=RAMPC[i]; return r>=0?rampH(RAMPS[r],x,z):FH[i]; }
 function fhCell(x,z){ if(x<0||z<0||x>=MW||z>=MH) return 0; const i=z*MW+x; const r=RAMPC[i]; return r>=0?Math.min(RAMPS[r].h0,RAMPS[r].h1):FH[i]; }
 function setFH(x0,z0,x1,z1,f,c){ for(let z=z0;z<=z1;z++) for(let x=x0;x<=x1;x++){ FH[z*MW+x]=f; if(c!=null) CH[z*MW+x]=c; } }
+
+/* ---- isolated sandbox arena ---- */
+for(let z=SANDBOX_START;z<=SANDBOX_END;z++) for(let x=2;x<=45;x++){
+  const edge=x===2||x===45||z===SANDBOX_START||z===SANDBOX_END;
+  grid[z][x]=edge?'#':'.'; roomOf[z][x]=edge?null:'SB';
+}
+setFH(2,SANDBOX_START,45,SANDBOX_END,0,7.5);
 
 /* ---- bunker (post-war) ---- */
 const ROOMS={A:[1,4,10,10],B:[12,4,25,10],C:[1,12,25,19]};
@@ -1291,6 +1299,7 @@ set(9,11,'r'); set(10,11,'r');
 set(0,8,'v'); set(0,9,'v'); set(0,16,'v');
 const GSPAWN=[];
 for(const [x,z] of [[31,21],[37,21],[45,20],[45,11],[45,3],[33,9],[43,13],[31,3]]) GSPAWN.push({x:cx(x),z:cx(z),room:'E',map:'bunker'});
+for(const [x,z] of [[5,142],[11,142],[19,142],[27,142],[35,142],[42,142],[5,151],[12,151],[20,151],[28,151],[36,151],[42,151]]) GSPAWN.push({x:cx(x),z:cx(z),room:'SB',map:'sandbox'});
 
 /* ---- asylum (abandoned psychiatric hospital) ---- */
 const HROOMS={H:[1,1,13,10],I:[15,1,30,10],J:[1,12,13,21],K:[15,12,30,21]};
@@ -1467,10 +1476,11 @@ const MAPS={
   bunker:{name:'Bunker dos Mortos',start:[cx(5),cx(7)+0.5],start2:[cx(6),cx(8)],room:'A',menu:{x:cx(5),z:cx(7)+0.5,yaw:0.2},fog:0x07090d,fogD:0.038,bg:0x05070c,sky:'bunker'},
   farm:{name:'Fazenda Santa Luzia',start:[cx(23),FR0(70)],start2:[cx(25),FR0(70)],room:'FB',menu:{x:cx(23.5),z:FR0(52),yaw:0.0},fog:0x0b0e12,fogD:0.022,bg:0x06080b,sky:'farm'},
   hosp:{name:'Hospício Vale Negro',start:[cx(hx(5)),cx(hz(5))],start2:[cx(hx(6)),cx(hz(6))],room:'H',menu:{x:cx(hx(7)),z:cx(hz(9)),yaw:0.0},fog:0x090c0a,fogD:0.052,bg:0x040605,sky:'hosp'},
+  sandbox:{name:'Sandbox de Testes',start:[cx(23),cx(146)],start2:[cx(24),cx(146)],room:'SB',menu:{x:cx(23),z:cx(146),yaw:0.0},fog:0x101820,fogD:0.009,bg:0x080d14,sky:'bunker'},
 };
 let CUR='bunker';
-const MAPG={bunker:new THREE.Group(),hosp:new THREE.Group(),farm:new THREE.Group()};
-scene.add(MAPG.bunker); scene.add(MAPG.hosp); scene.add(MAPG.farm);
+const MAPG={bunker:new THREE.Group(),hosp:new THREE.Group(),farm:new THREE.Group(),sandbox:new THREE.Group()};
+scene.add(MAPG.bunker); scene.add(MAPG.hosp); scene.add(MAPG.farm); scene.add(MAPG.sandbox);
 let FLOORS=false;
 let ROOT=MAPG.bunker;
 
@@ -1672,12 +1682,36 @@ function buildMaterials(){
 }
 const glowSpr=(color,size,op)=>{ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,opacity:op==null?0.6:op})); s.scale.set(size,size,1); return s; };
 
+function buildSandbox(){
+  const root=MAPG.sandbox;
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(84,28),new THREE.MeshPhongMaterial({color:0x59616a,specular:0x222222,shininess:18}));
+  floor.rotation.x=-Math.PI/2; floor.position.set(cx(23.5),0.002,cx((140+153)/2)); root.add(floor);
+  const wallMat=new THREE.MeshStandardMaterial({color:0x303a44,roughness:0.88,metalness:0.12});
+  const trimMat=new THREE.MeshStandardMaterial({color:0x9c6d38,roughness:0.65,metalness:0.25});
+  const wall=(w,h,d,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wallMat); m.position.set(x,y,z); root.add(m); const band=new THREE.Mesh(new THREE.BoxGeometry(w,0.12,d+0.03),trimMat); band.position.set(x,y+h/2-0.22,z); root.add(band); };
+  wall(88,4.5,2,cx(23.5),2.25,cx(SANDBOX_START));
+  wall(88,4.5,2,cx(23.5),2.25,cx(SANDBOX_END));
+  wall(2,4.5,32,cx(2),2.25,cx((140+153)/2));
+  wall(2,4.5,32,cx(45),2.25,cx((140+153)/2));
+  const stripMat=new THREE.MeshBasicMaterial({color:0x8a632d});
+  for(const z of [142,150]){ const stripe=new THREE.Mesh(new THREE.PlaneGeometry(82,0.045),stripMat); stripe.rotation.x=-Math.PI/2; stripe.position.set(cx(23.5),0.012,cx(z)); root.add(stripe); }
+  for(const x of [8,23,38]){
+    const pole=new THREE.Group(); pole.position.set(cx(x),0,cx(146.5));
+    const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.09,3.2,8),wallMat); stem.position.y=1.6; pole.add(stem);
+    const lamp=new THREE.PointLight(0xd5e7ff,1.15,24,2); lamp.position.y=3.25; pole.add(lamp);
+    const cap=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.12,0.7),trimMat); cap.position.y=3.25; pole.add(cap); root.add(pole);
+  }
+  const signTex=tex(512,128,(g,w,h)=>{ g.fillStyle='#111820'; g.fillRect(0,0,w,h); g.strokeStyle='#b58a4c'; g.lineWidth=8; g.strokeRect(5,5,w-10,h-10); g.fillStyle='#eee2ca'; g.textAlign='center'; g.font='bold 48px "Stardos Stencil", Impact, sans-serif'; g.fillText('SANDBOX · ÁREA DE TESTES',w/2,58); g.font='24px "Special Elite", "Courier New", monospace'; g.fillText('ARMAS  ·  ZUMBIS  ·  EQUIPAMENTOS  ·  EXPERIMENTOS',w/2,98); });
+  const sign=new THREE.Mesh(new THREE.PlaneGeometry(15,3.75),new THREE.MeshBasicMaterial({map:signTex,side:THREE.DoubleSide})); sign.position.set(cx(23.5),3.5,cx(SANDBOX_START)+1.02); root.add(sign);
+}
+
 function buildWorld(){
   buildZTex(); buildMaterials(); buildGunTex(); initFx(); buildPUTex(); buildSky();
   hemi=new THREE.HemisphereLight(0x8e97ad,0x2a2016,0.5); scene.add(hemi); scene.add(worldFlash); scene.add(boomLight);
   ROOT=MAPG.bunker; BATCH=new Batch(); buildBunker(); reuseMapProps('bunker'); BATCH.flush(MAPG.bunker);
   ROOT=MAPG.hosp; BATCH=new Batch(); buildHospital(); reuseMapProps('hosp'); BATCH.flush(MAPG.hosp);
   ROOT=MAPG.farm; BATCH=new Batch(); buildFarm(); BATCH.flush(MAPG.farm);
+  ROOT=MAPG.sandbox; buildSandbox();
   buildWindows(); buildDoors(); buildWallBuys(); buildPerks(); buildBox(); buildAfiador(); buildLever(); buildStations(); buildLetters(); buildTeleporters(); buildMapObjectives();
   decorWalls('bunker'); decorWalls('hosp'); ROOT=MAPG.farm; farmDecor();
   buildStaticLighting();
@@ -2578,7 +2612,7 @@ function qStringer(q,mat,x,z,sg){ const R=sg.R, X0=x*S, X1=X0+S, Z0=z*S, Z1=Z0+S
   if(open(z+1)) qWall(q,mat,x,z,0,1,0,hB); if(open(z-1)) qWall(q,mat,x,z,0,-1,0,hA);
 }
 function buildFarmShell(){
-  const q=new QB(), z0=FZ0, z1=MH-1;
+  const q=new QB(), z0=FZ0, z1=FARM_END;
   for(let z=z0;z<=z1;z++) for(let x=0;x<MW;x++){
     const c=grid[z][x], i=z*MW+x, room=roomOf[z][x], ramp=RAMPC[i];
     // ---- walls: a face toward every non-solid neighbour, as tall as that side needs
@@ -2611,7 +2645,7 @@ function buildFarmShell(){
     if(z-FZ0<=17&&f<-1&&ramp<0) qFlat(q,FM.leaves,x,z,0,true);
   }
   // the country beyond the treeline: a ground plane on every side of the farm
-  { const X0=0, X1=MW*S, Zt=FZ0*S, Zb=MH*S, E=160; const gm=FM.leaves;
+  { const X0=0, X1=MW*S, Zt=FZ0*S, Zb=(FARM_END+1)*S, E=160; const gm=FM.leaves;
     const add=(x0,z0,x1,z1)=>q.quad(gm,[[x0,-0.03,z0],[x0,-0.03,z1],[x1,-0.03,z1],[x1,-0.03,z0]],[0,1,0],[[x0/S,-z0/S],[x1/S,-z0/S],[x1/S,-z1/S],[x0/S,-z1/S]].slice(0,4));
     add(X0-E,Zt-E,X1+E,Zt); add(X0-E,Zb,X1+E,Zb+E); add(X0-E,Zt,X0,Zb); add(X1,Zt,X1+E,Zb); }
   // roofs over the two stairwell houses, and their back walls above the cellar ceiling
@@ -2834,7 +2868,7 @@ function farmFurniture(){
 /* portraits, photographs, scratches, leaks and hand prints on the farm's inner walls, at the right height for each floor */
 function farmDecor(){
   const D=decTexs(); DROOT=new THREE.Group(); const near=(x,z)=>interacts.some(it=>Math.hypot(it.x-x,it.z-z)<2.4)||propBoxes.some(b=>x>b.x0-0.9&&x<b.x1+0.9&&z>b.z0-0.9&&z<b.z1+0.9);
-  for(let z=FZ0;z<MH;z++) for(let x=0;x<MW;x++){ if(grid[z][x]!=='#') continue;
+  for(let z=FZ0;z<=FARM_END;z++) for(let x=0;x<MW;x++){ if(grid[z][x]!=='#') continue;
     for(const [nx,nz] of [[1,0],[-1,0],[0,1],[0,-1]]){ const ax=x+nx, az=z+nz; if(!inB(ax,az)||grid[az][ax]!=='.') continue; const room=roomOf[az][ax]; if(!room||room==='FY'||room==='FK') continue; if(RAMPC[az*MW+ax]>=0) continue;
       const wx=cx(x)+nx*S/2, wz=cx(z)+nz*S/2; if(near(wx,wz)||USED_FACE.has(faceKey(x,z,nx,nz))) continue; if(Math.random()>0.45) continue;
       const f=FH[az*MW+ax], lat=rand(-0.45,0.45); const manor=room==='FH'||room==='FW'||room==='FU', r=Math.random();
@@ -2944,7 +2978,7 @@ function buildFarm(){
   wheelbarrow(cx(17),FR(62.3),0.6); wheelbarrow(cx(38),FR(43),2.2);
   // trees: the woods over the lab, a dense treeline around the yard, the dark country beyond
   for(let i=0;i<70;i++){ const x=rand(1,47)*S, r=rand(0,17.5); mkTree(x,FR(r)+rand(-.8,.8)); }
-  for(let z=FZ0;z<MH;z++) for(let x=0;x<MW;x++) if(grid[z][x]==='T'&&Math.random()<0.8) mkTree(cx(x)+rand(-.6,.6),cx(z)+rand(-.6,.6));
+  for(let z=FZ0;z<=FARM_END;z++) for(let x=0;x<MW;x++) if(grid[z][x]==='T'&&Math.random()<0.8) mkTree(cx(x)+rand(-.6,.6),cx(z)+rand(-.6,.6));
   for(let i=0;i<70;i++){ mkTree(rand(-40,-1),FR(rand(-10,90))); mkTree(rand(MW*S+1,MW*S+40),FR(rand(-10,90))); }
   for(let i=0;i<40;i++) mkTree(rand(-20,MW*S+20),FR(rand(80,100)));
   // ---- barn: stalls on the west wall, the hayloft with its stairs, tools, the cart, lanterns
@@ -4604,8 +4638,9 @@ function zombieBody(z){
   buildZTex();
   const rng=mulberry(z.seed); const rpick=a=>a[Math.floor(rng()*a.length)];
   const brute=z.kind==='brute';
-  const hosp=CUR==='hosp', farm=CUR==='farm';
-  const outfit=brute?rpick(hosp?['butcher','patient2']:['butcher','worker']):rpick(hosp?['patient','patient','patient2','doctor','nurse','patient','civil2']:farm?['worker','worker','civil','civil2','butcher','doctor','patient2','soldier2','nurse','civil']:['soldier','soldier2','soldier','officer','civil','civil2','doctor','worker']);
+  const hosp=CUR==='hosp', farm=CUR==='farm', sandbox=CUR==='sandbox';
+  const sandboxOutfits=['soldier','soldier2','officer','civil','civil2','doctor','worker','patient','patient2','nurse','butcher'];
+  const outfit=brute?rpick(sandbox?sandboxOutfits.filter(v=>['butcher','worker','patient2'].includes(v)):hosp?['butcher','patient2']:['butcher','worker']):rpick(sandbox?sandboxOutfits:hosp?['patient','patient','patient2','doctor','nurse','patient','civil2']:farm?['worker','worker','civil','civil2','butcher','doctor','patient2','soldier2','nurse','civil']:['soldier','soldier2','soldier','officer','civil','civil2','doctor','worker']);
   const si=Math.floor(rng()*SKIN_PAL.length);
   const P_=(map,sh)=>new THREE.MeshPhongMaterial({map,shininess:sh,specular:0x1c140e});
   const faceMat=P_(ZT.faces[si],16), skinMat=P_(ZT.skins[si],14), shirtMat=P_(ZT.shirts[outfit],4), pantsMat=P_(ZT.pants[outfit],4);
@@ -6725,7 +6760,7 @@ $('#contbtn').addEventListener('click',resumeRun);
 /* ================= DEATH CINEMATIC: menu music, slow takes of the map, the dead walking around and sometimes feeding on you ================= */
 const CINE={on:false,corpse:null,cx:0,cz:0,cyaw:0,eaters:[],roamers:[],shot:null,list:[],idx:0,cutT:-1,feedT:0};
 function cineCell(near,maxD,minD){
-  const z0=CUR==='farm'?57:CUR==='hosp'?HSPLIT:0, z1=CUR==='farm'?MH-1:CUR==='hosp'?56:HSPLIT-1;
+  const z0=CUR==='sandbox'?SANDBOX_START:CUR==='farm'?57:CUR==='hosp'?HSPLIT:0, z1=CUR==='sandbox'?SANDBOX_END:CUR==='farm'?FARM_END:CUR==='hosp'?56:HSPLIT-1;
   for(let tries=0;tries<260;tries++){
     const x=Math.floor(rand(0,MW)), z=Math.floor(rand(z0,z1+1));
     if(grid[z][x]!=='.'||propCell[z*MW+x]) continue; const r=roomOf[z][x]; if(tries<200&&r&&!G.rooms.has(r)) continue;

@@ -1719,6 +1719,7 @@ function buildWorld(){
   world=true;
 }
 function setMap(k){
+  if(k==='sandbox'&&!CHEAT.sandboxAccess) k='bunker';
   if(!MAPS[k]) k='bunker';
   CUR=k; const m=MAPS[k]; FLOORS=k==='farm';
   for(const key in MAPG) MAPG[key].visible=key===k;
@@ -3781,7 +3782,7 @@ function setPerkSigns(on){ for(const s of perkSigns){ s.sign.material.color.setH
 /* ---- mystery box ---- */
 const BOX={spots:[{cells:[[13,12],[14,12]],n:[0,1]},{cells:[[22,10],[23,10]],n:[0,-1]},{cells:[[38,2],[39,2]],n:[0,1],room:'E'},
   {cells:[[hx(1),hz(2)],[hx(1),hz(3)]],n:[1,0]},{cells:[[hx(25),hz(12)],[hx(26),hz(12)]],n:[0,1],room:'K'},{cells:[[hx(36),hz(1)],[hx(37),hz(1)]],n:[0,1],room:'L'},{cells:[[16,132],[17,132]],n:[0,-1]},{cells:[[19,75],[20,75]],n:[0,1],room:'FK'},{cells:[[26,69],[27,69]],n:[0,1],room:'FC'},{cells:[[43,58],[44,58]],n:[0,1],room:'FL'},{cells:[[34,82],[35,82]],n:[0,1],room:'FU'}],spot:0,state:'idle',t:0,uses:0,weapon:null,gun:null,owner:null,pending:0};
-BOX.spots.push({cells:[[23,146],[24,146]],n:[0,1],room:'SB',map:'sandbox'});
+BOX.spots.push({cells:[[20,144],[21,144]],n:[0,1],room:'SB',map:'sandbox'});
 for(const s of BOX.spots) s.map=mapAtRow(s.cells[0][1]);
 const firstBoxSpot=()=>BOX.spots.findIndex(s=>s.map===CUR);
 function isMineBox(){ return NET.mode==='client'?(!!NET.me&&BOX.owner===NET.me):!BOX.owner; }
@@ -6033,7 +6034,7 @@ $('#kv-insp').addEventListener('click',()=>kvAct('inspect')); $('#kv-slash').add
 
 /* ================= DEVELOPER CONSOLE (CS-style) =================
    Opens with the key left of 1 ( ' on ABNT2, ` on US). Cheat commands need sv_cheats 1, as in CS. */
-const CHEAT={on:false,god:false,buddha:false,noclip:false,ammo:0,ts:1,grav:1,botStop:false,impacts:false,fov:72,vmFov:58,vmOff:[0,0,0],lefty:false,hud:true,vm:true,showFps:false,forceKind:null,forceOutfit:null,tl:null,xhSize:9,xhGap:0,xhCol:null};
+const CHEAT={on:false,god:false,buddha:false,noclip:false,ammo:0,ts:1,grav:1,botStop:false,impacts:false,fov:72,vmFov:58,vmOff:[0,0,0],lefty:false,hud:true,vm:true,showFps:false,forceKind:null,forceOutfit:null,sandboxAccess:false,tl:null,xhSize:9,xhGap:0,xhCol:null};
 const CON={open:false,hist:[],hi:-1,sugg:[],si:0};
 try{ CON.hist=JSON.parse(store.get('bdm_conhist','[]'))||[]; }catch(e){ CON.hist=[]; }
 const conEl=$('#con'), conLog=$('#conlog'), conIn=$('#conin'), conSug=$('#consug');
@@ -6109,13 +6110,13 @@ const CMDS={
     if((a[0]||'').toLowerCase()==='exit'){
       if(CUR!=='sandbox'){ cprint('Você não está no Sandbox.'); return; }
       if(!needHost()) return;
-      Object.assign(CHEAT,{on:false,god:false,buddha:false,noclip:false,ammo:0,ts:1,grav:1,botStop:false,forceKind:null,forceOutfit:null,tl:null});
+      Object.assign(CHEAT,{on:false,god:false,buddha:false,noclip:false,ammo:0,ts:1,grav:1,botStop:false,forceKind:null,forceOutfit:null,sandboxAccess:false,tl:null});
       hudCheat(); setMap('bunker'); closeConsole(); startGame(); cprint('Voltando ao Bunker dos Mortos.'); return;
     }
     if(a[0]!=='7824'){ cprint('Senha incorreta. Use: sandbox 7824','err'); return; }
     if(NET.mode){ cprint('O Sandbox só pode ser aberto em uma partida solo. Saia da sala online primeiro.','err'); return; }
     if(!needHost()) return;
-    Object.assign(CHEAT,{on:true,god:true,ammo:2,botStop:false,forceKind:null,forceOutfit:null});
+    Object.assign(CHEAT,{on:true,god:true,ammo:2,botStop:false,forceKind:null,forceOutfit:null,sandboxAccess:true});
     hudCheat(); setMap('sandbox'); G.resume=null; PROG.run=null; saveProg(); closeConsole();
     startGame();
     G.round=0; G.toSpawn=0; G.spawnT=0; G.roundGap=99999;
@@ -6789,12 +6790,13 @@ function openCheckpoint(){
   show('#ckpt'); Snd.ui('select');
 }
 function saveRun(){
+  if(CUR==='sandbox'){ PROG.run=null; saveProg(); return; }
   PROG.run={v:1,map:CUR,round:G.round,points:G.points|0,cards:G.cards.map(id=>[id,cardLv(id)]),inv:Wp.inv.map(s=>[s.id,s.lvl|0,s.mag|0,s.reserve|0]),cur:Wp.cur|0,
     perks:Object.keys(G.perks).filter(k=>G.perks[k]),power:!!G.power,doors:doors.map((d,i)=>d.open&&d.map===CUR?i:-1).filter(i=>i>=0),
     nades:G.nades|0,kills:G.kills|0,heads:G.heads|0,earned:G.earned|0,bat:Math.round(FL.bat*100)/100,t:Date.now()};
   saveProg();
 }
-function validRun(r){ return r&&typeof r==='object'&&MAPS[r.map]&&(r.round|0)>0&&Array.isArray(r.inv)?r:null; }
+function validRun(r){ return r&&typeof r==='object'&&r.map!=='sandbox'&&MAPS[r.map]&&(r.round|0)>0&&Array.isArray(r.inv)?r:null; }
 function applyRun(r){
   G.points=Math.max(0,r.points|0); G.kills=r.kills|0; G.heads=r.heads|0; G.earned=r.earned|0;
   G.cards=[]; G.clv={}; for(const e of r.cards||[]){ if(Array.isArray(e)&&CARD_BY[e[0]]&&!G.cards.includes(e[0])){ G.cards.push(e[0]); G.clv[e[0]]=clamp(e[1]|0,1,3); } }

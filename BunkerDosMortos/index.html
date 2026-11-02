@@ -1694,15 +1694,56 @@ function buildSandbox(){
   wall(2,4.5,32,cx(2),2.25,cx((140+153)/2));
   wall(2,4.5,32,cx(45),2.25,cx((140+153)/2));
   const stripMat=new THREE.MeshBasicMaterial({color:0x8a632d});
-  for(const z of [142,150]){ const stripe=new THREE.Mesh(new THREE.PlaneGeometry(82,0.045),stripMat); stripe.rotation.x=-Math.PI/2; stripe.position.set(cx(23.5),0.012,cx(z)); root.add(stripe); }
+  for(const z of [144,148]){ const stripe=new THREE.Mesh(new THREE.PlaneGeometry(82,0.045),stripMat); stripe.rotation.x=-Math.PI/2; stripe.position.set(cx(23.5),0.012,cx(z)); root.add(stripe); }
   for(const x of [8,23,38]){
-    const pole=new THREE.Group(); pole.position.set(cx(x),0,cx(146.5));
+    const pole=new THREE.Group(); pole.position.set(cx(x),0,cx(146));
     const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.09,3.2,8),wallMat); stem.position.y=1.6; pole.add(stem);
     const lamp=new THREE.PointLight(0xd5e7ff,1.15,24,2); lamp.position.y=3.25; pole.add(lamp);
     const cap=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.12,0.7),trimMat); cap.position.y=3.25; pole.add(cap); root.add(pole);
   }
-  const signTex=tex(512,128,(g,w,h)=>{ g.fillStyle='#111820'; g.fillRect(0,0,w,h); g.strokeStyle='#b58a4c'; g.lineWidth=8; g.strokeRect(5,5,w-10,h-10); g.fillStyle='#eee2ca'; g.textAlign='center'; g.font='bold 48px "Stardos Stencil", Impact, sans-serif'; g.fillText('SANDBOX · ÁREA DE TESTES',w/2,58); g.font='24px "Special Elite", "Courier New", monospace'; g.fillText('ARMAS  ·  ZUMBIS  ·  EQUIPAMENTOS  ·  EXPERIMENTOS',w/2,98); });
-  const sign=new THREE.Mesh(new THREE.PlaneGeometry(15,3.75),new THREE.MeshBasicMaterial({map:signTex,side:THREE.DoubleSide})); sign.position.set(cx(23.5),3.5,cx(SANDBOX_START)+1.02); root.add(sign);
+
+}
+
+/* ---- sandbox: immortal damage dummy + character transformation gallery ---- */
+function sbLabel(text,color){
+  const t=tex(512,128,(g,w,h)=>{
+    g.clearRect(0,0,w,h); g.fillStyle='rgba(10,14,18,.82)'; g.fillRect(12,18,w-24,h-36);
+    g.strokeStyle=color||'#d8b16b'; g.lineWidth=4; g.strokeRect(12,18,w-24,h-36);
+    g.fillStyle='#f4efe4'; g.font='bold 34px Impact, sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(text,w/2,h/2);
+  });
+  const m=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false}));
+  m.scale.set(3.4,.85,1); return m;
+}
+function buildSandboxExtras(){
+  const root=MAPG.sandbox;
+  // Compact immortal mannequin in the center: takes hits forever but never dies or attacks.
+  const d=makeZombie({x:cx(23),z:cx(147)});
+  d.training=true; d.maxHp=d.hp=999999999; d.state='inside'; d.runner=false; d.speed=0; d.t=0; d.g.position.y=0;
+  d.g.rotation.y=Math.PI; d.groanT=999999;
+  const dl=sbLabel('MANEQUIM · DANO INFINITO','#b54b4b'); dl.position.set(d.pos.x,2.8,d.pos.z); root.add(dl);
+
+  // All playable characters are placed together so changing form is immediate and easy to test.
+  const keys=CHAR_KEYS.slice();
+  const cols=Math.min(6,Math.max(1,keys.length));
+  keys.forEach((id,n)=>{
+    const vk=varKeys(id)[0];
+    const col=n%cols, row=Math.floor(n/cols);
+    const x=cx(6+col*7), z=cx(151-row*3);
+    const ped=new THREE.Group(); ped.position.set(x,0,z); root.add(ped);
+    const base=new THREE.Mesh(new THREE.CylinderGeometry(.75,.9,.18,20),new THREE.MeshStandardMaterial({color:0x3a4048,metalness:.35,roughness:.5}));
+    base.position.y=.09; ped.add(base);
+    const ch=buildChar(id,vk,{pose:'idle'}); ch.scale.setScalar(1.55); ch.position.y=.16; ch.rotation.y=Math.PI; ped.add(ch);
+    const name=(CHARS[id].name||id).toUpperCase();
+    const lab=sbLabel(name,'#6fa8dc'); lab.position.set(x,2.75,z); root.add(lab);
+    interacts.push({x,z,r:1.7,map:'sandbox',
+      text:()=>`${PRESS} para se transformar em ${CHARS[id].name||id}`,
+      use:()=>{
+        PROG.char=id; PROG.cv=vk; saveProg(); recomputeMods(); applyHands(); menuLabels();
+        banner('TRANSFORMAÇÃO CONCLUÍDA',`Agora você está usando ${CHARS[id].vars[vk].name}.`,'gold');
+        Snd.ui('select');
+      }
+    });
+  });
 }
 
 function buildWorld(){
@@ -1715,6 +1756,7 @@ function buildWorld(){
   buildWindows(); buildDoors(); buildWallBuys(); buildPerks(); buildBox(); buildAfiador(); buildLever(); buildStations(); buildLetters(); buildTeleporters(); buildSandboxTeleporters(); buildMapObjectives();
   decorWalls('bunker'); decorWalls('hosp'); ROOT=MAPG.farm; farmDecor();
   buildStaticLighting();
+  buildSandboxExtras();
   setMap('bunker');
   world=true;
 }
@@ -4065,7 +4107,7 @@ function objectiveDoorCheck(d){
 }
 function objectiveDescription(map=CUR){
   const count=mapObjectiveCount(map);
-  if(map==='sandbox') return ['MODO DE TESTES','Use a parede de armas, Caixa Misteriosa, vantagens, Afiador, armadilhas e teleportes. O console permite criar hordas e testar os visuais dos zumbis.','SANDBOX · SEM OBJETIVO DE CAMPANHA'];
+  if(map==='sandbox') return ['MODO DE TESTES','Tudo foi aproximado para teste rápido: manequim de dano infinito, galeria de personagens com transformação em E, parede de armas, Caixa Misteriosa, vantagens, Afiador, armadilhas e teleportes.','SANDBOX · SEM OBJETIVO DE CAMPANHA'];
   if(map==='bunker'){
     if(count<3) return ['RESTAURE A ENERGIA','Encontre os três fusíveis espalhados pelas alas do bunker.',`FUSÍVEIS ${count}/3 · A, B e C`];
     if(!G.power) return ['RESTAURE A ENERGIA','Volte ao painel elétrico e religue o sistema.','FUSÍVEIS 3/3 · PAINEL DE ENERGIA'];
@@ -4787,6 +4829,11 @@ function zombieAttack(z,dt,T,dist,reach){
   if(z.attackT>1.0){ z.attackT=0; z.hitDone=false; }
 }
 function updateZombie(z,dt){
+  if(z.training){
+    z.moving=false; z.attackT=0; z.t+=dt;
+    if(z.flashT>0){ z.flashT-=dt; if(z.flashT<=0) z.mats.forEach(m=>m.emissive.setHex(0)); }
+    animateZombie(z,dt); return;
+  }
   if(CHEAT.botStop&&z.state!=='dying'&&z.state!=='rise'){ z.moving=false; z.attackT=0; animateZombie(z,dt); return; }
   z.t+=dt; z.moving=false; const w=z.win;
   if(z.flashT>0){ z.flashT-=dt; if(z.flashT<=0) z.mats.forEach(m=>m.emissive.setHex(0)); }
@@ -4944,6 +4991,13 @@ const killDrax=(part,kind)=>(part==='head'?2:1)+(kind==='brute'?4:0);
 function killPoints(part,src,kind){ return (kind==='brute'?150:0)+(src==='knife'?130:part==='head'?100:(src==='splash'||src==='grenade')?50:60); }
 function damageZombie(z,amt,part,src,hitPt,shooter,luck){
   if(z.dead) return false;
+  if(z.training){
+    z.hp=z.maxHp||999999999; z.flashT=0.07; z.mats.forEach(m=>m.emissive.setHex(0x3a0000));
+    if(hitPt) emit('blood',hitPt.x,hitPt.y,hitPt.z,part==='head'?8:4,2.2,0.6);
+    else emit('blood',z.pos.x,zy(z)+1.3,z.pos.z,3,2,0.5);
+    if(!shooter) addPoints(10);
+    return false;
+  }
   if(G.insta>0||z.crawl) amt=Math.max(amt,z.hp+1);
   z.hp-=amt; z.flashT=0.07; z.mats.forEach(m=>m.emissive.setHex(0x3a0000));
   if(hitPt) emit('blood',hitPt.x,hitPt.y,hitPt.z,part==='head'?8:4,2.2,0.6);
@@ -6124,7 +6178,7 @@ const CMDS={
     G.points=50000; $('#ptsv').textContent=G.points;
     G.nades=Mod.nadeCap; hudNades(); hudAmmo(); drawRound(0);
     powerOn();
-    banner('SANDBOX LIBERADO','Pontos, energia, munição e invulnerabilidade preparados. Use zombie_models showcase para ver todos os visuais.','gold');
+    banner('SANDBOX LIBERADO','Pontos, energia, munição e invulnerabilidade preparados. Teste o manequim infinito e aproxime-se dos personagens para se transformar com E.','gold');
   }},
   points:{cheat:1,d:'points N define pontos; points +N soma; points -N subtrai; sem valor consulta',f:a=>{ if(!needGame()) return; if(a[0]==null){ cprint(`Pontos da rodada: ${G.points}`); return; } const raw=String(a[0]), v=num(raw,0)|0; if(raw[0]==='+') G.points=Math.max(0,G.points+Math.abs(v)); else if(raw[0]==='-') G.points=Math.max(0,G.points-Math.abs(v)); else G.points=Math.max(0,v); $('#ptsv').textContent=G.points; cprint(`Pontos da rodada: ${G.points}`); }},
   cash:{cheat:1,d:'atalho compatível: igual a points',f:a=>CMDS.points.f(a)},

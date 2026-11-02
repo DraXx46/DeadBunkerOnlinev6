@@ -4649,7 +4649,7 @@ function zombieBody(z){
   const brute=z.kind==='brute';
   const hosp=CUR==='hosp', farm=CUR==='farm', sandbox=CUR==='sandbox';
   const sandboxOutfits=['soldier','soldier2','officer','civil','civil2','doctor','worker','patient','patient2','nurse','butcher'];
-  const outfit=brute?rpick(sandbox?sandboxOutfits.filter(v=>['butcher','worker','patient2'].includes(v)):hosp?['butcher','patient2']:['butcher','worker']):rpick(sandbox?sandboxOutfits:hosp?['patient','patient','patient2','doctor','nurse','patient','civil2']:farm?['worker','worker','civil','civil2','butcher','doctor','patient2','soldier2','nurse','civil']:['soldier','soldier2','soldier','officer','civil','civil2','doctor','worker']);
+  const outfit=CHEAT.forceOutfit||(brute?rpick(sandbox?sandboxOutfits.filter(v=>['butcher','worker','patient2'].includes(v)):hosp?['butcher','patient2']:['butcher','worker']):rpick(sandbox?sandboxOutfits:hosp?['patient','patient','patient2','doctor','nurse','patient','civil2']:farm?['worker','worker','civil','civil2','butcher','doctor','patient2','soldier2','nurse','civil']:['soldier','soldier2','soldier','officer','civil','civil2','doctor','worker']));
   const si=Math.floor(rng()*SKIN_PAL.length);
   const P_=(map,sh)=>new THREE.MeshPhongMaterial({map,shininess:sh,specular:0x1c140e});
   const faceMat=P_(ZT.faces[si],16), skinMat=P_(ZT.skins[si],14), shirtMat=P_(ZT.shirts[outfit],4), pantsMat=P_(ZT.pants[outfit],4);
@@ -6033,7 +6033,7 @@ $('#kv-insp').addEventListener('click',()=>kvAct('inspect')); $('#kv-slash').add
 
 /* ================= DEVELOPER CONSOLE (CS-style) =================
    Opens with the key left of 1 ( ' on ABNT2, ` on US). Cheat commands need sv_cheats 1, as in CS. */
-const CHEAT={on:false,god:false,buddha:false,noclip:false,ammo:0,ts:1,grav:1,botStop:false,impacts:false,fov:72,vmFov:58,vmOff:[0,0,0],lefty:false,hud:true,vm:true,showFps:false,forceKind:null,tl:null,xhSize:9,xhGap:0,xhCol:null};
+const CHEAT={on:false,god:false,buddha:false,noclip:false,ammo:0,ts:1,grav:1,botStop:false,impacts:false,fov:72,vmFov:58,vmOff:[0,0,0],lefty:false,hud:true,vm:true,showFps:false,forceKind:null,forceOutfit:null,tl:null,xhSize:9,xhGap:0,xhCol:null};
 const CON={open:false,hist:[],hi:-1,sugg:[],si:0};
 try{ CON.hist=JSON.parse(store.get('bdm_conhist','[]'))||[]; }catch(e){ CON.hist=[]; }
 const conEl=$('#con'), conLog=$('#conlog'), conIn=$('#conin'), conSug=$('#consug');
@@ -6047,11 +6047,16 @@ function needGame(){ if(!inGame()){ cprint('Esse comando só funciona durante um
 function needHost(){ if(onlineGuest()){ cprint('Na partida de outra pessoa só o anfitrião pode usar esse comando.','err'); return false; } return true; }
 function cvarToggle(key,v,label){ const b=bool(v); CHEAT[key]=b==null?!CHEAT[key]:b; cprint(`${label} ${CHEAT[key]?'LIGADO':'DESLIGADO'}`); }
 const WEAPON_IDS=()=>Object.keys(WEAPONS).map(k=>'weapon_'+k);
-function spawnSandboxZombie(sp,kind){
+function spawnSandboxZombie(sp,kind,outfit){
   const k=(kind||'').toLowerCase();
-  if(k==='boss') return makeZombie({...sp,boss:true,bossName:'O Guardião'});
-  CHEAT.forceKind=k||null;
-  const z=makeZombie(sp); CHEAT.forceKind=null;
+  const oldKind=CHEAT.forceKind, oldOutfit=CHEAT.forceOutfit;
+  CHEAT.forceKind=k||null; CHEAT.forceOutfit=outfit||null;
+  let z;
+  try{
+    z=k==='boss'?makeZombie({...sp,boss:true,bossName:'O Guardião'}):makeZombie(sp);
+  }finally{
+    CHEAT.forceKind=oldKind; CHEAT.forceOutfit=oldOutfit;
+  }
   if(k==='crawler'&&z){ z.state=z.win?z.state:'inside'; crawlerize(z,false); z.hp=Math.min(z.hp,z.maxHp); }
   return z;
 }
@@ -6082,11 +6087,43 @@ const CMDS={
     for(let i=0;i<n;i++){ const p=frontPoint(4+i*0.8); const cx_=Math.floor(p.x/S), cz_=Math.floor(p.z/S); if(!walkable(cx_,cz_)){ cprint('Sem espaço livre na sua frente.','err'); break; } const z=spawnSandboxZombie({x:p.x,z:p.z,room:null},kind); if(z){ z.state='inside'; z.g.position.y=0; made++; } } cprint(`${made} zumbi(s) na sua frente${kind?' · tipo '+kind:''}`); }},
   bot_kick:{cheat:1,d:'remove todos os zumbis',f:()=>{ if(!needHost()) return; let n=0; for(const z of zombies.slice()){ if(!z.dead){ z.hp=0; killZombie(z,'body','nuke'); n++; } } cprint(`${n} zumbi(s) removido(s)`); }},
   bot_stop:{cheat:1,d:'1 congela os zumbis',f:a=>cvarToggle('botStop',a[0],'bot_stop')},
-  zombie_models:{cheat:1,d:'lista os visuais e tipos de zumbis disponíveis no Sandbox',f:()=>{ cprint('Visuais: soldado, oficial, civil, médico, trabalhador, paciente, enfermeira e açougueiro (variações aleatórias).'); cprint('Tipos: normal, brute, runner, crawler e boss.'); cprint('Use: bot_add_front 1 <tipo> ou bot_add 1 <tipo>.'); }},
+  zombie_models:{cheat:1,d:'zombie_models [showcase] lista os visuais ou cria uma fileira com todos os modelos no Sandbox',f:a=>{
+    const outfits=['soldier','soldier2','officer','civil','civil2','doctor','worker','patient','patient2','nurse','butcher'];
+    cprint('Visuais disponíveis: '+outfits.join(', '));
+    cprint('Tipos de zumbi: normal, brute, runner, crawler e boss.');
+    cprint('Use bot_add_front 1 <tipo> para testar um tipo de IA.');
+    if((a[0]||'').toLowerCase()!=='showcase') return;
+    if(!needGame()||CUR!=='sandbox'){ cprint('O showcase de modelos só funciona dentro do Sandbox.','err'); return; }
+    if(!needHost()) return;
+    const cells=[4,8,12,16,20,24,28,32,36,40,44]; let made=0;
+    outfits.forEach((outfit,i)=>{
+      const z=spawnSandboxZombie({x:cx(cells[i]),z:cx(143),room:'SB'},'normal',outfit);
+      if(z){ z.state='inside'; z.g.position.y=0; made++; }
+    });
+    cprint('Showcase criado: '+made+' visuais de zumbi. Use bot_kick para limpar.');
+  }},
   mp_round:{cheat:1,d:'pula para a rodada N',f:a=>{ if(!needGame()||!needHost()) return; const r=clamp(num(a[0],G.round+1)|0,1,200); for(const z of zombies.slice()) removeZombie(z); for(const w of windows) w.occupant=null; startRound(r); cprint(`Rodada ${r}`); }},
   mp_restartgame:{d:'recomeça a partida',f:()=>{ if(!needGame()||!needHost()) return; closeConsole(); startGame(); }},
   map:{d:'map bunker | map hosp | map farm (troca de mapa e recomeça)',f:a=>{ const k=a[0]==='hospital'||a[0]==='hospicio'?'hosp':a[0]==='fazenda'||a[0]==='mansao'?'farm':a[0]; if(!['bunker','hosp','farm'].includes(k)){ cprint('Mapas normais: bunker, hosp, farm. Use sandbox 7824 para a área de testes.','err'); return; } if(!needHost()) return; setMap(k); if(inGame()||G.state==='over'){ closeConsole(); startGame(); } else { const m=MAPS[k].menu; P.pos.set(m.x,0,m.z); } cprint(`Mapa: ${MAPS[k].name}`); }},
-  sandbox:{d:'sandbox 7824 entra na área privada de testes; sandbox exit volta ao bunker',f:a=>{ if((a[0]||'').toLowerCase()==='exit'){ if(CUR!=='sandbox'){ cprint('Você não está no Sandbox.'); return; } if(!needHost()) return; setMap('bunker'); closeConsole(); startGame(); cprint('Voltando ao Bunker dos Mortos.'); return; } if(a[0]!=='7824'){ cprint('Senha incorreta. Use: sandbox 7824','err'); return; } if(NET.mode){ cprint('O Sandbox só pode ser aberto em uma partida solo. Saia da sala online primeiro.','err'); return; } if(!needHost()) return; CHEAT.on=true; hudCheat(); setMap('sandbox'); G.resume=null; PROG.run=null; saveProg(); closeConsole(); startGame(); banner('SANDBOX LIBERADO','Área de testes · todos os equipamentos disponíveis','gold'); }},
+  sandbox:{d:'sandbox 7824 entra na área privada; sandbox exit volta ao bunker',f:a=>{
+    if((a[0]||'').toLowerCase()==='exit'){
+      if(CUR!=='sandbox'){ cprint('Você não está no Sandbox.'); return; }
+      if(!needHost()) return;
+      Object.assign(CHEAT,{on:false,god:false,buddha:false,noclip:false,ammo:0,ts:1,grav:1,botStop:false,forceKind:null,forceOutfit:null,tl:null});
+      hudCheat(); setMap('bunker'); closeConsole(); startGame(); cprint('Voltando ao Bunker dos Mortos.'); return;
+    }
+    if(a[0]!=='7824'){ cprint('Senha incorreta. Use: sandbox 7824','err'); return; }
+    if(NET.mode){ cprint('O Sandbox só pode ser aberto em uma partida solo. Saia da sala online primeiro.','err'); return; }
+    if(!needHost()) return;
+    Object.assign(CHEAT,{on:true,god:true,ammo:2,botStop:false,forceKind:null,forceOutfit:null});
+    hudCheat(); setMap('sandbox'); G.resume=null; PROG.run=null; saveProg(); closeConsole();
+    startGame();
+    G.round=0; G.toSpawn=0; G.spawnT=0; G.roundGap=99999;
+    G.points=50000; $('#ptsv').textContent=G.points;
+    G.nades=Mod.nadeCap; hudNades(); hudAmmo(); drawRound(0);
+    powerOn();
+    banner('SANDBOX LIBERADO','Pontos, energia, munição e invulnerabilidade preparados. Use zombie_models showcase para ver todos os visuais.','gold');
+  }},
   points:{cheat:1,d:'points N define pontos; points +N soma; points -N subtrai; sem valor consulta',f:a=>{ if(!needGame()) return; if(a[0]==null){ cprint(`Pontos da rodada: ${G.points}`); return; } const raw=String(a[0]), v=num(raw,0)|0; if(raw[0]==='+') G.points=Math.max(0,G.points+Math.abs(v)); else if(raw[0]==='-') G.points=Math.max(0,G.points-Math.abs(v)); else G.points=Math.max(0,v); $('#ptsv').textContent=G.points; cprint(`Pontos da rodada: ${G.points}`); }},
   cash:{cheat:1,d:'atalho compatível: igual a points',f:a=>CMDS.points.f(a)},
   mp_startmoney:{cheat:1,d:'atalho compatível: igual a points',f:a=>CMDS.points.f(a)},

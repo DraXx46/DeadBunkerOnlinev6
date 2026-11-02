@@ -3711,11 +3711,15 @@ function buildWallBuys(){
     {id:'mp40',cell:[17,64],n:[0,-1]}, {id:'thompson',cell:[30,64],n:[0,-1]}, {id:'trench',cell:[12,34],n:[0,1]},
     {id:'stg44',cell:[29,28],n:[-1,0]}, {id:'bar',cell:[8,29],n:[1,0]}, {id:'garand',cell:[39,26],n:[-1,0]}, {id:'ppsh',cell:[29,14],n:[-1,0]},
   ]) defs.push({id:d.id,cell:[d.cell[0],d.cell[1]+57],n:d.n});
+  const sandboxWeaponIds=Object.keys(WEAPONS);
+  const sandboxTop=[5,10,15,20,25,30,35,40], sandboxBottom=[5,11,17,23,29,35,41];
+  sandboxWeaponIds.forEach((id,i)=>defs.push({id,cell:i<8?[sandboxTop[i],140]:[sandboxBottom[i-8],153],n:i<8?[0,1]:[0,-1]}));
+  defs.push({id:'nades',cell:[44,146],n:[-1,0]});
   for(const d of defs){
     const [x,z]=d.cell, [nx,nz]=d.n; ROOT=MAPG[mapAtRow(z)];
     const fx=cx(x)+nx*S/2, fz=cx(z)+nz*S/2; const fb=floorAt(fx+nx*0.6,fz+nz*0.6);
     const isN=d.id==='nades'; const W=isN?null:WEAPONS[d.id];
-    const cost=isN?250:W.cost;
+    const cost=isN?250:(W.cost||1000);
     const t=isN?nadeChalkTex():chalkTex(W.sil,W.name,W.cost);
     const pl=new THREE.Mesh(new THREE.PlaneGeometry(1.9,0.95),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,color:0xb8b4a8}));
     pl.position.set(fx+nx*0.012,1.55+fb,fz+nz*0.012); pl.rotation.y=Math.atan2(nx,nz); ROOT.add(pl);
@@ -3748,6 +3752,9 @@ const PERKS=[
   {key:'speed',name:'Mão Ligeira',desc:'recarrega na metade do tempo',letter:'M',cost:3000,color:0x2f8f3a,css:'#2f8f3a',spots:[{cell:[1,18],n:[1,0]},{cell:[hx(12),hz(21)],n:[0,-1]},{cell:[31,122],n:[0,1]}]},
   {key:'rof',name:'Dedo Nervoso',desc:'atira mais rápido',letter:'D',cost:2000,color:0xd09a1c,css:'#c48a14',spots:[{cell:[25,12],n:[-1,0]},{cell:[hx(30),hz(9)],n:[-1,0]},{cell:[17,90],n:[0,-1]}]},
 ];
+PERKS[0].spots.push({cell:[14,148],n:[0,-1]});
+PERKS[1].spots.push({cell:[26,148],n:[0,-1]});
+PERKS[2].spots.push({cell:[38,148],n:[0,-1]});
 const perkSigns=[];
 function buildPerks(){
   for(const p of PERKS) for(const spt of p.spots){
@@ -3774,6 +3781,7 @@ function setPerkSigns(on){ for(const s of perkSigns){ s.sign.material.color.setH
 /* ---- mystery box ---- */
 const BOX={spots:[{cells:[[13,12],[14,12]],n:[0,1]},{cells:[[22,10],[23,10]],n:[0,-1]},{cells:[[38,2],[39,2]],n:[0,1],room:'E'},
   {cells:[[hx(1),hz(2)],[hx(1),hz(3)]],n:[1,0]},{cells:[[hx(25),hz(12)],[hx(26),hz(12)]],n:[0,1],room:'K'},{cells:[[hx(36),hz(1)],[hx(37),hz(1)]],n:[0,1],room:'L'},{cells:[[16,132],[17,132]],n:[0,-1]},{cells:[[19,75],[20,75]],n:[0,1],room:'FK'},{cells:[[26,69],[27,69]],n:[0,1],room:'FC'},{cells:[[43,58],[44,58]],n:[0,1],room:'FL'},{cells:[[34,82],[35,82]],n:[0,1],room:'FU'}],spot:0,state:'idle',t:0,uses:0,weapon:null,gun:null,owner:null,pending:0};
+BOX.spots.push({cells:[[23,146],[24,146]],n:[0,1],room:'SB',map:'sandbox'});
 for(const s of BOX.spots) s.map=mapAtRow(s.cells[0][1]);
 const firstBoxSpot=()=>BOX.spots.findIndex(s=>s.map===CUR);
 function isMineBox(){ return NET.mode==='client'?(!!NET.me&&BOX.owner===NET.me):!BOX.owner; }
@@ -3858,7 +3866,7 @@ function resetBox(){ if(BOX.gun){ BOX.float.remove(BOX.gun); BOX.gun=null; } BOX
 
 /* ---- afiador (upgrade machine, levels 1-10) ---- */
 const AFS=[];
-const AF_SPOTS=[{cells:[[12,19],[13,19]],n:[0,-1]},{cells:[[hx(2),hz(21)],[hx(3),hz(21)]],n:[0,-1]},{cells:[[11,58],[12,58]],n:[0,1]}];
+const AF_SPOTS=[{cells:[[12,19],[13,19]],n:[0,-1]},{cells:[[hx(2),hz(21)],[hx(3),hz(21)]],n:[0,-1]},{cells:[[11,58],[12,58]],n:[0,1]},{cells:[[5,147],[6,147]],n:[0,-1]}];
 function buildAfiador(){
   const st=tex(256,96,(c,w,h)=>{ c.fillStyle='#0e0b07'; c.fillRect(0,0,w,h); c.strokeStyle='#7d4dff'; c.lineWidth=5; c.strokeRect(4,4,w-8,h-8); c.fillStyle='#e9ddff'; c.textAlign='center'; c.font='bold 44px "Stardos Stencil", Impact, sans-serif'; c.fillText('AFIADOR',w/2,58); c.font='15px "Special Elite", "Courier New", monospace'; c.fillText('até o nível 10',w/2,82); });
   for(const spt of AF_SPOTS){
@@ -3889,7 +3897,7 @@ function updateAfiador(dt){
 
 /* ---- power lever ---- */
 const LEVERS=[];
-const LEVER_SPOTS=[{x:10,z:20,n:[0,-1]},{x:hx(27),z:hz(11),n:[0,-1]},{x:31,z:81,n:[0,1]}];
+const LEVER_SPOTS=[{x:10,z:20,n:[0,-1]},{x:hx(27),z:hz(11),n:[0,-1]},{x:31,z:81,n:[0,1]},{x:43,z:151,n:[-1,0]}];
 const LEVER={get pending(){ return LEVERS.length?LEVERS[0].pending:0; },set pending(v){ for(const l of LEVERS) l.pending=v; }};
 function buildLever(){
   const st=tex(128,48,(c,w,h)=>{ c.fillStyle='#d0b030'; c.fillRect(0,0,w,h); c.fillStyle='#111'; for(let i=-2;i<10;i++){ c.beginPath(); c.moveTo(i*18,0); c.lineTo(i*18+9,0); c.lineTo(i*18-5,h); c.lineTo(i*18-14,h); c.fill(); } c.fillStyle='#111'; c.fillRect(10,14,w-20,20); c.fillStyle='#f0e6c0'; c.font='bold 16px "Stardos Stencil", Impact, sans-serif'; c.textAlign='center'; c.fillText('ENERGIA',w/2,30); });
@@ -3911,7 +3919,7 @@ function resetLevers(){ for(const l of LEVERS){ l.piv.rotation.x=0.5; l.pending=
 function powerOn(){ if(G.power) return; G.power=true; Snd.power(); shake(0.3); tween(0.5,k=>{ for(const l of LEVERS) l.piv.rotation.x=0.5+k*(Math.PI-1.0); }); updateMissionHud(); setTimeout(()=>{ if(G.power){ setPerkSigns(true); banner('Energia ligada','Máquinas de bebida e Afiador disponíveis'); } },900); }
 
 /* ================= AMMO STATIONS & SHOCK TRAPS (every map) ================= */
-const AMMO_SPOTS=[{x:23,z:20,n:[0,-1]},{x:hx(4),z:hz(22),n:[0,-1]},{x:29,z:88,n:[-1,0]}];
+const AMMO_SPOTS=[{x:23,z:20,n:[0,-1]},{x:hx(4),z:hz(22),n:[0,-1]},{x:29,z:88,n:[-1,0]},{x:41,z:144,n:[-1,0]}];
 const AMMO_COST=1250;
 const AMMOS=[];
 function ammoCrateTex(){ return tex(256,128,(c,w,h)=>{ c.fillStyle='#3d4a2c'; c.fillRect(0,0,w,h); speckle(c,w,h,2500,['#2c3620','#56643e','#232b18'],0.5,1.8);
@@ -3952,6 +3960,7 @@ const TRAP_SPOTS=[
   {lever:{x:18,z:69,n:[1,0]},cells:[[12,70],[13,70],[14,70],[15,70],[12,71],[13,71],[14,71],[15,71]],name:'o túnel'},
   {lever:{x:21,z:81,n:[0,1]},cells:[[22,82],[23,82],[24,82],[25,82],[26,82],[27,82]],name:'a galeria'},
   {lever:{x:hx(31),z:hz(17),n:[1,0]},cells:[[hx(31),hz(18)],[hx(31),hz(19)],[hx(32),hz(18)],[hx(32),hz(19)]],name:'o portão do pátio'},
+  {lever:{x:34,z:146,n:[-1,0]},cells:[[30,146],[31,146],[30,147],[31,147]],name:'a zona de teste elétrico'},
 ];
 const TRAP_COST=1000, TRAP_ON=25, TRAP_CD=60;
 const TRAPS=[];
@@ -6038,6 +6047,14 @@ function needGame(){ if(!inGame()){ cprint('Esse comando só funciona durante um
 function needHost(){ if(onlineGuest()){ cprint('Na partida de outra pessoa só o anfitrião pode usar esse comando.','err'); return false; } return true; }
 function cvarToggle(key,v,label){ const b=bool(v); CHEAT[key]=b==null?!CHEAT[key]:b; cprint(`${label} ${CHEAT[key]?'LIGADO':'DESLIGADO'}`); }
 const WEAPON_IDS=()=>Object.keys(WEAPONS).map(k=>'weapon_'+k);
+function spawnSandboxZombie(sp,kind){
+  const k=(kind||'').toLowerCase();
+  if(k==='boss') return makeZombie({...sp,boss:true,bossName:'O Guardião'});
+  CHEAT.forceKind=k||null;
+  const z=makeZombie(sp); CHEAT.forceKind=null;
+  if(k==='crawler'&&z){ z.state=z.win?z.state:'inside'; crawlerize(z,false); z.hp=Math.min(z.hp,z.maxHp); }
+  return z;
+}
 const CMDS={
   help:{d:'lista os comandos (help <texto> filtra)',f:a=>{ const q=(a[0]||'').toLowerCase(); for(const [k,c] of Object.entries(CMDS)) if(!q||k.includes(q)||c.d.toLowerCase().includes(q)) cprint(`${k}${c.cheat?' *':''}  —  ${c.d}`); cprint('* precisa de sv_cheats 1','dim'); }},
   find:{d:'procura comandos por texto',f:a=>CMDS.help.f(a)},
@@ -6059,17 +6076,20 @@ const CMDS={
   weapon_level:{cheat:1,d:'muda o nível do Afiador da arma em mãos (0 a 10)',f:a=>{ if(!needGame()) return; const s=curSlot(); if(!s||Wp.knifeOut){ cprint('Pegue uma arma primeiro.','err'); return; } s.lvl=clamp(num(a[0],10)|0,0,MAXLV); const d=wstat(s); s.mag=d.mag; s.reserve=d.reserve; setGunModel(); hudAmmo(); cprint(`${d.name} (nível ${s.lvl})`); }},
   host_timescale:{cheat:1,d:'velocidade do tempo (0.1 a 4)',f:a=>{ CHEAT.ts=clamp(num(a[0],1),0.1,4); cprint(`host_timescale ${CHEAT.ts}`); }},
   sv_gravity:{cheat:1,d:'gravidade (800 é o normal)',f:a=>{ CHEAT.grav=clamp(num(a[0],800),0,4000)/800; cprint(`sv_gravity ${Math.round(CHEAT.grav*800)}`); }},
-  bot_add:{cheat:1,d:'bot_add [quantidade] [normal|brute|runner|crawler]',f:a=>{ if(!needGame()||!needHost()) return; const n=clamp(num(a[0],1)|0,1,40); const kind=(a[1]||'').toLowerCase(); const sp=spawnPoints(); if(!sp.length){ cprint('Nenhum ponto de surgimento aberto.','err'); return; }
-    for(let i=0;i<n;i++){ CHEAT.forceKind=kind||null; const z=makeZombie(pick(sp)); CHEAT.forceKind=null; if(kind==='crawler'&&z){ z.state=z.win?z.state:'inside'; crawlerize(z,false); z.hp=Math.min(z.hp,z.maxHp); } } cprint(`${n} zumbi(s) criado(s)`); }},
-  bot_add_front:{cheat:1,d:'cria zumbis na sua frente: bot_add_front [quantidade] [tipo]',f:a=>{ if(!needGame()||!needHost()) return; const n=clamp(num(a[0],1)|0,1,20); const kind=(a[1]||'').toLowerCase();
-    for(let i=0;i<n;i++){ const p=frontPoint(4+i*0.8); const cx_=Math.floor(p.x/S), cz_=Math.floor(p.z/S); if(!walkable(cx_,cz_)){ cprint('Sem espaço livre na sua frente.','err'); break; } CHEAT.forceKind=kind||null; const z=makeZombie({x:p.x,z:p.z,room:null}); CHEAT.forceKind=null; z.state='inside'; z.g.position.y=0; if(kind==='crawler') crawlerize(z,false); } cprint(`${n} zumbi(s) na sua frente`); }},
+  bot_add:{cheat:1,d:'bot_add [quantidade] [normal|brute|runner|crawler|boss]',f:a=>{ if(!needGame()||!needHost()) return; const n=clamp(num(a[0],1)|0,1,40); const kind=(a[1]||'').toLowerCase(); const sp=spawnPoints(); if(!sp.length){ cprint('Nenhum ponto de surgimento aberto.','err'); return; }
+    for(let i=0;i<n;i++) spawnSandboxZombie(pick(sp),kind); cprint(`${n} zumbi(s) criado(s)${kind?' · tipo '+kind:''}`); }},
+  bot_add_front:{cheat:1,d:'cria zumbis na sua frente: bot_add_front [quantidade] [normal|brute|runner|crawler|boss]',f:a=>{ if(!needGame()||!needHost()) return; const n=clamp(num(a[0],1)|0,1,20); const kind=(a[1]||'').toLowerCase(); let made=0;
+    for(let i=0;i<n;i++){ const p=frontPoint(4+i*0.8); const cx_=Math.floor(p.x/S), cz_=Math.floor(p.z/S); if(!walkable(cx_,cz_)){ cprint('Sem espaço livre na sua frente.','err'); break; } const z=spawnSandboxZombie({x:p.x,z:p.z,room:null},kind); if(z){ z.state='inside'; z.g.position.y=0; made++; } } cprint(`${made} zumbi(s) na sua frente${kind?' · tipo '+kind:''}`); }},
   bot_kick:{cheat:1,d:'remove todos os zumbis',f:()=>{ if(!needHost()) return; let n=0; for(const z of zombies.slice()){ if(!z.dead){ z.hp=0; killZombie(z,'body','nuke'); n++; } } cprint(`${n} zumbi(s) removido(s)`); }},
   bot_stop:{cheat:1,d:'1 congela os zumbis',f:a=>cvarToggle('botStop',a[0],'bot_stop')},
+  zombie_models:{cheat:1,d:'lista os visuais e tipos de zumbis disponíveis no Sandbox',f:()=>{ cprint('Visuais: soldado, oficial, civil, médico, trabalhador, paciente, enfermeira e açougueiro (variações aleatórias).'); cprint('Tipos: normal, brute, runner, crawler e boss.'); cprint('Use: bot_add_front 1 <tipo> ou bot_add 1 <tipo>.'); }},
   mp_round:{cheat:1,d:'pula para a rodada N',f:a=>{ if(!needGame()||!needHost()) return; const r=clamp(num(a[0],G.round+1)|0,1,200); for(const z of zombies.slice()) removeZombie(z); for(const w of windows) w.occupant=null; startRound(r); cprint(`Rodada ${r}`); }},
   mp_restartgame:{d:'recomeça a partida',f:()=>{ if(!needGame()||!needHost()) return; closeConsole(); startGame(); }},
-  map:{d:'map bunker | map hosp | map farm (troca de mapa e recomeça)',f:a=>{ const k=a[0]==='hospital'||a[0]==='hospicio'?'hosp':a[0]==='fazenda'||a[0]==='mansao'?'farm':a[0]; if(!MAPS[k]){ cprint('Mapas: bunker, hosp, farm','err'); return; } if(!needHost()) return; setMap(k); if(inGame()||G.state==='over'){ closeConsole(); startGame(); } else { const m=MAPS[k].menu; P.pos.set(m.x,0,m.z); } cprint(`Mapa: ${MAPS[k].name}`); }},
-  cash:{cheat:1,d:'cash N define seus pontos (mp_startmoney também)',f:a=>{ if(!needGame()) return; G.points=Math.max(0,num(a[0],50000)|0); $('#ptsv').textContent=G.points; cprint(`Pontos: ${G.points}`); }},
-  mp_startmoney:{cheat:1,d:'igual a cash',f:a=>CMDS.cash.f(a)},
+  map:{d:'map bunker | map hosp | map farm (troca de mapa e recomeça)',f:a=>{ const k=a[0]==='hospital'||a[0]==='hospicio'?'hosp':a[0]==='fazenda'||a[0]==='mansao'?'farm':a[0]; if(!['bunker','hosp','farm'].includes(k)){ cprint('Mapas normais: bunker, hosp, farm. Use sandbox 7824 para a área de testes.','err'); return; } if(!needHost()) return; setMap(k); if(inGame()||G.state==='over'){ closeConsole(); startGame(); } else { const m=MAPS[k].menu; P.pos.set(m.x,0,m.z); } cprint(`Mapa: ${MAPS[k].name}`); }},
+  sandbox:{d:'sandbox 7824 entra na área privada de testes; sandbox exit volta ao bunker',f:a=>{ if((a[0]||'').toLowerCase()==='exit'){ if(CUR!=='sandbox'){ cprint('Você não está no Sandbox.'); return; } if(!needHost()) return; setMap('bunker'); closeConsole(); startGame(); cprint('Voltando ao Bunker dos Mortos.'); return; } if(a[0]!=='7824'){ cprint('Senha incorreta. Use: sandbox 7824','err'); return; } if(NET.mode){ cprint('O Sandbox só pode ser aberto em uma partida solo. Saia da sala online primeiro.','err'); return; } if(!needHost()) return; CHEAT.on=true; hudCheat(); setMap('sandbox'); G.resume=null; PROG.run=null; saveProg(); closeConsole(); startGame(); banner('SANDBOX LIBERADO','Área de testes · todos os equipamentos disponíveis','gold'); }},
+  points:{cheat:1,d:'points N define pontos; points +N soma; points -N subtrai; sem valor consulta',f:a=>{ if(!needGame()) return; if(a[0]==null){ cprint(`Pontos da rodada: ${G.points}`); return; } const raw=String(a[0]), v=num(raw,0)|0; if(raw[0]==='+') G.points=Math.max(0,G.points+Math.abs(v)); else if(raw[0]==='-') G.points=Math.max(0,G.points-Math.abs(v)); else G.points=Math.max(0,v); $('#ptsv').textContent=G.points; cprint(`Pontos da rodada: ${G.points}`); }},
+  cash:{cheat:1,d:'atalho compatível: igual a points',f:a=>CMDS.points.f(a)},
+  mp_startmoney:{cheat:1,d:'atalho compatível: igual a points',f:a=>CMDS.points.f(a)},
   drax:{cheat:1,d:'drax N soma drax para testar o Arsenal',f:a=>{ const n=num(a[0],1000)|0; PROG.drax=Math.max(0,PROG.drax+n); saveProg(); cprint(`Drax: ${PROG.drax}`); }},
   knife:{cheat:1,d:'knife <tipo> [acabamento] [raro] cria e equipa uma faca',f:a=>{ const t=(a[0]||'').toLowerCase(); if(!KTYPES[t]){ cprint(`Tipos: ${KT_KEYS.join(', ')}`,'err'); return; } let s=(a[1]||'').toLowerCase(); if(s&&!SKINS[s]){ cprint(`Acabamentos: ${Object.keys(SKINS).join(', ')}`,'err'); return; } const r=s?Math.max(0,SKINS[s].r):4; const it=rollItem(r,null,t); if(s) it.s=s; if(a[2]==='raro'||a[2]==='1') it.rp=true; PROG.items.push(it); PROG.eq=it.uid; saveProg(); recomputeMods(); setKnifeModel(); hudAmmo(); cprint(`Equipada: ${itemName(it)} (${itemRar(it).name})${it.pas.length?' · '+it.pas.map(fmtPas).join(' · '):''}`); }},
   card:{cheat:1,d:'card <id> pega uma carta · card list mostra os ids',f:a=>{ if(a[0]==='list'||!a[0]){ cprint(CARDS.map(c=>`${c.id}${c.pact?'(pacto)':''}`).join(', ')); return; } if(!needGame()) return; const c=CARD_BY[a[0]]; if(!c){ cprint('Carta desconhecida. Use card list.','err'); return; } const l=addCard(c.id); recomputeMods(); hudCards(); cprint(`Carta: ${c.name}${c.lv?' '+ROM[l]:''}`); }},

@@ -1712,7 +1712,7 @@ function buildWorld(){
   ROOT=MAPG.hosp; BATCH=new Batch(); buildHospital(); reuseMapProps('hosp'); BATCH.flush(MAPG.hosp);
   ROOT=MAPG.farm; BATCH=new Batch(); buildFarm(); BATCH.flush(MAPG.farm);
   ROOT=MAPG.sandbox; buildSandbox();
-  buildWindows(); buildDoors(); buildWallBuys(); buildPerks(); buildBox(); buildAfiador(); buildLever(); buildStations(); buildLetters(); buildTeleporters(); buildMapObjectives();
+  buildWindows(); buildDoors(); buildWallBuys(); buildPerks(); buildBox(); buildAfiador(); buildLever(); buildStations(); buildLetters(); buildTeleporters(); buildSandboxTeleporters(); buildMapObjectives();
   decorWalls('bunker'); decorWalls('hosp'); ROOT=MAPG.farm; farmDecor();
   buildStaticLighting();
   setMap('bunker');
@@ -3721,7 +3721,7 @@ function buildWallBuys(){
     const fx=cx(x)+nx*S/2, fz=cx(z)+nz*S/2; const fb=floorAt(fx+nx*0.6,fz+nz*0.6);
     const isN=d.id==='nades'; const W=isN?null:WEAPONS[d.id];
     const cost=isN?250:(W.cost||1000);
-    const t=isN?nadeChalkTex():chalkTex(W.sil,W.name,W.cost);
+    const t=isN?nadeChalkTex():chalkTex(W.sil,W.name,cost);
     const pl=new THREE.Mesh(new THREE.PlaneGeometry(1.9,0.95),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,color:0xb8b4a8}));
     pl.position.set(fx+nx*0.012,1.55+fb,fz+nz*0.012); pl.rotation.y=Math.atan2(nx,nz); ROOT.add(pl);
     const wb={id:d.id,fx,fz,nx,nz,cost,bought:false,model:null};
@@ -7061,11 +7061,37 @@ function buildTeleporters(){
       for(let j=0;j<6;j++){ const t=new THREE.Mesh(new THREE.TorusGeometry(0.11,0.025,5,10),new THREE.MeshPhongMaterial({color:0x8a5a2a,shininess:60,specular:0x664422})); t.rotation.x=Math.PI/2; t.position.y=0.8+j*0.2; c.add(t); }
       const tip=new THREE.Mesh(new THREE.SphereGeometry(0.12,10,8),new THREE.MeshBasicMaterial({color:0x223344})); tip.position.y=2.3; c.add(tip); coils.push({c,tip,p:new THREE.Vector3(px+Math.cos(a)*0.95,y+2.3,pz+Math.sin(a)*0.95)}); }
     const glowM=new THREE.SpriteMaterial({map:glowTex,color:0x7ac8ff,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,opacity:0}); const gl=new THREE.Sprite(glowM); gl.scale.set(2.6,2.6,1); gl.position.y=0.6; g.add(gl);
-    const pad={i,x:px,z:pz,y,plate,coils,glowM}; TELE.pads.push(pad);
+    const pad={i,x:px,z:pz,y,plate,coils,glowM,map:'farm',pairIndex:1-i}; TELE.pads.push(pad);
     addPropBox(px+Math.cos(0)*0.95,pz,0.12,0.12); addPropBox(px+Math.cos(2.094)*0.95,pz+Math.sin(2.094)*0.95,0.12,0.12); addPropBox(px+Math.cos(4.19)*0.95,pz+Math.sin(4.19)*0.95,0.12,0.12);
     interacts.push({x:px,z:pz,r:1.3,
       text:()=>{ if(!G.power) return 'Teleporte sem energia'; if(TELE.cd>0) return `Teleporte recarregando… ${Math.ceil(TELE.cd)} s`; return `${PRESS} para se teletransportar ${i===0?'para a mansão':'para o celeiro'} [${price(TELE_COST)}]`; },
       use:()=>{ if(!G.power||TELE.cd>0){ Snd.deny(); return; } if(!spend(TELE_COST)) return; teleport(pad,TELE.pads[1-i]); }});
+  });
+}
+function buildSandboxTeleporters(){
+  const spots=[[9,145],[40,145]];
+  spots.forEach(([x,z],i)=>{
+    const px=cx(x), pz=cx(z), y=floorAt(px,pz); ROOT=MAPG.sandbox;
+    const g=new THREE.Group(); g.position.set(px,y,pz); ROOT.add(g);
+    const base=new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.1,0.18,24),M.iron); base.position.y=0.09; g.add(base);
+    const plate=new THREE.Mesh(new THREE.CylinderGeometry(0.82,0.82,0.02,24),new THREE.MeshPhongMaterial({color:0x223040,emissive:0x000000,shininess:60})); plate.position.y=0.19; g.add(plate);
+    const coils=[];
+    for(let k=0;k<3;k++){
+      const a=k/3*Math.PI*2, c=new THREE.Group(); c.position.set(Math.cos(a)*0.95,0,Math.sin(a)*0.95); g.add(c);
+      c.add(new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,2.2,8),M.iron)); c.children[0].position.y=1.1;
+      for(let j=0;j<6;j++){ const t=new THREE.Mesh(new THREE.TorusGeometry(0.11,0.025,5,10),new THREE.MeshPhongMaterial({color:0x8a5a2a,shininess:60,specular:0x664422})); t.rotation.x=Math.PI/2; t.position.y=0.8+j*0.2; c.add(t); }
+      const tip=new THREE.Mesh(new THREE.SphereGeometry(0.12,10,8),new THREE.MeshBasicMaterial({color:0x223344})); tip.position.y=2.3; c.add(tip);
+      coils.push({c,tip,p:new THREE.Vector3(px+Math.cos(a)*0.95,y+2.3,pz+Math.sin(a)*0.95)});
+    }
+    const glowM=new THREE.SpriteMaterial({map:glowTex,color:0x7ac8ff,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,opacity:0});
+    const gl=new THREE.Sprite(glowM); gl.scale.set(2.6,2.6,1); gl.position.y=0.6; g.add(gl);
+    const pad={i:i+2,x:px,z:pz,y,plate,coils,glowM,map:'sandbox',pairIndex:i===0?3:2};
+    TELE.pads.push(pad);
+    for(const a of [0,2.094,4.19]) addPropBox(px+Math.cos(a)*0.95,pz+Math.sin(a)*0.95,0.12,0.12);
+    interacts.push({x:px,z:pz,r:1.3,
+      text:()=>{ if(!G.power) return 'Teleporte sem energia'; if(TELE.cd>0) return `Teleporte recarregando… ${Math.ceil(TELE.cd)} s`; return `${PRESS} para testar o teleporte [${price(TELE_COST)}]`; },
+      use:()=>{ if(!G.power||TELE.cd>0){ Snd.deny(); return; } if(!spend(TELE_COST)) return; teleport(pad,TELE.pads[pad.pairIndex]); }
+    });
   });
 }
 function teleport(from,to){
@@ -7073,12 +7099,11 @@ function teleport(from,to){
   for(const c of from.coils) arcFx(c.p,new THREE.Vector3(from.x,from.y+1,from.z));
   P.pos.set(to.x+rand(-.3,.3),0,to.z+rand(-.3,.3)+1.3); P.vy=0; P.y=0; resetMotion(); flowDirty=true;
   for(const c of to.coils) arcFx(c.p,new THREE.Vector3(to.x,to.y+1,to.z)); emit('elec',to.x,to.y+1,to.z,24,4,0.4,1);
-  banner(to.i===0?'Celeiro':'Ala de cima','');
+  banner(to.map==='sandbox'?(to.i===2?'Plataforma oeste':'Plataforma leste'):(to.i===0?'Celeiro':'Ala de cima'),'');
 }
 function updateTeleporters(dt){
   if(TELE.cd>0) TELE.cd=Math.max(0,TELE.cd-dt); if(TELE.fx>0) TELE.fx=Math.max(0,TELE.fx-dt*1.5);
-  if(CUR!=='farm') return;
-  for(const p of TELE.pads){ const ready=G.power&&TELE.cd<=0; p.glowM.opacity=G.power?(ready?0.35+Math.sin(G.t*4)*0.12:0.08)+TELE.fx*0.6:0; p.plate.material.emissive.setHex(ready?0x0a2a44:0x000000);
+  for(const p of TELE.pads){ if(p.map!==CUR) continue; const ready=G.power&&TELE.cd<=0; p.glowM.opacity=G.power?(ready?0.35+Math.sin(G.t*4)*0.12:0.08)+TELE.fx*0.6:0; p.plate.material.emissive.setHex(ready?0x0a2a44:0x000000);
     for(const c of p.coils) c.tip.material.color.setHex(ready?(Math.random()<0.5?0x9ad8ff:0x4a8aff):G.power?0x2a3a4a:0x111418);
     if(ready&&Math.random()<dt*2.5){ const a=pick(p.coils), b=pick(p.coils); if(a!==b) arcFx(a.p,b.p); } }
 }

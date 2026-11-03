@@ -816,6 +816,7 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
 <div id="err" hidden><p id="errmsg"></p></div>
 
 <script src="three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 (function(){
 'use strict';
@@ -4427,6 +4428,109 @@ let gunModel=null;
 const handR=makeHand(false), handL=makeHand(true);
 const gunHolder=new THREE.Group(); vmRoot.add(gunHolder);
 gunHolder.add(handR,handL);
+
+/* ---- rigged first-person hands ----
+   Imported GLB contains both hands/forearms and authored animation clips.
+   Procedural hands remain as fallback if the asset or loader fails. */
+let riggedHands=null, handMixer=null, handActions={}, activeHandAction=null;
+let handIdleClip=null;
+let rigHandBones={}, rigHandRest={}, rigFingerPoseKey='';
+const RIG_HAND_WEAPON_POSES={
+  pistol:{right:{index:0.12,middle:0.78,ring:0.82,pinky:0.86,thumb:0.42},left:{index:0.82,middle:0.86,ring:0.88,pinky:0.9,thumb:0.48}},
+  rifle:{right:{index:0.08,middle:0.78,ring:0.82,pinky:0.86,thumb:0.38},left:{index:0.72,middle:0.82,ring:0.84,pinky:0.86,thumb:0.42}},
+  smg:{right:{index:0.08,middle:0.8,ring:0.84,pinky:0.87,thumb:0.4},left:{index:0.76,middle:0.84,ring:0.86,pinky:0.88,thumb:0.42}},
+  shotgun:{right:{index:0.1,middle:0.8,ring:0.84,pinky:0.88,thumb:0.4},left:{index:0.8,middle:0.86,ring:0.88,pinky:0.9,thumb:0.44}},
+  heavy:{right:{index:0.1,middle:0.8,ring:0.84,pinky:0.88,thumb:0.4},left:{index:0.84,middle:0.9,ring:0.92,pinky:0.94,thumb:0.46}}
+};
+const RIG_FINGER_NAMES=['index','middle','ring','pinky'];
+function cacheRigHandBones(rig){
+  rigHandBones={}; rigHandRest={};
+  const wanted=['shoulder.L','shoulder.R','hand.L','hand.R'];
+  rig.traverse(o=>{ if(o.isBone&&(wanted.includes(o.name)||/^(finger_(index|middle|ring|pinky)|thumb)\\.0[1-3]\\.[LR]$/.test(o.name))) {
+    rigHandBones[o.name]=o; rigHandRest[o.name]={position:o.position.clone(),quaternion:o.quaternion.clone()};
+  }});
+}
+function applyRigFingerPose(){
+  if(!riggedHands||!Object.keys(rigHandBones).length) return;
+  const s=curSlot(), id=s?.id||'m1911';
+  const rifle=['kar98k','garand','stg44','bar','mg42','ptrs','ray'].includes(id);
+  const smg=['thompson','mp40','ppsh'].includes(id);
+  const shotgun=['db','trench'].includes(id);
+  const heavy=['mg42','ptrs'].includes(id);
+  const family=['m1911','python'].includes(id)?'pistol':heavy?'heavy':shotgun?'shotgun':smg?'smg':rifle?'rifle':'rifle';
+  const cfg=RIG_HAND_WEAPON_POSES[family];
+  for(const side of ['R','L']){
+    const hand=cfg[side==='R'?'right':'left'];
+    for(const finger of RIG_FINGER_NAMES){
+      const amount=hand[finger], base=rigHandRest['finger_'+finger+'.01.'+side];
+      for(let joint=1;joint<=3;joint++){
+        const name='finger_'+finger+'.0'+joint+'.'+side, bone=rigHandBones[name], rest=rigHandRest[name];
+        if(!bone||!rest) continue;
+        const weight=joint===1?1:joint===2?0.82:0.62;
+        const curl=amount*weight*(finger==='index'&&side==='R'?0.62:1);
+        bone.quaternion.copy(rest.quaternion).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(curl*0.92,0,0,'XYZ')));
+      }
+    }
+    for(let joint=1;joint<=3;joint++){
+      const name='thumb.0'+joint+'.'+side, bone=rigHandBones[name], rest=rigHandRest[name];
+      if(!bone||!rest) continue;
+      const amount=hand.thumb, weight=joint===1?1:joint===2?0.75:0.5;
+      bone.quaternion.copy(rest.quaternion).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(amount*0.65,0,side==='R'?-amount*0.16:amount*0.16,'XYZ')));
+    }
+  }
+}
+function playRiggedHandAnimation(name,oneShot=true){
+  if(!handMixer||!handActions[name]) return;
+  const next=handActions[name];
+  if(activeHandAction&&activeHandAction!==next) activeHandAction.fadeOut(0.07);
+  next.reset(); next.enabled=true; next.setEffectiveWeight(1); next.setEffectiveTimeScale(1);
+  next.setLoop(oneShot?THREE.LoopOnce:THREE.LoopRepeat,oneShot?1:Infinity);
+  next.clampWhenFinished=oneShot; next.fadeIn(0.07).play(); activeHandAction=next;
+}
+function loadRiggedHands(){
+  return new Promise(resolve=>{
+    if(!THREE.GLTFLoader){ console.warn('[Bunker] GLTFLoader indisponível; mantendo mãos procedurais.'); resolve(false); return; }
+    const loader=new THREE.GLTFLoader();
+    loader.load('./Rigged%20Hand.glb',gltf=>{
+      try{
+        const rig=gltf.scene; rig.name='BunkerRiggedFirstPersonHands';
+        cacheRigHandBones(rig);
+        rig.traverse(o=>{
+          if(o.isSkinnedMesh){
+            o.frustumCulled=false; o.castShadow=false; o.receiveShadow=false;
+            const mats=Array.isArray(o.material)?o.material:[o.material];
+            for(const m of mats) if(m){ m.side=THREE.DoubleSide; m.needsUpdate=true; }
+          }
+        });
+        rig.updateMatrixWorld(true);
+        const bounds=new THREE.Box3().setFromObject(rig);
+        const size=bounds.getSize(new THREE.Vector3()), center=bounds.getCenter(new THREE.Vector3());
+        if(!isFinite(size.x)||size.x<0.001||size.y<0.001) throw new Error('malha das mãos sem dimensões válidas');
+        const fit=0.76/Math.max(size.x,size.y*1.15);
+        rig.scale.setScalar(fit);
+        rig.position.set(-center.x*fit,-center.y*fit-0.19,-center.z*fit-0.34);
+        gunHolder.add(rig); handR.visible=false; handL.visible=false; riggedHands=rig;
+        handMixer=new THREE.AnimationMixer(rig);
+        for(const clip of gltf.animations||[]) handActions[clip.name]=handMixer.clipAction(clip);
+        if(handActions['00']){ handIdleClip='00'; playRiggedHandAnimation('00',false); }
+        handMixer.addEventListener('finished',()=>{ if(handIdleClip) playRiggedHandAnimation(handIdleClip,false); });
+        const texLoader=new THREE.TextureLoader();
+        texLoader.load('./HAND_C.jpg',map=>{
+          map.flipY=false; map.encoding=THREE.sRGBEncoding;
+          rig.traverse(o=>{ if(o.isSkinnedMesh){ const list=Array.isArray(o.material)?o.material:[o.material]; list.forEach(m=>{ if(m){m.map=map;m.needsUpdate=true;} }); } });
+        },undefined,()=>console.info('[Bunker] HAND_C.jpg não encontrado; mantendo material do GLB.'));
+        // O arquivo foi enviado com um espaço no nome: HAND_N .jpg
+        texLoader.load('./HAND_N%20.jpg',normal=>{
+          normal.flipY=false;
+          rig.traverse(o=>{ if(o.isSkinnedMesh){ const list=Array.isArray(o.material)?o.material:[o.material]; list.forEach(m=>{ if(m){m.normalMap=normal;m.needsUpdate=true;} }); } });
+        },undefined,()=>console.info('[Bunker] HAND_N .jpg não encontrado; mantendo normal map do GLB.'));
+        console.info('[Bunker] Mãos rigadas carregadas.',{clips:Object.keys(handActions)});
+        resolve(true);
+      }catch(err){ console.error('[Bunker] Falha ao preparar mãos rigadas:',err); resolve(false); }
+    },undefined,err=>{ console.warn('[Bunker] Rigged Hand.glb não carregou; mantendo mãos procedurais.',err); resolve(false); });
+  });
+}
+
 /* the viewmodel knife: held in slot 3 or used for a quick stab; its blade is the equipped skin */
 const knife=new THREE.Group(); knife.visible=false; vmRoot.add(knife);
 const knifeHand=makeHand(false); knifeHand.scale.setScalar(0.95); knife.add(knifeHand);
@@ -5225,7 +5329,7 @@ const KDRAW={karambit:1.05,butterfly:1.15,flip:0.85};
 function drawKnife(){ if(Wp.knifeOut||Wp.drinkT>0||Wp.upT>0||P.down) return; const it=equippedItem(); Wp.knifeOut=true; Wp.reloading=false; Wp.kAct='draw'; Wp.kT=0; Wp.kDur=KDRAW[it.t]||0.8; Wp.knifeT=0; Snd.kdraw(it.t); hudAmmo(); }
 function cycleWeapon(dir){ const opts=Wp.inv.map((s,i)=>i).concat(['k']); let cur=Wp.knifeOut?opts.length-1:Wp.cur; cur=(cur+dir+opts.length)%opts.length; const t=opts[cur]; if(t==='k') drawKnife(); else switchTo(t); }
 function reloadTime(st){ return st.reload*(G.perks.speed?0.5:1)*abReload(); }
-function startReload(){ if(Wp.knifeOut) return; const s=curSlot(); const st=wstat(s); if(st.sprite){ if(s.mag<st.mag&&s.reserve>0&&!busy()) doomReload(s); return; } if(Wp.reloading||s.mag>=st.mag||s.reserve<=0||busy()) return; Wp.reloading=true; Wp.reloadT=reloadTime(st); Snd.reload(Wp.reloadT,st.snd); }
+function startReload(){ if(Wp.knifeOut) return; const s=curSlot(); const st=wstat(s); if(st.sprite){ if(s.mag<st.mag&&s.reserve>0&&!busy()) doomReload(s); return; } if(Wp.reloading||s.mag>=st.mag||s.reserve<=0||busy()) return; Wp.reloading=true; Wp.reloadT=reloadTime(st); playRiggedHandAnimation('Hand_roll_2',true); Snd.reload(Wp.reloadT,st.snd); }
 function startDrink(p){ Wp.drinkT=1.7; Wp.drinkPerk=p; Wp.reloading=false; Wp.kAct=null; bottle.material.color.setHex(p.color); Snd.gulp(); }
 const _o=new THREE.Vector3(), _d=new THREE.Vector3(), _r=new THREE.Vector3(), _u=new THREE.Vector3(), _tmp=new THREE.Vector3(), _mz=new THREE.Vector3();
 const raycaster=new THREE.Raycaster();
@@ -5261,7 +5365,7 @@ function fire(){
   if(d.sprite){ if(CHEAT.ammo!==1) s.mag=0; doomFire(s); }
   Snd.shot(d.snd,tier); if(!d.proj&&!d.sprite) Snd.casing(isOutside(P.pos.x,P.pos.z)); if(d.ping&&s.mag===0) setTimeout(()=>Snd.ping(),60);
   if(s.id==='kar98k'&&s.mag>0) setTimeout(()=>{ if(curSlot()===s&&!Wp.knifeOut) Snd.bolt(); },380); if(s.id==='trench'&&s.mag>0) setTimeout(()=>{ if(curSlot()===s&&!Wp.knifeOut) Snd.pump(); },300);
-  Wp.kick=1; Wp.flashT=0.05; worldFlash.intensity=d.proj?1.2:2.2; worldFlash.color.setHex(d.proj?(s.id==='ray'?0x6affc8:0xff7a30):0xffb060);
+  Wp.kick=1; playRiggedHandAnimation('Hand_roll_1',true); Wp.flashT=0.05; worldFlash.intensity=d.proj?1.2:2.2; worldFlash.color.setHex(d.proj?(s.id==='ray'?0x6affc8:0xff7a30):0xffb060);
   const cr=P.crouch;
   P.pitch=clamp(P.pitch+d.recoil*(1-P.ads*0.4)*(1-cr*0.5),-1.45,1.45); P.yaw+=rand(-1,1)*d.recoil*0.3*(1-cr*0.5);
   camera.updateMatrixWorld(); camera.getWorldDirection(_d); _o.copy(camera.position);
@@ -5467,6 +5571,8 @@ function vmLag(dt,dyaw,dpitch){ dt=Math.min(dt,0.05);
   vmRoot.rotation.set(LAG.p*k,LAG.y*k,LAG.y*0.25*k);
   vmRoot.position.x+=LAG.x*k; vmRoot.position.y+=LAG.h*k; vmRoot.position.z+=LAG.f*k; }
 function updateViewmodel(dt){
+  if(handMixer) handMixer.update(dt);
+  applyRigFingerPose();
   const s=curSlot(); if(!s||!gunModel) return;
   const dyaw=P.yaw-vmYaw, dpitch=P.pitch-vmPitch; vmYaw=P.yaw; vmPitch=P.pitch;
   vmLag(dt,dyaw,dpitch);
@@ -8378,7 +8484,7 @@ function frame(now){
 
 /* ================= BOOT ================= */
 const fontsReady=(document.fonts&&document.fonts.ready)?Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2000))]):Promise.resolve();
-Promise.all([fontsReady,PH.ready,loadGunPack()]).then(()=>{
+Promise.all([fontsReady,PH.ready,loadGunPack(),loadRiggedHands()]).then(()=>{
   try{ buildWorld(); }catch(e){ console.error(e); fail('Falha ao montar o mapa: '+e.message); return; }
   P.pos.set(MAPS[CUR].menu.x,0,MAPS[CUR].menu.z);
   resetGame();

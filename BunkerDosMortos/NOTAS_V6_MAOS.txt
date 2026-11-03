@@ -35,3 +35,19 @@ CONSOLE (abra o console, digite "help pg" ou "help vm"; * = precisa de sv_cheats
 - Para ver XP com cheats ligados: pg_cheatxp 1 e depois pg_fim durante a partida.
 - Mudanças de preço/força pelo console valem até recarregar a página; para fixar, copie para o código
   (vm_mao_print imprime a pegada pronta para colar em RIG_HANDS).
+
+MODO X1 (1 contra 1)
+- Arena X1: mapa pequeno e simétrico, base A (azul) e base B (vermelha), pilares, caixas e sacos de areia.
+- Online: escolha "Arena X1" no mapa da sala (ou no card em Jogar). O lobby mostra o código para o amigo.
+- No lobby o anfitrião define rodadas e liga/desliga habilidades (Z) e ultimate (X); cada um escolhe o personagem.
+- Cada rodada: 7 s de compra (congelado; B abre o menu, números escolhem) e depois combate (90 s).
+  A primeira morte decide a rodada; os dois voltam nas bases. Melhor de N.
+- Dinheiro estilo CS: começa com $800; vitória +$3.250 (+$300 pelo abate), derrota +$1.900, empate +$1.500.
+- Tiro na cabeça: 2,6× o dano; pernas 0,75×. Faca e habilidades de dano também acertam o adversário.
+- O servidor (server.js) precisa ser publicado de novo: ele passou a aceitar o mapa x1 e a volta ao lobby.
+- Console: help x1 (x1_status, x1_rodadas, x1_habilidades, x1_ultimate, x1_compra, x1_tempo, x1_inicial,
+  x1_dinheiro*, x1_preco, x1_dano, x1_proxima, x1_fim).
+
+ANIMAÇÕES EM 3ª PESSOA
+- Andar, correr, pular, agachar, olhar e mirar, iguais para todos os personagens.
+- Saias e a batina do Padre se deformam em volta das pernas: as pernas nunca atravessam o tecido.

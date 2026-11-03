@@ -13,7 +13,7 @@ const MAX_PAYLOAD = 16 * 1024;
 const rooms = new Map();
 const clients = new Map();
 const CODE_CHARS = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
-const MAPS = new Set(['bunker', 'hosp', 'farm']);
+const MAPS = new Set(['bunker', 'hosp', 'farm', 'x1']);
 const DIFFICULTIES = new Set(['normal', 'hard', 'nightmare']);
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -154,7 +154,7 @@ wss.on('connection', (ws) => {
     if (msg.type === 'createRoom') {
       if (roomOf(client)) { sendError(ws, reqId, 'Você já está em uma sala. Saia dela antes de criar outra.'); return; }
       const map = MAPS.has(msg.map) ? msg.map : 'bunker';
-      const maxPlayers = Math.max(2, Math.min(4, Math.round(Number(msg.maxPlayers) || 2)));
+      const maxPlayers = map === 'x1' ? 2 : Math.max(2, Math.min(4, Math.round(Number(msg.maxPlayers) || 2)));
       const difficulty = DIFFICULTIES.has(msg.difficulty) ? msg.difficulty : 'normal';
       let code;
       try { code = makeCode(); }
@@ -213,6 +213,15 @@ wss.on('connection', (ws) => {
       if (notReady.length) { sendError(ws, reqId, 'Ainda há jogadores que não estão prontos.'); return; }
       room.started = true;
       for (const p of room.players.values()) send(p.ws, { type: 'roomStarted', room: publicRoom(room) });
+      send(ws, { type: 'startAck', reqId });
+      broadcastRoom(room);
+      return;
+    }
+    if (msg.type === 'backToLobby') {
+      const room = roomOf(client);
+      if (!room || room.hostId !== client.id) { sendError(ws, reqId, 'Somente o anfitrião pode voltar ao lobby.'); return; }
+      room.started = false;
+      for (const p of room.players.values()) p.ready = p.id === room.hostId;
       send(ws, { type: 'startAck', reqId });
       broadcastRoom(room);
       return;

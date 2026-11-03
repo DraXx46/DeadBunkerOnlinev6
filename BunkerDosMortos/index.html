@@ -4434,6 +4434,51 @@ gunHolder.add(handR,handL);
    Procedural hands remain as fallback if the asset or loader fails. */
 let riggedHands=null, handMixer=null, handActions={}, activeHandAction=null;
 let handIdleClip=null;
+let rigHandBones={}, rigHandRest={}, rigFingerPoseKey='';
+const RIG_HAND_WEAPON_POSES={
+  pistol:{right:{index:0.12,middle:0.78,ring:0.82,pinky:0.86,thumb:0.42},left:{index:0.82,middle:0.86,ring:0.88,pinky:0.9,thumb:0.48}},
+  rifle:{right:{index:0.08,middle:0.78,ring:0.82,pinky:0.86,thumb:0.38},left:{index:0.72,middle:0.82,ring:0.84,pinky:0.86,thumb:0.42}},
+  smg:{right:{index:0.08,middle:0.8,ring:0.84,pinky:0.87,thumb:0.4},left:{index:0.76,middle:0.84,ring:0.86,pinky:0.88,thumb:0.42}},
+  shotgun:{right:{index:0.1,middle:0.8,ring:0.84,pinky:0.88,thumb:0.4},left:{index:0.8,middle:0.86,ring:0.88,pinky:0.9,thumb:0.44}},
+  heavy:{right:{index:0.1,middle:0.8,ring:0.84,pinky:0.88,thumb:0.4},left:{index:0.84,middle:0.9,ring:0.92,pinky:0.94,thumb:0.46}}
+};
+const RIG_FINGER_NAMES=['index','middle','ring','pinky'];
+function cacheRigHandBones(rig){
+  rigHandBones={}; rigHandRest={};
+  const wanted=['shoulder.L','shoulder.R','hand.L','hand.R'];
+  rig.traverse(o=>{ if(o.isBone&&(wanted.includes(o.name)||/^(finger_(index|middle|ring|pinky)|thumb)\\.0[1-3]\\.[LR]$/.test(o.name))) {
+    rigHandBones[o.name]=o; rigHandRest[o.name]={position:o.position.clone(),quaternion:o.quaternion.clone()};
+  }});
+}
+function applyRigFingerPose(){
+  if(!riggedHands||!Object.keys(rigHandBones).length) return;
+  const s=curSlot(), id=s?.id||'m1911';
+  const rifle=['kar98k','garand','stg44','bar','mg42','ptrs','ray'].includes(id);
+  const smg=['thompson','mp40','ppsh'].includes(id);
+  const shotgun=['db','trench'].includes(id);
+  const heavy=['mg42','ptrs'].includes(id);
+  const family=['m1911','python'].includes(id)?'pistol':heavy?'heavy':shotgun?'shotgun':smg?'smg':rifle?'rifle':'rifle';
+  const cfg=RIG_HAND_WEAPON_POSES[family];
+  for(const side of ['R','L']){
+    const hand=cfg[side==='R'?'right':'left'];
+    for(const finger of RIG_FINGER_NAMES){
+      const amount=hand[finger], base=rigHandRest['finger_'+finger+'.01.'+side];
+      for(let joint=1;joint<=3;joint++){
+        const name='finger_'+finger+'.0'+joint+'.'+side, bone=rigHandBones[name], rest=rigHandRest[name];
+        if(!bone||!rest) continue;
+        const weight=joint===1?1:joint===2?0.82:0.62;
+        const curl=amount*weight*(finger==='index'&&side==='R'?0.62:1);
+        bone.quaternion.copy(rest.quaternion).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(curl*0.92,0,0,'XYZ')));
+      }
+    }
+    for(let joint=1;joint<=3;joint++){
+      const name='thumb.0'+joint+'.'+side, bone=rigHandBones[name], rest=rigHandRest[name];
+      if(!bone||!rest) continue;
+      const amount=hand.thumb, weight=joint===1?1:joint===2?0.75:0.5;
+      bone.quaternion.copy(rest.quaternion).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(amount*0.65,0,side==='R'?-amount*0.16:amount*0.16,'XYZ')));
+    }
+  }
+}
 function playRiggedHandAnimation(name,oneShot=true){
   if(!handMixer||!handActions[name]) return;
   const next=handActions[name];
@@ -4449,6 +4494,7 @@ function loadRiggedHands(){
     loader.load('./Rigged%20Hand.glb',gltf=>{
       try{
         const rig=gltf.scene; rig.name='BunkerRiggedFirstPersonHands';
+        cacheRigHandBones(rig);
         rig.traverse(o=>{
           if(o.isSkinnedMesh){
             o.frustumCulled=false; o.castShadow=false; o.receiveShadow=false;
@@ -5526,6 +5572,7 @@ function vmLag(dt,dyaw,dpitch){ dt=Math.min(dt,0.05);
   vmRoot.position.x+=LAG.x*k; vmRoot.position.y+=LAG.h*k; vmRoot.position.z+=LAG.f*k; }
 function updateViewmodel(dt){
   if(handMixer) handMixer.update(dt);
+  applyRigFingerPose();
   const s=curSlot(); if(!s||!gunModel) return;
   const dyaw=P.yaw-vmYaw, dpitch=P.pitch-vmPitch; vmYaw=P.yaw; vmPitch=P.pitch;
   vmLag(dt,dyaw,dpitch);

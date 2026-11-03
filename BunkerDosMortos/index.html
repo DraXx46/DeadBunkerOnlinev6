@@ -4430,22 +4430,17 @@ const gunHolder=new THREE.Group(); vmRoot.add(gunHolder);
 gunHolder.add(handR,handL);
 
 /* ---- rigged first-person hands ----
-   The imported GLB contains both hands, forearms and three authored clips.
-   Procedural hands remain as a safe fallback if the asset or loader fails. */
+   Imported GLB contains both hands/forearms and authored animation clips.
+   Procedural hands remain as fallback if the asset or loader fails. */
 let riggedHands=null, handMixer=null, handActions={}, activeHandAction=null;
 let handIdleClip=null;
 function playRiggedHandAnimation(name,oneShot=true){
   if(!handMixer||!handActions[name]) return;
   const next=handActions[name];
   if(activeHandAction&&activeHandAction!==next) activeHandAction.fadeOut(0.07);
-  next.reset();
-  next.enabled=true;
-  next.setEffectiveWeight(1);
-  next.setEffectiveTimeScale(1);
+  next.reset(); next.enabled=true; next.setEffectiveWeight(1); next.setEffectiveTimeScale(1);
   next.setLoop(oneShot?THREE.LoopOnce:THREE.LoopRepeat,oneShot?1:Infinity);
-  next.clampWhenFinished=oneShot;
-  next.fadeIn(0.07).play();
-  activeHandAction=next;
+  next.clampWhenFinished=oneShot; next.fadeIn(0.07).play(); activeHandAction=next;
 }
 function loadRiggedHands(){
   return new Promise(resolve=>{
@@ -4453,52 +4448,43 @@ function loadRiggedHands(){
     const loader=new THREE.GLTFLoader();
     loader.load('./Rigged%20Hand.glb',gltf=>{
       try{
-        const rig=gltf.scene;
-        rig.name='BunkerRiggedFirstPersonHands';
+        const rig=gltf.scene; rig.name='BunkerRiggedFirstPersonHands';
         rig.traverse(o=>{
-          if(o.isSkinnedMesh){ o.frustumCulled=false; o.castShadow=false; o.receiveShadow=false;
+          if(o.isSkinnedMesh){
+            o.frustumCulled=false; o.castShadow=false; o.receiveShadow=false;
             const mats=Array.isArray(o.material)?o.material:[o.material];
             for(const m of mats) if(m){ m.side=THREE.DoubleSide; m.needsUpdate=true; }
           }
         });
         rig.updateMatrixWorld(true);
         const bounds=new THREE.Box3().setFromObject(rig);
-        const size=bounds.getSize(new THREE.Vector3());
-        const center=bounds.getCenter(new THREE.Vector3());
+        const size=bounds.getSize(new THREE.Vector3()), center=bounds.getCenter(new THREE.Vector3());
         if(!isFinite(size.x)||size.x<0.001||size.y<0.001) throw new Error('malha das mãos sem dimensões válidas');
-        // Fit the arm span to the existing weapon viewmodel width.
         const fit=0.76/Math.max(size.x,size.y*1.15);
         rig.scale.setScalar(fit);
         rig.position.set(-center.x*fit,-center.y*fit-0.19,-center.z*fit-0.34);
-        gunHolder.add(rig);
-        handR.visible=false; handL.visible=false;
-        riggedHands=rig;
+        gunHolder.add(rig); handR.visible=false; handL.visible=false; riggedHands=rig;
         handMixer=new THREE.AnimationMixer(rig);
-        for(const clip of gltf.animations||[]){
-          const action=handMixer.clipAction(clip);
-          handActions[clip.name]=action;
-        }
+        for(const clip of gltf.animations||[]) handActions[clip.name]=handMixer.clipAction(clip);
         if(handActions['00']){ handIdleClip='00'; playRiggedHandAnimation('00',false); }
-        handMixer.addEventListener('finished',()=>{
-          if(handIdleClip) playRiggedHandAnimation(handIdleClip,false);
-        });
-        // Optional external hand maps from the earlier texture upload. If absent,
-        // the material embedded in the GLB remains active without breaking startup.
+        handMixer.addEventListener('finished',()=>{ if(handIdleClip) playRiggedHandAnimation(handIdleClip,false); });
         const texLoader=new THREE.TextureLoader();
         texLoader.load('./HAND_C.jpg',map=>{
           map.flipY=false; map.encoding=THREE.sRGBEncoding;
           rig.traverse(o=>{ if(o.isSkinnedMesh){ const list=Array.isArray(o.material)?o.material:[o.material]; list.forEach(m=>{ if(m){m.map=map;m.needsUpdate=true;} }); } });
-        },undefined,()=>console.info('[Bunker] HAND_C.jpg não encontrado; usando material do GLB.'));
-        texLoader.load('./HAND_N.jpg',normal=>{
+        },undefined,()=>console.info('[Bunker] HAND_C.jpg não encontrado; mantendo material do GLB.'));
+        // O arquivo foi enviado com um espaço no nome: HAND_N .jpg
+        texLoader.load('./HAND_N%20.jpg',normal=>{
           normal.flipY=false;
           rig.traverse(o=>{ if(o.isSkinnedMesh){ const list=Array.isArray(o.material)?o.material:[o.material]; list.forEach(m=>{ if(m){m.normalMap=normal;m.needsUpdate=true;} }); } });
-        },undefined,()=>console.info('[Bunker] HAND_N.jpg não encontrado; usando normal map do GLB.'));
-        console.info('[Bunker] Mãos rigadas carregadas.',{bones:rig.getObjectByProperty('type','SkinnedMesh')?'skinned':'scene',clips:Object.keys(handActions)});
+        },undefined,()=>console.info('[Bunker] HAND_N .jpg não encontrado; mantendo normal map do GLB.'));
+        console.info('[Bunker] Mãos rigadas carregadas.',{clips:Object.keys(handActions)});
         resolve(true);
       }catch(err){ console.error('[Bunker] Falha ao preparar mãos rigadas:',err); resolve(false); }
     },undefined,err=>{ console.warn('[Bunker] Rigged Hand.glb não carregou; mantendo mãos procedurais.',err); resolve(false); });
   });
 }
+
 /* the viewmodel knife: held in slot 3 or used for a quick stab; its blade is the equipped skin */
 const knife=new THREE.Group(); knife.visible=false; vmRoot.add(knife);
 const knifeHand=makeHand(false); knifeHand.scale.setScalar(0.95); knife.add(knifeHand);

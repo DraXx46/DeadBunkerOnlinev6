@@ -1,0 +1,37 @@
+BUNKER DOS MORTOS v6 — MÃOS, MIRA E PROGRESSÃO
+
+MÃOS (Rigged Hand.glb)
+- O GLB é usado só como malha + esqueleto; as animações embutidas não são tocadas.
+- IK de 2 ossos leva cada palma até a pegada da arma; os dedos fecham em volta dela.
+- Pegada de cada arma em RIG_HANDS (index.html), ajustada dedo a dedo para não atravessar a arma
+  nem flutuar e para não tapar a mira no ADS. k = fechamento de [indicador, médio, anelar, mindinho, polegar].
+- Pistolas (Glock e Python) são seguradas com uma mão só (L:null).
+- Se o GLB falhar, voltam as luvas procedurais.
+
+MIRA (ADS) E RASTRO
+- A linha de mira de cada arma (alça -> massa) é lida da malha; no ADS o olho fica sobre ela e a massa
+  cai no centro da tela. A distância do olho segue o Viewmodel Workshop.
+- O rastro das balas, o clarão e a fumaça saem da boca real do cano de cada arma (no quadril e mirando).
+
+PROGRESSÃO
+- Personagens pagos com drax: Recruta grátis, Iara 3.000, Helena 4.000, V.I.K.T.O.R 5.000,
+  Moreira 6.000, Padre Tomás 8.000 (o mais forte).
+- Habilidade (Z) vem bloqueada: desbloqueia com drax e sobe do Nv 0 ao Nv 4 com XP de habilidade
+  (ganho usando Z e X nas partidas). Nv 0 quase não muda nada; Nv 4 é muito forte.
+- Ultimate (X) libera e sobe do Nv 1 ao Nv 3 com o mesmo XP de habilidade.
+- Com Z no Nv 4 e X no Nv 3, a Maestria (passiva final) fica à venda. Ex.: Padre = Fogo Purificador
+  (o fogo pula de zumbi em zumbi e toma quase o mapa).
+- Nível do personagem (1–30) e da conta (1–100) sobem com o XP de cada partida.
+  Personagem: drax a cada nível. Conta: a cada 10 níveis, drax e XP de conta.
+- Perfil com o nível da conta no menu principal. Tela animada de XP/drax no fim de cada partida.
+- Saves antigos mantêm o personagem que estava em uso.
+
+CONSOLE (abra o console, digite "help pg" ou "help vm"; * = precisa de sv_cheats 1)
+- Progressão: pg_status, pg_comprar, pg_bloquear, pg_desbloquear, pg_hab, pg_ult, pg_xp, pg_nivel,
+  pg_maestria, pg_tudo, pg_reset, pg_conta, pg_conta_nivel, pg_preco, pg_custo_hab, pg_custo_maestria,
+  pg_xp_uso, pg_xp_abate, pg_limiar_hab, pg_limiar_ult, pg_forca, pg_ab, pg_cheatxp, pg_fim, pg_demo
+- Mãos e mira: vm_mao, vm_mao_mover, vm_dedos, vm_pegada, vm_uma_mao, vm_mao_escala, vm_mao_print,
+  vm_maos, vm_ads_auto, vm_ads_olho
+- Para ver XP com cheats ligados: pg_cheatxp 1 e depois pg_fim durante a partida.
+- Mudanças de preço/força pelo console valem até recarregar a página; para fixar, copie para o código
+  (vm_mao_print imprime a pegada pronta para colar em RIG_HANDS).

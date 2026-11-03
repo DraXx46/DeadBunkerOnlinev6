@@ -13,6 +13,48 @@
   --f-type:"Special Elite", "Courier New", Courier, monospace;
   color-scheme:dark;
 }
+
+/* ---------- progressão: perfil, resumo de fim de partida ---------- */
+.pgprof{display:flex;flex-direction:column;gap:6px;max-width:330px;padding:10px 12px;border:1px solid var(--line);background:rgba(0,0,0,.4)}
+.pgp-top{display:flex;align-items:center;gap:10px}
+.pgp-lv{font-family:var(--f-display);font-size:26px;min-width:44px;height:44px;display:grid;place-items:center;color:#1a1408;background:linear-gradient(160deg,#ffe089,#c79a3a);box-shadow:2px 2px 0 #000}
+.pgp-who{display:flex;flex-direction:column;min-width:0}.pgp-who b{font-weight:400;color:var(--chalk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pgp-who small,.pgp-next{color:var(--muted);font-size:12px}
+.pgbar{height:8px;background:rgba(255,255,255,.08);border:1px solid var(--line);overflow:hidden;position:relative}
+.pgbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blood),var(--blood-hi));box-shadow:0 0 10px rgba(224,48,31,.6)}
+.xpsum{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border:1px solid var(--line);background:rgba(0,0,0,.45);position:relative;cursor:pointer;min-width:0}
+.pgrow{position:relative;display:flex;flex-direction:column;gap:5px}
+.pgrow-h{display:flex;align-items:baseline;gap:10px;min-width:0}
+.pgname{color:var(--chalk);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pglv{font-family:var(--f-display);font-size:18px;color:var(--brass);font-variant-numeric:tabular-nums}
+.pggain{font-variant-numeric:tabular-nums;color:#9be08a;min-width:86px;text-align:right}
+.pgrow .pgbar{height:10px}
+.pgrow:nth-child(1) .pgbar i{background:linear-gradient(90deg,#8a6a1e,#ffd24a);box-shadow:0 0 10px rgba(255,210,74,.55)}
+.pgrow:nth-child(3) .pgbar i{background:linear-gradient(90deg,#1a6a7a,#5af0ff);box-shadow:0 0 10px rgba(90,240,255,.5)}
+.pgrow.up .pglv{animation:pgpop .6s cubic-bezier(.2,1.6,.4,1)}
+.pgrow.up .pgbar{animation:pgflash .6s ease-out}
+@keyframes pgpop{0%{transform:scale(1)}35%{transform:scale(1.6);color:#fff;text-shadow:0 0 14px #ffd24a}100%{transform:scale(1)}}
+@keyframes pgflash{0%{box-shadow:0 0 0 rgba(255,255,255,0)}30%{box-shadow:0 0 18px rgba(255,240,200,.9);border-color:#fff}100%{box-shadow:0 0 0 rgba(255,255,255,0)}}
+.pgspark{position:absolute;right:30px;top:6px;width:6px;height:6px;border-radius:50%;pointer-events:none;animation:pgspark .9s ease-out forwards}
+@keyframes pgspark{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+.pgdrax{display:flex;justify-content:space-between;align-items:baseline;border-top:1px dashed var(--line);padding-top:8px}
+.pgdrax b{font-family:var(--f-display);font-size:24px;font-weight:400;color:#d6b8ff;font-variant-numeric:tabular-nums}
+.pgtoast{position:absolute;left:50%;top:-14px;transform:translateX(-50%);white-space:nowrap;padding:6px 12px;background:#1a1410;border:1px solid var(--brass);color:var(--chalk);font-size:14px;animation:pgtoast 2.6s ease forwards;pointer-events:none;z-index:2}
+.pgtoast.gold{background:linear-gradient(180deg,#3a2c0c,#1a1206);color:#ffe089;box-shadow:0 0 18px rgba(255,210,74,.35)}
+@keyframes pgtoast{0%{opacity:0;transform:translate(-50%,10px)}12%{opacity:1;transform:translate(-50%,-6px)}80%{opacity:1;transform:translate(-50%,-14px)}100%{opacity:0;transform:translate(-50%,-26px)}}
+.pgnote{margin:0;color:var(--muted);font-size:13px}
+#over{overflow-y:auto}
+#over .dossier{gap:12px;padding:16px 0}
+.abs.lock{opacity:.55;filter:grayscale(1)}
+.chinfo{max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain;padding-right:6px;scrollbar-width:thin}
+.chlv{display:flex;flex-direction:column;gap:8px}
+.chlv .pgline{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-size:14px}
+.chlv .pgline b{font-family:var(--f-display);font-weight:400;color:var(--brass);font-size:18px}
+.chbuy{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.chprice{font-family:var(--f-display);color:#d6b8ff;font-size:18px}
+.chc .chtag{font-size:12px;color:#d6b8ff}
+.chpas.mast{border-color:rgba(199,154,58,.6);background:linear-gradient(180deg,rgba(60,44,12,.55),rgba(0,0,0,.4))}
+.chpas.mast h4{color:#ffe089}
+.chpas.locked{opacity:.6}
 [hidden]{display:none!important}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);overflow:hidden;font-family:var(--f-type);-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 #game{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;background:var(--bg)}
@@ -575,6 +617,7 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
   <div class="mmgrid">
     <nav class="mmleft" aria-label="Menu principal">
       <div class="mmbrand"><p class="file">Arquivo nº 47 · Setor leste · Noite</p><h1>Bunker<br>dos <em>Mortos</em></h1></div>
+      <div class="pgprof" id="pgprof" aria-label="Perfil"></div>
       <ul class="mmlist">
         <li id="contli" hidden><button id="contbtn" class="mi cont" type="button" data-snd="confirm"><span>Continuar</span><small id="contsub"></small></button></li>
         <li><button id="play" class="mi" type="button" data-snd="confirm"><span>Jogar</span><small>Solo · escolha o mapa</small></button></li>
@@ -798,6 +841,7 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
       <div><dt>Drax ganhos</dt><dd id="st-drax">0</dd></div>
     </dl>
     <p class="rec" id="overrec"></p>
+    <div id="xpsum" class="xpsum" hidden aria-live="polite"></div>
     <div class="row">
       <button id="again" class="cta">Jogar de novo</button>
       <button id="tomenu" class="ghost" data-snd="back">Menu</button>
@@ -816,6 +860,7 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
 <div id="err" hidden><p id="errmsg"></p></div>
 
 <script src="three.min.js"></script>
+<script src="GLTFLoader.js"></script>
 <script>
 (function(){
 'use strict';
@@ -1077,6 +1122,9 @@ const Snd=(()=>{
       case 'back': burst(o,{type:'bandpass',freq:1300,q:3,dur:.03,gain:.3}); osc(o,{t,type:'triangle',freq:740,freqEnd:420,dur:.14,gain:.08}); osc(o,{t,freq:120,freqEnd:80,dur:.06,gain:.2}); break;
       case 'buy': burst(o,{type:'bandpass',freq:2600,q:5,dur:.03,gain:.4}); [1046,1318,1568,2093].forEach((f,i)=>osc(o,{t:t+i*.06,type:'triangle',freq:f,dur:.35,gain:.08})); bell(o,t+.24,523,.04,1.2); break;
       case 'deny': osc(o,{type:'square',freq:120,dur:.18,gain:.07,lp:800}); osc(o,{t:t+.09,type:'square',freq:95,dur:.18,gain:.07,lp:800}); break;
+      case 'tick': osc(o,{type:'triangle',freq:1700+Math.random()*300,dur:.03,gain:.035}); break;
+      case 'levelup': burst(o,{type:'bandpass',freq:3000,q:4,dur:.06,gain:.35}); osc(o,{t,freq:110,freqEnd:55,dur:.35,gain:.35}); [523,659,784,1046,1318].forEach((f,i)=>osc(o,{t:t+i*.055,type:'triangle',freq:f,dur:.32,gain:.09})); bell(o,t+.28,1046,.06,1.8); bell(o,t+.3,1568,.035,1.4); break;
+      case 'unlock': burst(o,{type:'lowpass',freq:700,dur:.3,gain:.6}); osc(o,{t,freq:70,freqEnd:40,dur:.5,gain:.5}); [392,523,784].forEach((f,i)=>osc(o,{t:t+.08+i*.07,type:'triangle',freq:f,dur:.4,gain:.08})); bell(o,t+.2,784,.05,1.6); break;
       case 'select': burst(o,{type:'lowpass',freq:1200,dur:.12,gain:.45}); osc(o,{t,freq:160,freqEnd:90,dur:.12,gain:.3}); osc(o,{t:t+.04,type:'triangle',freq:523,dur:.3,gain:.07}); osc(o,{t:t+.1,type:'triangle',freq:784,dur:.35,gain:.07}); break;
     } }finally{ BUS=null; }
   }
@@ -3724,7 +3772,31 @@ function buildGun(id,tier){
   const g=new THREE.Group(); g.add(asset.clone(true));
   const len=GUN_ASSET_MAP[id]?.length||0.8;
   g.userData={muzzle:-len*0.49,fore:-len*0.22,foreY:-0.035,sight:0.035};
+  try{ Object.assign(g.userData,gunGeom(g)); }catch(e){ console.warn('[Bunker] geometria da arma',id,e); }
   return g;
+}
+/* Lê a malha da arma (espaço local): ponto real do cano e a linha de mira (tangente superior que passa pela alça e pela massa). */
+const GUN_GEOM_CACHE={};
+function gunGeom(g){
+  g.updateMatrixWorld(true); const inv=new THREE.Matrix4().copy(g.matrixWorld).invert(), M=new THREE.Matrix4(), v=new THREE.Vector3(), P=[];
+  g.traverse(m=>{ if(!m.isMesh||!m.geometry||!m.geometry.attributes.position) return; M.multiplyMatrices(inv,m.matrixWorld); const pos=m.geometry.attributes.position;
+    for(let i=0;i<pos.count;i++){ v.fromBufferAttribute(pos,i).applyMatrix4(M); P.push(v.x,v.y,v.z); } });
+  if(P.length<9) return {};
+  let mnz=1e9,mxz=-1e9; for(let i=2;i<P.length;i+=3){ mnz=Math.min(mnz,P[i]); mxz=Math.max(mxz,P[i]); }
+  const L=mxz-mnz; let mx=0,my=0,n=0;
+  for(let i=0;i<P.length;i+=3) if(P[i+2]<mnz+Math.max(0.006,L*0.012)){ mx+=P[i]; my+=P[i+1]; n++; }
+  mx/=n; my/=n;                                                   // centro da boca do cano
+  const NB=72, top=new Array(NB).fill(-1e9), z1=mnz+L*0.8;
+  for(let i=0;i<P.length;i+=3){ if(Math.abs(P[i]-mx)>0.007||P[i+2]>z1) continue; const b=Math.min(NB-1,Math.floor((P[i+2]-mnz)/(z1-mnz)*NB)); if(P[i+1]>top[b]) top[b]=P[i+1]; }
+  const pts=[]; for(let b=0;b<NB;b++) if(top[b]>-1e8) pts.push([mnz+(b+0.5)/NB*(z1-mnz),top[b]]);
+  const hull=[]; for(const p of pts){ while(hull.length>=2){ const a=hull[hull.length-2], c=hull[hull.length-1]; if((c[0]-a[0])*(p[1]-a[1])-(c[1]-a[1])*(p[0]-a[0])>=0) hull.pop(); else break; } hull.push(p); }
+  let best=null, bs=-1e9;
+  for(let i=0;i<hull.length-1;i++){ for(let j=i+1;j<hull.length;j++){ const a=hull[i], c=hull[j], span=c[0]-a[0], slope=(c[1]-a[1])/span;
+      // só arestas do envelope superior: nenhum ponto acima da reta
+      let ok=true; for(const q of pts){ if(q[1]>a[1]+slope*(q[0]-a[0])+1e-4){ ok=false; break; } } if(!ok) continue;
+      const sc=span/L-5*Math.abs(slope); if(span>=L*0.12&&Math.abs(slope)<0.15&&sc>bs){ bs=sc; best=[a,c]; } } }
+  if(!best){ let ty=-1e9; for(const q of pts) ty=Math.max(ty,q[1]); best=[[mnz+L*0.1,ty],[mnz+L*0.6,ty]]; }
+  return {muzzle:mnz,muzzlePt:[mx,my,mnz],sightF:[mx,best[0][1],best[0][0]],sightR:[mx,best[1][1],best[1][0]]};
 }
 
 /* ---- wall buys ---- */
@@ -4427,6 +4499,188 @@ let gunModel=null;
 const handR=makeHand(false), handL=makeHand(true);
 const gunHolder=new THREE.Group(); vmRoot.add(gunHolder);
 gunHolder.add(handR,handL);
+
+/* ---- rigged first-person hands (Rigged Hand.glb) ----
+   O GLB entra só como malha + esqueleto. As animações que vêm junto com o modelo NÃO são usadas.
+   A cada frame os dois braços são resolvidos com IK de 2 ossos para que a palma de cada mão caia
+   exatamente no ponto de pegada da arma atual (RIG_HANDS[id]) e os dedos fecham em volta dela.
+   As luvas procedurais continuam como reserva caso o GLB não carregue. */
+const RIG={ok:false,root:null,rig:null,s:1,sides:{},mats:{glove:VMSKIN.clone(),sleeve:VMSLEEVE.clone()}};
+for(const m of Object.values(RIG.mats)) m.skinning=true;   // three r128 exige skinning=true em material de malha skinada
+/* mantém o material das mãos rigadas igual ao das luvas procedurais (applyHands recolore conforme o personagem) */
+function rigSyncMats(){ for(const [k,src] of [['glove',VMSKIN],['sleeve',VMSLEEVE]]){ const m=RIG.mats[k]; m.copy(src); m.skinning=true; m.needsUpdate=true; } }
+const _rq1=new THREE.Quaternion(), _rq2=new THREE.Quaternion(), _rq3=new THREE.Quaternion(), _rm=new THREE.Matrix4();
+const _rv1=new THREE.Vector3(), _rv2=new THREE.Vector3(), _rv3=new THREE.Vector3(), _rv4=new THREE.Vector3(), _rv5=new THREE.Vector3();
+/* formas de pegada: ângulos (rad) das 3 juntas de cada dedo + polegar */
+const RIG_CURL={
+  trigger:{index:[0.42,0.38,0.2],middle:[1.05,1.15,0.8],ring:[1.1,1.2,0.85],pinky:[1.1,1.15,0.8],thumb:[0.35,0.3,0.2]},
+  grip:{index:[0.95,1.05,0.7],middle:[1.05,1.15,0.8],ring:[1.1,1.2,0.85],pinky:[1.1,1.15,0.8],thumb:[0.4,0.3,0.25]},
+  wrap:{index:[0.85,0.95,0.65],middle:[0.95,1.05,0.75],ring:[1.0,1.1,0.8],pinky:[1.0,1.05,0.75],thumb:[0.5,0.35,0.25]},
+  cup:{index:[0.5,0.45,0.3],middle:[0.55,0.5,0.35],ring:[0.6,0.55,0.4],pinky:[0.65,0.6,0.4],thumb:[0.15,0.1,0.1]},
+  open:{index:[0.15,0.1,0.05],middle:[0.2,0.15,0.1],ring:[0.25,0.2,0.1],pinky:[0.3,0.2,0.1],thumb:[0.05,0.05,0.05]}
+};
+const RIG_FINGERS=['index','middle','ring','pinky'];
+const rigBn=n=>THREE.PropertyBinding.sanitizeNodeName(n);   // 'finger_index.01.L' -> 'finger_index01L'
+function rigWQ(o,out){ return o.getWorldQuaternion(out); }
+function rigSetWorldQuat(bone,wq){ rigWQ(bone.parent,_rq3).invert(); bone.quaternion.copy(_rq3).multiply(wq); bone.updateMatrixWorld(true); }
+/* guarda o esqueleto de uma mão: ossos, pose de descanso e o referencial da palma (X=índice→mindinho, Y=dedos, Z=dorso) */
+function rigBuildSide(rig,S,by){
+  const g=(n)=>by[rigBn(n)];
+  const sd={S,shoulder:g('shoulder.'+S),upper:g('upper_arm.'+S),fore:g('forearm.'+S),hand:g('hand.'+S),fingers:{}};
+  for(const f of RIG_FINGERS) sd.fingers[f]=[1,2,3].map(j=>g('finger_'+f+'.0'+j+'.'+S));
+  sd.fingers.thumb=[1,2,3].map(j=>g('thumb.0'+j+'.'+S));
+  const all=[sd.upper,sd.fore,sd.hand,...RIG_FINGERS.flatMap(f=>sd.fingers[f]),...sd.fingers.thumb];
+  if(!sd.shoulder||all.some(b=>!b)) throw new Error('osso ausente no lado '+S+': '+all.map((b,i)=>b?'':i).join(','));
+  sd.shRest=sd.shoulder.position.clone();
+  rig.updateMatrixWorld(true);
+  sd.rest=all.map(b=>b.quaternion.clone()); sd.all=all;
+  const P=b=>b.getWorldPosition(new THREE.Vector3());
+  const hp=P(sd.hand), mid=P(sd.fingers.middle[0]);
+  const yh=mid.clone().sub(hp).normalize();
+  let xh=P(sd.fingers.pinky[0]).sub(P(sd.fingers.index[0])); if(S==='L') xh.negate();
+  xh.addScaledVector(yh,-xh.dot(yh)).normalize();
+  const zh=new THREE.Vector3().crossVectors(xh,yh).normalize();
+  const F=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(xh,yh,zh));
+  const Qh=sd.hand.getWorldQuaternion(new THREE.Quaternion());
+  sd.gInv=Qh.clone().invert().multiply(F).invert();                         // hand-bone world quat = alvo * gInv
+  const c4=new THREE.Vector3(); for(const f of RIG_FINGERS) c4.add(P(sd.fingers[f][0])); c4.multiplyScalar(0.25);
+  sd.palmOff=hp.clone().add(c4).multiplyScalar(0.5).sub(hp).applyQuaternion(Qh.clone().invert()); // palma, no espaço do osso da mão
+  sd.armLen=[P(sd.fore).distanceTo(P(sd.upper)),P(sd.hand).distanceTo(P(sd.fore))];
+  return sd;
+}
+/* separa a malha em luva (mão/dedos) e manga (antebraço/braço) pelo osso dominante de cada triângulo */
+function rigSplitMaterials(mesh){
+  const geo=mesh.geometry, si=geo.attributes.skinIndex, sw=geo.attributes.skinWeight;
+  if(!si||!sw||!geo.index){ mesh.material=RIG.mats.glove; return; }
+  const handBone=mesh.skeleton.bones.map(b=>/^(finger_|thumb|palm|hand)/.test(b.name));
+  const glove=new Uint8Array(si.count);
+  for(let v=0;v<si.count;v++){ let w=0; for(let k=0;k<4;k++) if(handBone[si.array[v*4+k]]) w+=sw.array[v*4+k]; glove[v]=w>0.5?1:0; }
+  const idx=geo.index.array, A=[], B=[];
+  for(let i=0;i<idx.length;i+=3){ const n=glove[idx[i]]+glove[idx[i+1]]+glove[idx[i+2]]; (n>=2?A:B).push(idx[i],idx[i+1],idx[i+2]); }
+  geo.setIndex(A.concat(B)); geo.clearGroups(); geo.addGroup(0,A.length,0); geo.addGroup(A.length,B.length,1);
+  mesh.material=[RIG.mats.glove,RIG.mats.sleeve];
+}
+function loadRiggedHands(){
+  return new Promise(resolve=>{
+    if(!THREE.GLTFLoader){ console.warn('[Bunker] GLTFLoader indisponível; mantendo mãos procedurais.'); resolve(false); return; }
+    new THREE.GLTFLoader().load('./Rigged%20Hand.glb',gltf=>{
+      try{
+        const rig=gltf.scene; rig.name='BunkerRiggedFirstPersonHands';
+        const by={}; rig.traverse(o=>{ if(o.isBone) by[o.name]=o; });
+        const meshes=[]; rig.traverse(o=>{ if(o.isSkinnedMesh) meshes.push(o); });
+        if(!meshes.length) throw new Error('GLB sem malha skinada');
+        const root=new THREE.Group(); root.name='RigHandsRoot'; root.add(rig); root.visible=false;
+        RIG.sides.R=rigBuildSide(rig,'R',by); RIG.sides.L=rigBuildSide(rig,'L',by);
+        /* O GLB traz a malha da mão direita ligada aos ossos ESQUERDOS (cópia espelhada). Religa ao esqueleto direito. */
+        for(const m of meshes){ const g=m.geometry; g.computeBoundingBox(); if(g.boundingBox.getCenter(new THREE.Vector3()).x<=0) continue;
+          const bones=m.skeleton.bones, at={}; bones.forEach((b,i)=>{ at[b.name]=i; });
+          const map=bones.map((b,i)=>{ const j=at[b.name.replace(/L(\d*)$/,'R$1')]; return j==null?i:j; });
+          const si=g.attributes.skinIndex; for(let k=0;k<si.array.length;k++) si.array[k]=map[si.array[k]]; si.needsUpdate=true;
+          if(g.index){ const ia=g.index.array; for(let k=0;k<ia.length;k+=3){ const t=ia[k+1]; ia[k+1]=ia[k+2]; ia[k+2]=t; } g.index.needsUpdate=true; } }   // malha espelhada: inverte o sentido dos triângulos
+        for(const m of meshes){ m.frustumCulled=false; m.castShadow=false; m.receiveShadow=false; rigSplitMaterials(m); }
+        RIG.meshes={}; for(const m of meshes){ m.geometry.computeBoundingBox(); RIG.meshes[m.geometry.boundingBox.getCenter(new THREE.Vector3()).x>0?'R':'L']=m; }
+        RIG.sleeves={R:[],L:[]};
+        /* o GLB não tem antebraço: manga simples presa aos ossos do antebraço e do braço (mesmo material da manga do personagem) */
+        for(const S of ['R','L']){ const sd=RIG.sides[S];
+          for(const [bone,len,r0,r1] of [[sd.fore,sd.armLen[1],0.031,0.04],[sd.upper,sd.armLen[0],0.04,0.048]]){
+            const sl=new THREE.Mesh(new THREE.CylinderGeometry(r0,r1,len+0.02,14,1,true),VMSLEEVE); sl.position.y=len/2; sl.userData.vb=true; sl.frustumCulled=false; bone.add(sl); RIG.sleeves[S].push(sl); } }
+        vmRoot.add(root); RIG.root=root; RIG.rig=rig; RIG.ok=true;
+        handR.visible=false; handL.visible=false;
+        console.info('[Bunker] Mãos rigadas carregadas (IK por arma, sem animações embutidas).');
+        resolve(true);
+      }catch(err){ RIG.ok=false; console.error('[Bunker] Falha ao preparar mãos rigadas:',err); resolve(false); }
+    },undefined,err=>{ console.warn('[Bunker] Rigged Hand.glb não carregou; mantendo mãos procedurais.',err); resolve(false); });
+  });
+}
+/* IK de 2 ossos: leva o pulso até 'wrist' (mundo), dobrando o cotovelo para o lado do 'pole' */
+const _ikA=new THREE.Vector3(), _ikB=new THREE.Vector3(), _ikC=new THREE.Vector3(), _ikD=new THREE.Vector3(), _ikP=new THREE.Vector3(), _ikN=new THREE.Vector3(), _ikT=new THREE.Vector3(), _ikU=new THREE.Vector3(), _ikV=new THREE.Vector3();
+function rigSolveArm(sd,wrist,pole){
+  const {upper,fore,hand}=sd, l1=sd.armLen[0]*RIG.s, l2=sd.armLen[1]*RIG.s;
+  upper.getWorldPosition(_ikA);
+  _ikD.copy(wrist).sub(_ikA); let d=_ikD.length(); if(d<1e-5) return; _ikD.multiplyScalar(1/d);
+  d=Math.min(Math.max(d,Math.abs(l1-l2)+0.002),l1+l2-0.002);
+  const a=(l1*l1-l2*l2+d*d)/(2*d), h=Math.sqrt(Math.max(l1*l1-a*a,0));
+  _ikP.copy(pole); _ikP.addScaledVector(_ikD,-_ikP.dot(_ikD)); if(_ikP.lengthSq()<1e-6) _ikP.set(0,-1,0); _ikP.normalize();
+  _ikN.copy(_ikA).addScaledVector(_ikD,a).addScaledVector(_ikP,h);                    // novo cotovelo
+  _ikT.copy(_ikA).addScaledVector(_ikD,d);                                             // pulso alcançável
+  fore.getWorldPosition(_ikB);
+  _rq1.setFromUnitVectors(_ikU.copy(_ikB).sub(_ikA).normalize(),_ikV.copy(_ikN).sub(_ikA).normalize());
+  rigWQ(upper,_rq2); rigSetWorldQuat(upper,_rq1.multiply(_rq2));                      // braço
+  fore.getWorldPosition(_ikB); hand.getWorldPosition(_ikC);
+  _rq1.setFromUnitVectors(_ikU.copy(_ikC).sub(_ikB).normalize(),_ikV.copy(_ikT).sub(_ikB).normalize());
+  rigWQ(fore,_rq2); rigSetWorldQuat(fore,_rq1.multiply(_rq2));                        // antebraço
+}
+/* dobra uma corrente de ossos (dedo/polegar) em direção ao lado da palma; ang = [j1,j2,j3] em rad */
+function rigCurlChain(bones,ang,toward){
+  for(let j=0;j<bones.length;j++){
+    const b=bones[j]; rigWQ(b,_rq2);
+    const dd=_rv1.set(0,1,0).applyQuaternion(_rq2);
+    const ax=_rv2.crossVectors(dd,toward); if(ax.lengthSq()<1e-8) continue; ax.normalize();
+    _rq1.setFromAxisAngle(ax,ang[j]); rigSetWorldQuat(b,_rq1.multiply(_rq2));
+  }
+}
+function rigPoseHand(sd,cfg,gh,scl){
+  // gh: matriz mundial do gunHolder; cfg: {p:[x,y,z] em espaço do gunHolder, r:[graus], curl:nome|objeto}
+  const {hand}=sd;
+  for(let i=0;i<sd.all.length;i++) sd.all[i].quaternion.copy(sd.rest[i]);
+  sd.shoulder.position.copy(sd.shRest); sd.shoulder.updateMatrixWorld(true);
+  const Qt=_rq1.setFromEuler(new THREE.Euler(...gunDeg3(cfg.r),'XYZ'));
+  rigWQ(gunHolder,_rq3); const Qw=new THREE.Quaternion().copy(_rq3).multiply(Qt);          // alvo no mundo
+  const Pw=new THREE.Vector3(...cfg.p).applyMatrix4(gh);
+  const Qhand=Qw.clone().multiply(sd.gInv);
+  const off=sd.palmOff.clone().multiplyScalar(RIG.s).applyQuaternion(Qhand);
+  const wrist=Pw.clone().sub(off);
+  /* o ombro fica fora da tela: se a mão estiver além do alcance do braço, o ombro avança até ela (sem esticar nem soltar a mão) */
+  const U=sd.upper.getWorldPosition(_rv1), reach=(sd.armLen[0]+sd.armLen[1])*RIG.s*0.94, to=_rv2.copy(wrist).sub(U), dist=to.length();
+  if(dist>reach){ to.multiplyScalar((dist-reach)/dist); to.applyMatrix3(new THREE.Matrix3().setFromMatrix4(_rm.copy(sd.shoulder.parent.matrixWorld).invert())); sd.shoulder.position.add(to); sd.shoulder.updateMatrixWorld(true); }
+  rigSolveArm(sd,wrist,_rv5.set(sd.S==='R'?0.55:-0.55,-1,0.45));
+  rigSetWorldQuat(hand,Qhand);
+  // dedos
+  const curl=typeof cfg.curl==='string'?RIG_CURL[cfg.curl]:cfg.curl;
+  const zh=new THREE.Vector3(0,0,1).applyQuaternion(Qw), xh=new THREE.Vector3(1,0,0).applyQuaternion(Qw);
+  const palm=zh.clone().negate();                                                         // lado da palma
+  const kk=cfg.k||[1,1,1,1,1];                                                           // fator de fechamento por dedo: indicador, médio, anelar, mindinho, polegar
+  RIG_FINGERS.forEach((f,i)=>rigCurlChain(sd.fingers[f],curl[f].map(a=>a*kk[i]),palm));
+  const idxSide=xh.clone().multiplyScalar(sd.S==='R'?-1:1);
+  rigCurlChain(sd.fingers.thumb,curl.thumb.map(a=>a*kk[4]),palm.clone().multiplyScalar(0.55).addScaledVector(idxSide,0.6).normalize());
+}
+function rigUpdate(){
+  const R=RIG; if(!R.ok) return;
+  const s=curSlot(), cfg=s&&RIG_HANDS[s.id];
+  R.root.visible=!!(cfg&&gunHolder.visible&&gunModel);
+  if(!R.root.visible) return;
+  R.s=cfg.s||1; R.root.scale.setScalar(R.s);
+  // ombros fixos na câmera (não acompanham a arma); o resto vem do IK
+  const sh=RIG_SHOULDER; R.root.position.set(sh[0],sh[1]-1.4453*R.s,sh[2]-0.104*R.s);
+  R.root.updateMatrixWorld(true); gunHolder.updateMatrixWorld(true);
+  const gh=gunHolder.matrixWorld;
+  rigPoseHand(R.sides.R,cfg.R,gh);
+  const two=!!cfg.L; if(R.meshes&&R.meshes.L) R.meshes.L.visible=two; for(const sl of (R.sleeves&&R.sleeves.L)||[]) sl.visible=two;   // pistolas: só a mão direita
+  if(two) rigPoseHand(R.sides.L,cfg.L,gh);
+}
+
+/* Ombros (espaço da câmera do viewmodel): fixos; o IK estica/dobra o braço até a arma. */
+const RIG_SHOULDER=[0,-0.2,0.12];
+/* Pegada por arma, no espaço do gunHolder (mesmo da config do Workshop): p = centro da palma, r = rotação em graus
+   (Y = dedos, Z = dorso da mão, X = do indicador para o mindinho), s = escala do conjunto de braços, curl = forma dos dedos. */
+const RIG_HANDS={   // gerado pelo ajuste automático (sem atravessar a arma); k = fechamento de [indicador, médio, anelar, mindinho, polegar]; L:null = uma mão só
+  m1911:{"s":0.85,"R":{"p":[0.0262,-0.074,0.074],"r":[-8,94,-85],"curl":"trigger","k":[1.34,0.78,1,1.06,0.99]},"L":null},
+  kar98k:{"s":0.85,"R":{"p":[0.074,-0.088,0.036],"r":[-95,83.4,6],"curl":"trigger","k":[0.84,1,1.17,1,1.25]},"L":{"p":[0.0212,-0.08,-0.2622],"r":[-62.9,-127.8,-11.1],"curl":"wrap","k":[0.3,1.44,0.73,0.81,1.57]}},
+  garand:{"s":0.85,"R":{"p":[0.026,-0.001,0.078],"r":[-80,78.6,-12],"curl":"trigger","k":[1.25,1.6,1.36,1.6,1.46]},"L":{"p":[-0.0003,-0.0105,-0.002],"r":[-87,-127.5,-27.4],"curl":"wrap","k":[0.23,0.76,1.4,1.31,0.6]}},
+  db:{"s":0.85,"R":{"p":[0.092,-0.056,0.108],"r":[-79.8,79,-12.9],"curl":"trigger","k":[0.83,0.3,1.25,0.99,0.46]},"L":{"p":[0.0245,-0.0507,-0.1915],"r":[-63,-120.9,-7],"curl":"wrap","k":[1.44,1.09,1.32,0.56,0.99]}},
+  thompson:{"s":0.85,"R":{"p":[0,-0.017,0.0863],"r":[-87,80.5,-14.8],"curl":"trigger","k":[1,0.63,1,1,1]},"L":{"p":[0.012,-0.033,-0.176],"r":[-71.6,-120,-8],"curl":"wrap","k":[1.5,0.84,0.96,1.41,1.6]}},
+  mp40:{"s":0.85,"R":{"p":[0.028,-0.0302,0.0767],"r":[-86.5,75.4,-10],"curl":"trigger","k":[0.67,0.56,0.46,0.28,0.65]},"L":{"p":[0,-0.02,-0.1505],"r":[-70.9,-120.4,-16],"curl":"wrap","k":[1.13,1.35,0.94,1.15,0.94]}},
+  ppsh:{"s":0.85,"R":{"p":[0.054,-0.032,0.08],"r":[-86,77,-12.6],"curl":"trigger","k":[0.76,0.56,0.19,1.04,0.97]},"L":{"p":[-0.0035,-0.0415,-0.163],"r":[-74,-123.1,-18.5],"curl":"wrap","k":[1.44,1.06,0.75,0.72,1.25]}},
+  stg44:{"s":0.85,"R":{"p":[0.0252,0.0013,0.092],"r":[-79.1,78.1,-4.4],"curl":"trigger","k":[1.39,1.28,1.01,1.25,1.6]},"L":{"p":[0.0055,-0.029,-0.2075],"r":[-68.4,-121,-10],"curl":"wrap","k":[1.46,1.51,0.18,0.16,1.5]}},
+  trench:{"s":0.85,"R":{"p":[0.0897,-0.0493,0.092],"r":[-88.3,74.5,-18],"curl":"trigger","k":[1.35,0.75,1.13,1.15,0.52]},"L":{"p":[0.0335,-0.0385,-0.2275],"r":[-66.4,-134.1,-13],"curl":"wrap","k":[0.52,1.15,0.95,0.89,1.55]}},
+  bar:{"s":0.85,"R":{"p":[0.0575,-0.034,0.086],"r":[-78,87,-15],"curl":"trigger","k":[0.83,0.92,1.13,1.18,0.27]},"L":{"p":[0.016,-0.037,-0.22],"r":[-70,-111,-16.5],"curl":"wrap","k":[0.38,0.46,0.17,1,1.25]}},
+  mg42:{"s":0.85,"R":{"p":[0.046,-0.0317,0.0912],"r":[-76.5,86.3,-11],"curl":"trigger","k":[1.53,0.9,0.83,1.5,1.56]},"L":{"p":[0.016,-0.046,-0.2205],"r":[-73.9,-122.4,-10.8],"curl":"wrap","k":[0.89,1.08,1.12,1,1.03]}},
+  ptrs:{"s":0.85,"R":{"p":[0.05,-0.0675,0.0275],"r":[-84,79.5,-0.5],"curl":"trigger","k":[1.18,1.29,1.24,1.25,1.6]},"L":{"p":[0.031,-0.074,-0.278],"r":[-70,-133,-4],"curl":"wrap","k":[0.55,1.44,1.43,0.45,1.25]}},
+  python:{"s":0.85,"R":{"p":[0.036,-0.0795,0.058],"r":[-2.6,96.9,-82],"curl":"trigger","k":[1,1,1.5,1.04,1.06]},"L":null},
+  doom:{"s":0.85,"R":{"p":[0.086,-0.038,0.102],"r":[-83,79,-14],"curl":"trigger"},"L":{"p":[0.016,-0.03,-0.2],"r":[-74,-122,-10],"curl":"wrap"}},
+  ray:{"s":0.85,"R":{"p":[0.004,0.0148,0.0795],"r":[-85.9,80.2,-0.9],"curl":"trigger","k":[0.15,1.25,0.17,0.17,1.6]},"L":{"p":[0,-0.014,-0.114],"r":[-66,-115,-12.5],"curl":"wrap","k":[0.15,0.55,1.32,0.8,1.29]}},
+};
+
 /* the viewmodel knife: held in slot 3 or used for a quick stab; its blade is the equipped skin */
 const knife=new THREE.Group(); knife.visible=false; vmRoot.add(knife);
 const knifeHand=makeHand(false); knifeHand.scale.setScalar(0.95); knife.add(knifeHand);
@@ -4444,7 +4698,7 @@ function setGunModel(){
   const s=curSlot(); if(!s) return;
   const tier=lvTier(s.lvl|0); const key=s.id+'+'+tier; if(!vmCache[key]) vmCache[key]=buildGun(s.id,tier);
   gunModel=vmCache[key]; gunHolder.add(gunModel);
-  const u=gunModel.userData; flashSprite.position.set(0,0.012,u.muzzle-0.05); gunModel.add(flashSprite);
+  const u=gunModel.userData; if(u.muzzlePt) flashSprite.position.set(u.muzzlePt[0],u.muzzlePt[1],u.muzzlePt[2]-0.03); else flashSprite.position.set(0,0.012,u.muzzle-0.05); gunModel.add(flashSprite);
   const pose=GUN_ASSETS[s.id]?GUN_VIEWMODEL_CONFIG[s.id]:null;
   gunModel.position.set(0,0,0); gunModel.rotation.set(0,0,0); gunModel.scale.setScalar(1);
   if(pose){
@@ -4453,11 +4707,41 @@ function setGunModel(){
     gunModel.scale.setScalar(pose.weapon.scale);
     handR.position.fromArray(pose.rightHand.position); handR.rotation.set(...gunDeg3(pose.rightHand.rotationDeg)); handR.scale.setScalar(pose.rightHand.scale);
     handL.position.fromArray(pose.leftHand.position); handL.rotation.set(...gunDeg3(pose.leftHand.rotationDeg)); handL.scale.setScalar(pose.leftHand.scale);
+    u.adsAuto=VMDBG.adsAuto?gunAutoAds(gunModel,pose):null;
   }else{
     handR.position.set(0.004,-0.072,0.03); handR.rotation.set(-0.9,0.1,-0.15); handR.scale.setScalar(1);
     handL.position.set(-0.012,u.foreY,u.fore); handL.rotation.set(-1.0,-0.4,0.5); handL.scale.setScalar(1);
     if(u.fore>-0.03){ handL.position.set(-0.028,-0.085,0.035); handL.rotation.set(-0.8,-0.5,0.5); }
   }
+}
+
+/* Rastro das balas: projeta a boca do cano do viewmodel (câmera própria, FOV 58) para o mundo (câmera do jogo),
+   assim o rastro nasce exatamente onde o jogador vê o cano, em qualquer arma, no quadril ou mirando. */
+const _vmM=new THREE.Vector3(), _vmD=new THREE.Vector3();
+function vmMuzzleWorld(out){
+  if(!gunModel||!gunModel.userData.muzzlePt||!gunHolder.visible) return out;
+  vmScene.updateMatrixWorld(true); _vmM.fromArray(gunModel.userData.muzzlePt); gunModel.localToWorld(_vmM);
+  const dist=Math.max(0.12,_vmM.length()); vmCam.updateMatrixWorld(); _vmM.project(vmCam);
+  if(!isFinite(_vmM.x)||Math.abs(_vmM.x)>1.2||Math.abs(_vmM.y)>1.2) return out;
+  _vmD.set(_vmM.x,_vmM.y,0.5).unproject(camera).sub(camera.position).normalize();
+  return out.copy(camera.position).addScaledVector(_vmD,dist);
+}
+
+/* ADS automático: coloca o olho do jogador sobre a linha de mira (alça -> massa) e alinha essa linha com o centro da tela.
+   A distância do olho até a alça segue o ajuste do Workshop, para manter o tamanho da arma na tela. */
+function gunAutoAds(gm,pose){
+  const u=gm.userData; if(!u.sightR||!u.sightF) return null;
+  gm.updateMatrix(); const W=gm.matrix;
+  const lift=0.0006/(pose.weapon.scale||1);
+  const A=new THREE.Vector3(u.sightR[0],u.sightR[1]+lift,u.sightR[2]).applyMatrix4(W), F=new THREE.Vector3(u.sightF[0],u.sightF[1]+lift,u.sightF[2]).applyMatrix4(W);
+  const f=F.clone().sub(A).normalize(), up=new THREE.Vector3(0,1,0).applyQuaternion(gm.quaternion);
+  up.addScaledVector(f,-up.dot(f)).normalize(); const back=f.clone().negate(), r=new THREE.Vector3().crossVectors(up,back);
+  const R=new THREE.Matrix4().makeBasis(r,up,back).invert();                       // gunHolder -> câmera
+  const old=new THREE.Euler(...gunDeg3(pose.ads.rotationDeg),'XYZ'), oldA=A.clone().applyEuler(old).add(new THREE.Vector3(...pose.ads.position));
+  const dEye=VMDBG.eye!=null?VMDBG.eye:clamp(-oldA.z,0.07,0.2);
+  const pos=A.clone().applyMatrix4(R).negate().add(new THREE.Vector3(0,0,-dEye));
+  const e=new THREE.Euler().setFromRotationMatrix(R,'XYZ');
+  return {pos:pos.toArray(),rot:[e.x,e.y,e.z]};
 }
 
 /* ================= HELPERS: grid physics ================= */
@@ -5267,6 +5551,7 @@ function fire(){
   camera.updateMatrixWorld(); camera.getWorldDirection(_d); _o.copy(camera.position);
   _r.set(1,0,0).applyQuaternion(camera.quaternion); _u.set(0,1,0).applyQuaternion(camera.quaternion);
   const muz=_tmp.copy(_o).addScaledVector(_d,0.55).addScaledVector(_r,0.16*(1-P.ads)).addScaledVector(_u,-0.11*(1-P.ads)-0.03);
+  vmMuzzleWorld(muz);
   wPuff(muz.x+_d.x*0.2,muz.y+_d.y*0.2,muz.z+_d.z*0.2,d.pellets?2:1,0x9a948a,0.07,0.8,0.25,0.22);
   const moving=Math.hypot(IN.mx,IN.my)>0.2||keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD;
   const pellets=d.pellets||1;
@@ -5467,7 +5752,7 @@ function vmLag(dt,dyaw,dpitch){ dt=Math.min(dt,0.05);
   vmRoot.rotation.set(LAG.p*k,LAG.y*k,LAG.y*0.25*k);
   vmRoot.position.x+=LAG.x*k; vmRoot.position.y+=LAG.h*k; vmRoot.position.z+=LAG.f*k; }
 function updateViewmodel(dt){
-  const s=curSlot(); if(!s||!gunModel) return;
+  const s=curSlot(); if(!s||!gunModel){ if(RIG.root) RIG.root.visible=false; return; }
   const dyaw=P.yaw-vmYaw, dpitch=P.pitch-vmPitch; vmYaw=P.yaw; vmPitch=P.pitch;
   vmLag(dt,dyaw,dpitch);
   const bob=P.moveAmt>0.1&&P.y<=0?1:0;
@@ -5486,12 +5771,12 @@ function updateViewmodel(dt){
     const lowered=(Wp.swapT>0?Wp.swapT/0.45:0)+(Wp.drinkT>0?1:0)+(Wp.upT>0?1:0)+(Wp.knifeT>0.05?0.5:0);
     const low=clamp(lowered,0,1);
     const u=gunModel.userData, pose=GUN_ASSETS[s.id]?GUN_VIEWMODEL_CONFIG[s.id]:null;
-    const hip=pose?.hip.position||[0.13,-0.122,-0.33], aim=pose?.ads.position||[0,-(u.sight||0.035)-0.004,-0.27];
+    const hip=pose?.hip.position||[0.13,-0.122,-0.33], aim=u.adsAuto?u.adsAuto.pos:pose?.ads.position||[0,-(u.sight||0.035)-0.004,-0.27];
     let px=lerp(hip[0],aim[0],P.ads)+bx, py=lerp(hip[1],aim[1],P.ads)-by-low*0.4+crY*(1-P.ads), pz=lerp(hip[2],aim[2],P.ads)+Wp.kick*0.06;
     const ha=1-P.ads;
     let rx,ry,rz;
     if(pose){
-      const hr=gunDeg3(pose.hip.rotationDeg), ar=gunDeg3(pose.ads.rotationDeg);
+      const hr=gunDeg3(pose.hip.rotationDeg), ar=u.adsAuto?u.adsAuto.rot:gunDeg3(pose.ads.rotationDeg);
       rx=lerp(hr[0],ar[0],P.ads)+Wp.kick*0.12;
       ry=lerp(hr[1],ar[1],P.ads);
       rz=lerp(hr[2],ar[2],P.ads)-0.08*P.crouch*ha;
@@ -5501,18 +5786,19 @@ function updateViewmodel(dt){
     gunHolder.position.set(lerp(gunHolder.position.x,px,dt*14),lerp(gunHolder.position.y,py,dt*14),pz);
     gunHolder.rotation.set(lerp(gunHolder.rotation.x,rx,dt*16),lerp(gunHolder.rotation.y,ry+swayX,dt*10),lerp(gunHolder.rotation.z,rz,dt*10));
     flashSprite.visible=Wp.flashT>0; if(flashSprite.visible){ flashSprite.material.rotation=Math.random()*6; const f=rand(0.18,0.28); flashSprite.scale.set(f,f,1); }
-    vmFlash.intensity=Wp.flashT>0?2.5:0; vmFlash.position.set(gunHolder.position.x,gunHolder.position.y,gunHolder.position.z+u.muzzle);
+    vmFlash.intensity=Wp.flashT>0?2.5:0; if(u.muzzlePt){ _mz.fromArray(u.muzzlePt); gunModel.localToWorld(_mz); vmFlash.position.copy(_mz); } else vmFlash.position.set(gunHolder.position.x,gunHolder.position.y,gunHolder.position.z+u.muzzle);
     knife.visible=Wp.knifeT>0;
     if(knife.visible){ const k=1-Wp.knifeT/0.55; const a=Math.sin(clamp(k*1.6,0,1)*Math.PI); knife.position.set(0,0,0); knife.rotation.set(0,0,0); if(knifeModel){ const qa={x:0.03-a*0.12,y:-0.04+a*0.06,z:0.02-a*0.32,rx:-0.3+a*0.1,ry:0.2-a*0.6,rz:-0.4+a*0.5,spin:0,hA:0,hB:0,bl:0,tw:0,g:0,ix:0,th:0}; placeKnife(knifeModel,knifeModel.userData,qa); poseKnife(knifeModel.userData,qa); } }
     // smoke curling off a hot barrel
     if(!(WEAPONS[s.id]&&(WEAPONS[s.id].proj||WEAPONS[s.id].sprite))){
-      gunHolder.updateMatrixWorld(true); _mz.set(0,0.014,u.muzzle+0.01); gunModel.localToWorld(_mz);
+      gunHolder.updateMatrixWorld(true); if(u.muzzlePt) _mz.set(u.muzzlePt[0],u.muzzlePt[1],u.muzzlePt[2]-0.005); else _mz.set(0,0.014,u.muzzle+0.01); gunModel.localToWorld(_mz);
       const since=G.t-Wp.lastShot;
       if(since<0.05&&Wp.flashT>0.04){ vmPuff(_mz,1,0.16,0.45,0.05,0.018); }
       if(Wp.heat>0.08&&since>0.14){ smokeAcc+=Wp.heat*24*dt; while(smokeAcc>1){ smokeAcc-=1; vmPuff(_mz,1,0.22*clamp(Wp.heat,0.35,1),rand(1.1,1.9),0.085,0.011); } }
       Wp.heat=Math.max(0,Wp.heat-dt*(since>0.14?0.42:0.08));
     }
   }
+  rigUpdate();
   repairView(dt);
   updateVmSmoke(dt,dyaw,dpitch);
   bottle.visible=Wp.drinkT>0;
@@ -5910,10 +6196,10 @@ function knifeAnim(parts,act,k,out){
 function poseKnife(parts,a){ parts.spin.rotation.x=a.spin||0; parts.spin.rotation.z=a.tw||0; if(parts.hand) poseGrip(parts.hand,parts.grip,a); if(parts.hA){ parts.hA.rotation.x=a.hA; parts.hB.rotation.x=a.hB; } if(parts.bpiv&&(parts.type==='flip'||parts.type==='estilete')) parts.bpiv.rotation.x=-a.bl; }
 
 /* ================= PROGRESS (drax + inventory) ================= */
-const PROG={v:1,drax:0,items:[],eq:'base',rev:0,bought:{d:0,i:[]},cases:0,char:'recruta',cv:'m',own:[],run:null};
+const PROG={v:1,drax:0,items:[],eq:'base',rev:0,bought:{d:0,i:[]},cases:0,char:'recruta',cv:'m',own:[],run:null,cp:{},acc:{xp:0}};
 function equippedItem(){ return PROG.items.find(i=>i.uid===PROG.eq)||BASE_ITEM; }
 let progDoc=null, progWriting=false, progPending=false;
-function loadProgFrom(d){ if(!d||typeof d!=='object') return; PROG.drax=Math.max(0,d.drax|0); PROG.items=Array.isArray(d.items)?d.items.filter(i=>i&&KTYPES[i.t]&&SKINS[i.s]).slice(0,300):[]; PROG.eq=typeof d.eq==='string'?d.eq:'base'; PROG.rev=d.rev|0; PROG.cases=d.cases|0; PROG.bought=d.bought&&typeof d.bought==='object'?{d:d.bought.d|0,i:Array.isArray(d.bought.i)?d.bought.i:[]}:{d:0,i:[]}; loadCharProg(d); PROG.run=validRun(d.run)||null; }
+function loadProgFrom(d){ if(!d||typeof d!=='object') return; PROG.drax=Math.max(0,d.drax|0); PROG.items=Array.isArray(d.items)?d.items.filter(i=>i&&KTYPES[i.t]&&SKINS[i.s]).slice(0,300):[]; PROG.eq=typeof d.eq==='string'?d.eq:'base'; PROG.rev=d.rev|0; PROG.cases=d.cases|0; PROG.bought=d.bought&&typeof d.bought==='object'?{d:d.bought.d|0,i:Array.isArray(d.bought.i)?d.bought.i:[]}:{d:0,i:[]}; loadCharProg(d); loadPgFrom(d); PROG.run=validRun(d.run)||null; }
 function writeProg(){ if(!progDoc) return; if(progWriting){ progPending=true; return; } progWriting=true; const body=JSON.parse(JSON.stringify(PROG)); progDoc.set(body).catch(e=>{ if(e&&(e.code==='invalid_argument'||e.code==='revoked'||e.code==='not_granted')) progDoc=null; }).finally(()=>{ progWriting=false; if(progPending){ progPending=false; writeProg(); } }); }
 function saveProg(){ PROG.rev=(PROG.rev|0)+1; store.set('bdm_prog',JSON.stringify(PROG)); writeProg(); renderDrax(); }
 async function initProg(){
@@ -6183,6 +6469,43 @@ const CMDS={
   points:{cheat:1,d:'points N define pontos; points +N soma; points -N subtrai; sem valor consulta',f:a=>{ if(!needGame()) return; if(a[0]==null){ cprint(`Pontos da rodada: ${G.points}`); return; } const raw=String(a[0]), v=num(raw,0)|0; if(raw[0]==='+') G.points=Math.max(0,G.points+Math.abs(v)); else if(raw[0]==='-') G.points=Math.max(0,G.points-Math.abs(v)); else G.points=Math.max(0,v); $('#ptsv').textContent=G.points; cprint(`Pontos da rodada: ${G.points}`); }},
   cash:{cheat:1,d:'atalho compatível: igual a points',f:a=>CMDS.points.f(a)},
   mp_startmoney:{cheat:1,d:'atalho compatível: igual a points',f:a=>CMDS.points.f(a)},
+  // ---- progressão (help pg) ----
+  pg_status:{d:'mostra conta, personagem atual, níveis, XP e valores da progressão',f:a=>{ const c=pgId(a[0]), p=pgC(c), A=accLv(PROG.acc.xp), L=charLv(p.xp); cprint(`Conta Nv ${A.L} (${PROG.acc.xp} XP) · drax ${PROG.drax}`); cprint(`${c}: comprado ${p.own?'sim':'não'} · Nv ${L.L} (${p.xp} XP) · XP habilidade ${p.ax} · Z ${p.z?'Nv '+abLvA(c):'bloqueada'} · X ${abLvU(c)?'Nv '+abLvU(c):'bloqueada'} · maestria ${p.m?'sim':'não'}`); cprint(`preço ${PG.price[c]} · desbloqueio Z ${PG.unlock[c]} · maestria ${PG.mastery[c]} · XP Z ${PG.aXp.join('/')} · XP X ${PG.uXp.join('/')} · XP por uso ${PG.xpUseA}/${PG.xpUseU} · por abate ${PG.xpKillA}/${PG.xpKillU} · XP com cheats ${PG.cheatXp?1:0}`,'dim'); }},
+  pg_comprar:{cheat:1,d:'pg_comprar [personagem|todos] marca o personagem como comprado (sem gastar drax)',f:a=>{ const ids=a[0]==='todos'?CHAR_KEYS:[pgId(a[0])]; for(const id of ids) pgC(id).own=1; pgRefresh(); cprint('Comprado: '+ids.join(', ')); }},
+  pg_bloquear:{cheat:1,d:'pg_bloquear [personagem] volta o personagem para não comprado (o Recruta é sempre liberado)',f:a=>{ const id=pgId(a[0]); if(id==='recruta'){ cprint('O Recruta é sempre liberado','err'); return; } Object.assign(pgC(id),{own:0,z:0,m:0}); if(PROG.char===id){ PROG.char='recruta'; PROG.cv=varKeys('recruta')[0]; } pgRefresh(); cprint(id+' bloqueado'); }},
+  pg_desbloquear:{cheat:1,d:'pg_desbloquear [personagem] libera a habilidade Z (sem gastar drax)',f:a=>{ const id=pgId(a[0]); Object.assign(pgC(id),{own:1,z:1}); pgRefresh(); cprint(id+': habilidade liberada'); }},
+  pg_hab:{cheat:1,d:'pg_hab N [personagem] define o nível da habilidade Z (-1 bloqueada, 0 a 4)',f:a=>{ const id=pgId(a[1]), n=Math.round(num(a[0],0)), p=pgC(id); if(n<0){ p.z=0; } else { p.own=1; p.z=1; p.ax=Math.max(PG.aXp[clamp(n,0,4)],0); } pgRefresh(); cprint(`${id}: Z ${p.z?'Nv '+abLvA(id):'bloqueada'} · X ${abLvU(id)||'bloqueada'} · XP ${p.ax}`); }},
+  pg_ult:{cheat:1,d:'pg_ult N [personagem] define o nível da ultimate X (0 bloqueada, 1 a 3); mexe no XP de habilidade',f:a=>{ const id=pgId(a[1]), n=clamp(Math.round(num(a[0],1)),0,3), p=pgC(id); p.own=1; p.z=1; p.ax=n?PG.uXp[n-1]:Math.min(p.ax,PG.uXp[0]-1); pgRefresh(); cprint(`${id}: Z Nv ${abLvA(id)} · X ${abLvU(id)||'bloqueada'} · XP ${p.ax}`); }},
+  pg_xp:{cheat:1,d:'pg_xp N [personagem] soma XP de habilidade',f:a=>{ const id=pgId(a[1]), p=pgC(id); p.ax=Math.max(0,p.ax+(num(a[0],1000)|0)); pgRefresh(); cprint(`${id}: XP de habilidade ${p.ax} · Z Nv ${abLvA(id)} · X Nv ${abLvU(id)}`); }},
+  pg_nivel:{cheat:1,d:'pg_nivel N [personagem] define o nível do personagem (1 a 30)',f:a=>{ const id=pgId(a[1]), L=clamp(Math.round(num(a[0],1)),1,PG.charMax); pgC(id).xp=pgXpFor(L,250,90); pgRefresh(); cprint(`${id}: Nv ${charLv(pgC(id).xp).L}`); }},
+  pg_maestria:{cheat:1,d:'pg_maestria 0/1 [personagem] liga ou desliga a passiva de maestria',f:a=>{ const id=pgId(a[1]), p=pgC(id); p.m=a[0]==null?(p.m?0:1):(bool(a[0])?1:0); if(p.m){ p.own=1; } pgRefresh(); cprint(`${id}: maestria ${p.m?'ligada':'desligada'} (${MASTERY[id].name})`); }},
+  pg_tudo:{cheat:1,d:'libera todos os personagens, habilidades e ultimates no máximo (sem maestria)',f:()=>{ for(const id of CHAR_KEYS) Object.assign(pgC(id),{own:1,z:1,ax:Math.max(pgC(id).ax,PG.uXp[2])}); pgRefresh(); cprint('Tudo liberado no máximo. Use pg_maestria 1 para testar a passiva final.'); }},
+  pg_reset:{cheat:1,d:'pg_reset [personagem|tudo] zera a progressão (o drax não muda)',f:a=>{ const ids=a[0]==='tudo'||a[0]==null?CHAR_KEYS:[pgId(a[0])]; for(const id of ids) PROG.cp[id]={own:id==='recruta'?1:0,xp:0,ax:0,z:0,m:0}; if(a[0]==='tudo'||a[0]==null) PROG.acc={xp:0}; if(!pgOwn(PROG.char)){ PROG.char='recruta'; PROG.cv=varKeys('recruta')[0]; } pgRefresh(); cprint('Progressão zerada: '+ids.join(', ')); }},
+  pg_conta:{cheat:1,d:'pg_conta N soma XP de conta',f:a=>{ PROG.acc.xp=Math.max(0,PROG.acc.xp+(num(a[0],1000)|0)); pgRefresh(); cprint(`Conta Nv ${accLv(PROG.acc.xp).L} (${PROG.acc.xp} XP)`); }},
+  pg_conta_nivel:{cheat:1,d:'pg_conta_nivel N define o nível da conta (1 a 100), sem dar as recompensas',f:a=>{ PROG.acc.xp=pgXpFor(clamp(Math.round(num(a[0],1)),1,PG.accMax),400,120); pgRefresh(); cprint(`Conta Nv ${accLv(PROG.acc.xp).L}`); }},
+  pg_preco:{d:'pg_preco personagem N muda o preço de compra do personagem (até recarregar a página)',f:a=>{ const id=pgId(a[0]); if(a[1]==null){ cprint(`${id}: ${PG.price[id]}`); return; } PG.price[id]=Math.max(0,num(a[1],0)|0); pgRefresh(); cprint(`${id}: preço ◆ ${PG.price[id]}`); }},
+  pg_custo_hab:{d:'pg_custo_hab personagem N muda o custo para desbloquear a habilidade Z',f:a=>{ const id=pgId(a[0]); if(a[1]==null){ cprint(`${id}: ${PG.unlock[id]}`); return; } PG.unlock[id]=Math.max(0,num(a[1],0)|0); pgRefresh(); cprint(`${id}: desbloqueio ◆ ${PG.unlock[id]}`); }},
+  pg_custo_maestria:{d:'pg_custo_maestria personagem N muda o preço da maestria',f:a=>{ const id=pgId(a[0]); if(a[1]==null){ cprint(`${id}: ${PG.mastery[id]}`); return; } PG.mastery[id]=Math.max(0,num(a[1],0)|0); pgRefresh(); cprint(`${id}: maestria ◆ ${PG.mastery[id]}`); }},
+  pg_xp_uso:{d:'pg_xp_uso Z X XP de habilidade ganho por uso da habilidade (Z) e da ultimate (X)',f:a=>{ if(a[0]!=null) PG.xpUseA=Math.max(0,num(a[0],PG.xpUseA)); if(a[1]!=null) PG.xpUseU=Math.max(0,num(a[1],PG.xpUseU)); cprint(`XP por uso: Z ${PG.xpUseA} · X ${PG.xpUseU}`); }},
+  pg_xp_abate:{d:'pg_xp_abate Z X XP de habilidade por abate durante a habilidade (Z) e a ultimate (X)',f:a=>{ if(a[0]!=null) PG.xpKillA=Math.max(0,num(a[0],PG.xpKillA)); if(a[1]!=null) PG.xpKillU=Math.max(0,num(a[1],PG.xpKillU)); cprint(`XP por abate: Z ${PG.xpKillA} · X ${PG.xpKillU}`); }},
+  pg_limiar_hab:{d:'pg_limiar_hab A B C D XP acumulado para a habilidade Z chegar ao Nv 1, 2, 3 e 4',f:a=>{ if(a.length>=4) PG.aXp=[0,...a.slice(0,4).map(v=>Math.max(1,num(v,1)|0))].sort((x,y)=>x-y); pgRefresh(); cprint('Z: '+PG.aXp.join(' / ')); }},
+  pg_limiar_ult:{d:'pg_limiar_ult A B C XP acumulado para a ultimate X chegar ao Nv 1, 2 e 3',f:a=>{ if(a.length>=3) PG.uXp=a.slice(0,3).map(v=>Math.max(1,num(v,1)|0)).sort((x,y)=>x-y); pgRefresh(); cprint('X: '+PG.uXp.join(' / ')); }},
+  pg_forca:{d:'pg_forca a|u E|C|D|R valores… muda a tabela de força por nível (a: 5 valores Nv0–4; u: 3 valores Nv1–3). Sem valores mostra a tabela. E=efeito C=recarga D=duração R=alcance',f:a=>{ const g=a[0]==='u'?'u':'a', k=(a[1]||'').toUpperCase(); if(!LVF[g][k]){ for(const gg of ['a','u']) for(const [kk,v] of Object.entries(LVF[gg])) cprint(`${gg} ${kk}: ${v.join(' ')}`); return; } const vals=a.slice(2).map(v=>num(v,NaN)).filter(v=>isFinite(v)); if(vals.length===LVF[g][k].length) LVF[g][k]=vals; abApplyLevels(); cprint(`${g} ${k}: ${LVF[g][k].join(' ')}`); }},
+  pg_ab:{d:'mostra os valores atuais da habilidade e da ultimate do personagem em uso (já com nível e maestria)',f:()=>{ abApplyLevels(); const c=abc(); cprint(`${c} (Z Nv ${abLvA(c)}, X Nv ${abLvU(c)}, maestria ${pgMastery(c)?'sim':'não'}): `+Object.entries(AB_CFG[c]).map(([k,v])=>k+'='+(+v).toFixed(2)).join(' ')); }},
+  pg_cheatxp:{d:'pg_cheatxp 0/1 deixa a partida render XP mesmo com sv_cheats 1 (para testar a tela final)',f:a=>{ PG.cheatXp=a[0]==null?!PG.cheatXp:bool(a[0]); cprint(`XP com cheats: ${PG.cheatXp?1:0}`); }},
+  pg_fim:{cheat:1,d:'termina a partida agora e mostra a tela de XP (use pg_cheatxp 1 para ganhar XP)',f:()=>{ if(G.state!=='playing'&&G.state!=='paused'){ cprint('Só funciona durante uma partida','err'); return; } gameOver(); }},
+  pg_demo:{d:'mostra a animação de fim de partida com dados de exemplo (não salva nada)',f:()=>{ const c=abc(), p=pgC(c); const S={c,base:900,acc0:PROG.acc.xp,acc1:PROG.acc.xp+2600,char0:p.xp,char1:p.xp+900,ax0:p.ax,ax1:p.ax+700,z:true,matchDrax:420,bonusDrax:1200,rewards:[{t:'acc',L:accLv(PROG.acc.xp+2600).L,drax:1000,xp:500}]}; show('#over'); pgAnimate(S); }},
+  // ---- mãos e viewmodel (help vm) ----
+  vm_ads_auto:{d:'vm_ads_auto 0/1 mira automática (linha de mira da arma) ou a posição do Workshop',f:a=>{ VMDBG.adsAuto=a[0]==null?!VMDBG.adsAuto:bool(a[0]); setGunModel(); cprint(`ADS automático: ${VMDBG.adsAuto?1:0}`); }},
+  vm_ads_olho:{d:'vm_ads_olho N distância do olho até a alça de mira no ADS (0.07 a 0.2; vazio = automático)',f:a=>{ VMDBG.eye=a[0]==null?null:clamp(num(a[0],0.12),0.05,0.3); setGunModel(); cprint(`Distância do olho: ${VMDBG.eye==null?'auto':VMDBG.eye}`); }},
+  vm_maos:{d:'vm_maos 0/1 mãos novas (Rigged Hand.glb) ou as luvas antigas',f:a=>{ const on=a[0]==null?!RIG.ok:bool(a[0]); if(on&&!RIG.root){ cprint('As mãos novas não carregaram','err'); return; } RIG.ok=on; if(RIG.root) RIG.root.visible=false; handR.visible=handL.visible=!on; cprint(`Mãos novas: ${on?1:0}`); }},
+  vm_mao:{d:'vm_mao R|L px py pz [rx ry rz] posição (m) e rotação (graus) da palma na arma atual; sem números mostra',f:a=>{ const c=vmHandCfg(a[0]); if(!c) return; const n=a.slice(1).map(v=>num(v,NaN)); if(n.length>=3&&n.slice(0,3).every(isFinite)) c.p=n.slice(0,3); if(n.length>=6&&n.slice(3,6).every(isFinite)) c.r=n.slice(3,6); cprint(`${curSlot().id} ${a[0].toUpperCase()}: p=[${c.p.join(', ')}] r=[${c.r.join(', ')}]`); }},
+  vm_mao_mover:{d:'vm_mao_mover R|L dx dy dz [drx dry drz] empurra a palma um pouco (m e graus)',f:a=>{ const c=vmHandCfg(a[0]); if(!c) return; const n=a.slice(1).map(v=>num(v,0)); c.p=c.p.map((v,i)=>+(v+(n[i]||0)).toFixed(4)); c.r=c.r.map((v,i)=>+(v+(n[i+3]||0)).toFixed(1)); cprint(`${curSlot().id} ${a[0].toUpperCase()}: p=[${c.p.join(', ')}] r=[${c.r.join(', ')}]`); }},
+  vm_dedos:{d:'vm_dedos R|L indicador médio anelar mindinho polegar: fechamento de cada dedo (0 aberto, 1 padrão, 1.6 bem fechado)',f:a=>{ const c=vmHandCfg(a[0]); if(!c) return; const n=a.slice(1).map(v=>num(v,NaN)); if(n.length) c.k=(c.k||[1,1,1,1,1]).map((v,i)=>isFinite(n[i])?clamp(n[i],0,2):v); cprint(`${curSlot().id} ${a[0].toUpperCase()} dedos: ${(c.k||[1,1,1,1,1]).join(' ')}`); }},
+  vm_pegada:{d:'vm_pegada R|L trigger|grip|wrap|cup|open forma base dos dedos',f:a=>{ const c=vmHandCfg(a[0]); if(!c) return; if(RIG_CURL[a[1]]) c.curl=a[1]; cprint(`${curSlot().id} ${a[0].toUpperCase()} pegada: ${c.curl}`); }},
+  vm_uma_mao:{d:'vm_uma_mao 0/1 segura a arma atual com uma mão só (1) ou duas (0)',f:a=>{ const id=curSlot()&&curSlot().id, c=RIG_HANDS[id]; if(!c){ cprint('Sem arma','err'); return; } const one=a[0]==null?!!c.L:bool(a[0]); if(one){ if(c.L) VMDBG.saveL[id]=c.L; c.L=null; } else c.L=VMDBG.saveL[id]||{p:[-0.01,-0.04,-0.12],r:[-74,-122,-10],curl:'wrap',k:[1,1,1,1,1]}; cprint(`${id}: ${c.L?'duas mãos':'uma mão'}`); }},
+  vm_mao_escala:{d:'vm_mao_escala N tamanho dos braços na arma atual (0.6 a 1.2)',f:a=>{ const c=RIG_HANDS[curSlot()&&curSlot().id]; if(!c) return; if(a[0]!=null) c.s=clamp(num(a[0],0.85),0.5,1.4); cprint(`escala: ${c.s}`); }},
+  vm_mao_print:{d:'mostra o JSON da pegada da arma atual (copie para RIG_HANDS no index.html)',f:()=>{ const id=curSlot()&&curSlot().id; cprint(`${id}:${JSON.stringify(RIG_HANDS[id])},`); }},
   drax:{cheat:1,d:'drax N soma drax para testar o Arsenal',f:a=>{ const n=num(a[0],1000)|0; PROG.drax=Math.max(0,PROG.drax+n); saveProg(); cprint(`Drax: ${PROG.drax}`); }},
   knife:{cheat:1,d:'knife <tipo> [acabamento] [raro] cria e equipa uma faca',f:a=>{ const t=(a[0]||'').toLowerCase(); if(!KTYPES[t]){ cprint(`Tipos: ${KT_KEYS.join(', ')}`,'err'); return; } let s=(a[1]||'').toLowerCase(); if(s&&!SKINS[s]){ cprint(`Acabamentos: ${Object.keys(SKINS).join(', ')}`,'err'); return; } const r=s?Math.max(0,SKINS[s].r):4; const it=rollItem(r,null,t); if(s) it.s=s; if(a[2]==='raro'||a[2]==='1') it.rp=true; PROG.items.push(it); PROG.eq=it.uid; saveProg(); recomputeMods(); setKnifeModel(); hudAmmo(); cprint(`Equipada: ${itemName(it)} (${itemRar(it).name})${it.pas.length?' · '+it.pas.map(fmtPas).join(' · '):''}`); }},
   card:{cheat:1,d:'card <id> pega uma carta · card list mostra os ids',f:a=>{ if(a[0]==='list'||!a[0]){ cprint(CARDS.map(c=>`${c.id}${c.pact?'(pacto)':''}`).join(', ')); return; } if(!needGame()) return; const c=CARD_BY[a[0]]; if(!c){ cprint('Carta desconhecida. Use card list.','err'); return; } const l=addCard(c.id); recomputeMods(); hudCards(); cprint(`Carta: ${c.name}${c.lv?' '+ROM[l]:''}`); }},
@@ -6465,7 +6788,7 @@ function applyHands(){
   const L=curVar().look; const H=HANDS[L.hands]||HANDS.tac;
   const maps=[null,gloveTex,leatherTex,getCamo()];
   const setM=(mat,spec)=>{ mat.map=maps[spec[0]]; mat.color.setHex(spec[1]); if(spec[2]!=null&&mat.specular){ mat.specular.setHex(spec[2]); mat.shininess=spec[3]; } mat.needsUpdate=true; };
-  setM(VMSKIN,H.g); setM(VMKNUCK,H.k); setM(VMSLEEVE,H.s); setM(VMCUFF,H.c);
+  setM(VMSKIN,H.g); setM(VMKNUCK,H.k); setM(VMSLEEVE,H.s); setM(VMCUFF,H.c); rigSyncMats();
   const sc=L.fem?0.92:(L.build||1)>1.05?1.06:1; for(const h of [handR,handL,knifeHand]) h.scale.setScalar(h===knifeHand?0.95*sc:sc);
 }
 
@@ -6747,7 +7070,7 @@ function renderChars(){
   for(const id of CHAR_KEYS){ const C=CHARS[id]; const vk=id===chSel?chVar:(id===PROG.char?PROG.cv:varKeys(id)[0]);
     const b=document.createElement('button'); b.type='button'; b.className='chc'+(id===chSel?' on':'')+(id===PROG.char?' eq':''); b.dataset.id=id;
     const im=document.createElement('img'); im.alt=''; im.src=charThumb(id,vk==='vm'||vk==='vf'?vk:vk); const tx=document.createElement('span'); tx.className='cht';
-    const n=document.createElement('b'); n.textContent=C.vars[vk].name; const r=document.createElement('small'); r.textContent=C.passive.name+(id===PROG.char?' · em uso':''); tx.append(n,r); b.append(im,tx);
+    const n=document.createElement('b'); n.textContent=C.vars[vk].name; const r=document.createElement('small'); r.textContent=pgOwn(id)?`Nv ${charLv(pgC(id).xp).L} · `+C.passive.name+(id===PROG.char?' · em uso':''):`🔒 ◆ ${PG.price[id].toLocaleString('pt-BR')}`; if(!pgOwn(id)) r.className='chtag'; tx.append(n,r); b.append(im,tx);
     b.addEventListener('click',()=>{ chSel=id; chVar=id===PROG.char?PROG.cv:varKeys(id)[0]; chTab='perfil'; renderChars(); }); list.appendChild(b); }
   const C=CHARS[chSel], V=C.vars[chVar]; const info=$('#chinfo'); info.textContent='';
   const h=document.createElement('h3'); h.textContent=V.name; const rl=document.createElement('p'); rl.className='chrole'; rl.textContent=V.role||C.role; info.append(h,rl);
@@ -6756,13 +7079,14 @@ function renderChars(){
     info.appendChild(vs); }
   const tabs=document.createElement('nav'); tabs.className='tabs'; for(const [k,l] of [['perfil','Perfil'],['historia','História']]){ const b=document.createElement('button'); b.type='button'; b.textContent=l; b.className=chTab===k?'on':''; b.addEventListener('click',()=>{ chTab=k; renderChars(); }); tabs.appendChild(b); } info.appendChild(tabs);
   if(chTab==='perfil'){ const pb=document.createElement('div'); pb.className='chpas'; const pt=document.createElement('p'); pt.className='file'; pt.textContent='Passiva única'; const pn=document.createElement('h4'); pn.textContent=C.passive.name; const ul=document.createElement('ul'); for(const l of C.passive.lines){ const li=document.createElement('li'); li.textContent=l; if(l.startsWith('−')) li.className='con'; ul.appendChild(li); } pb.append(pt,pn,ul); info.appendChild(pb);
-    const AD=typeof AB_DEF!=='undefined'&&AB_DEF[chSel]; if(AD) for(const [k,lab] of [['a','Habilidade · Z'],['u','Ultimate · X']]){ const ab=document.createElement('div'); ab.className='chpas'; const t=document.createElement('p'); t.className='file'; t.textContent=lab; const h=document.createElement('h4'); h.textContent=AD[k].name; const d=document.createElement('ul'); const li=document.createElement('li'); li.textContent=AD[k].desc; d.appendChild(li); ab.append(t,h,d); info.appendChild(ab); }
+    pgCharPanel(chSel,info,renderChars);
     if(V.bundle){ const bn=document.createElement('p'); bn.className='chbun'; bn.textContent=varOK(chSel,chVar)?'Visual do bundle Noite Eterna. A passiva continua a mesma do Recruta.':'Visual do bundle de Halloween Noite Eterna. Compre o bundle no menu principal para usar.'; info.appendChild(bn); } }
   else { const st=document.createElement('div'); st.className='chstory'; for(const para of C.story){ const p=document.createElement('p'); p.textContent=para; st.appendChild(p); } if(V.lore){ const p=document.createElement('p'); p.className='chlore'; p.textContent=V.lore; st.appendChild(p); } info.appendChild(st); }
   const row=document.createElement('div'); row.className='row'; const pick=document.createElement('button'); pick.type='button'; pick.id='ch-pick'; pick.className='cta small';
-  const using=chSel===PROG.char&&chVar===PROG.cv; const ok=varOK(chSel,chVar);
-  pick.textContent=using?'Em uso':ok?'Selecionar':'Bloqueado'; pick.disabled=using||!ok; pick.dataset.snd='select';
-  pick.addEventListener('click',()=>{ if(!varOK(chSel,chVar)) return; PROG.char=chSel; PROG.cv=chVar; saveProg(); recomputeMods(); applyHands(); menuLabels(); renderChars(); });
+  const using=chSel===PROG.char&&chVar===PROG.cv; const ok=varOK(chSel,chVar), owned=pgOwn(chSel), price=PG.price[chSel]||0;
+  pick.textContent=!owned?`Comprar · ◆ ${price.toLocaleString('pt-BR')}`:using?'Em uso':ok?'Selecionar':'Bloqueado'; pick.disabled=owned?(using||!ok):PROG.drax<price; pick.dataset.snd=owned?'select':'none';
+  pick.addEventListener('click',()=>{ if(!pgOwn(chSel)){ if(!pgBuyChar(chSel)) return; } if(!varOK(chSel,chVar)) { renderChars(); return; } PROG.char=chSel; PROG.cv=chVar; saveProg(); recomputeMods(); applyHands(); menuLabels(); renderChars(); });
+  if(!owned){ const pr=document.createElement('p'); pr.className='pgnote'; pr.textContent=PROG.drax<price?`Você tem ◆ ${PROG.drax.toLocaleString('pt-BR')}. Faltam ◆ ${(price-PROG.drax).toLocaleString('pt-BR')}.`:'Depois de comprar, desbloqueie a habilidade com drax e evolua jogando.'; info.appendChild(pr); }
   row.appendChild(pick);
   if(!ok){ const go=document.createElement('button'); go.type='button'; go.className='ghost'; go.textContent='Ver o bundle'; go.addEventListener('click',()=>{ show('#menu'); menuEnter(); }); row.appendChild(go); }
   info.appendChild(row);
@@ -6773,6 +7097,7 @@ $('#ch-back').addEventListener('click',()=>{ show('#menu'); menuEnter(); });
 
 /* ---- main menu ---- */
 function menuLabels(){
+  renderProfile();
   const run=validRun(PROG.run); $('#contli').hidden=!run; if(run) $('#contsub').textContent=`${MAPS[run.map].name} · rodada ${(run.round|0)+1} · ${(run.points|0).toLocaleString('pt-BR')} pontos`;
   const V=curVar(); $('#charsub').textContent=`${V.name} · ${curChar().passive.name}`;
   const own=PROG.own.includes(BUNDLE.id); const b=$('#adbuy');
@@ -6954,7 +7279,7 @@ function updateCine(dt){
 
 /* ================= SPECIAL ROUNDS: incendiary burn over time, electric arcs that jump to the nearest dead ================= */
 const BURN=new Map();
-function igniteZ(z,dps){ const b=BURN.get(z); if(b){ b.t=3.2; b.dps=Math.max(b.dps,dps); } else BURN.set(z,{t:3.2,tick:0.45,dps}); }
+function igniteZ(z,dps){ const T=pgBurnSpread()?9.6:3.2; const b=BURN.get(z); if(b){ b.t=Math.max(b.t,T); b.dps=Math.max(b.dps,dps); } else BURN.set(z,{t:T,tick:0.45,dps}); }
 function updateBurns(dt){
   if(!BURN.size) return; const live=new Set(zlist());
   for(const [z,b] of BURN){
@@ -6963,7 +7288,9 @@ function updateBurns(dt){
     if(Math.random()<dt*16) emit('fire',z.pos.x+rand(-.22,.22),y+(z.crawl?rand(0.1,0.4):rand(0.4,1.7)),z.pos.z+rand(-.22,.22),1,0.7,0.55,-2.5);
     if(Math.random()<dt*3) wPuff(z.pos.x,y+(z.crawl?0.4:1.6),z.pos.z,1,0x3a342e,0.14,1.1,0.8,0.25);
     if(z.mats&&!z.flashT) z.mats[2].emissive.setHex(Math.random()<0.5?0x4a1600:0x2a0c00);
-    if(b.tick<=0){ b.tick=0.5; if(applyHit(z,b.dps*0.5,'body','burn',null)){ hitmarker(true); BURN.delete(z); continue; } }
+    if(b.tick<=0){ b.tick=0.5;
+      if(pgBurnSpread()){ let n=0; for(const q of live){ if(n>=3) break; if(q===z||q.dead||q.predDead||BURN.has(q)) continue; if(Math.hypot(q.pos.x-z.pos.x,q.pos.z-z.pos.z)<6){ igniteZ(q,b.dps); n++; } } }   // Fogo Purificador: o fogo pula de zumbi em zumbi
+      if(applyHit(z,b.dps*0.5,'body','burn',null)){ hitmarker(true); BURN.delete(z); continue; } }
     if(b.t<=0){ BURN.delete(z); if(z.mats) z.mats[2].emissive.setHex(0); }
   }
 }
@@ -7001,7 +7328,7 @@ function vbTex(i){ return tex(96,96,(g,w,h)=>{ g.clearRect(0,0,w,h); const c=w/2
 let VBT=null;
 function vbTargets(knifeOnly){
   const out=[]; const roots=knifeOnly||Wp.knifeOut?[knife]:[gunHolder];
-  for(const r of roots) r.traverse(o=>{ if(!o.isMesh||!o.visible||!o.geometry||o.userData.vb) return; const m=o.material; if(!m||m.transparent||Array.isArray(m)) return;
+  for(const r of roots) r.traverse(o=>{ if(!o.isMesh||o.isSkinnedMesh||!o.visible||!o.geometry||o.userData.vb) return; const m=o.material; if(!m||m.transparent||Array.isArray(m)) return;
     let vis=true; for(let p=o.parent;p;p=p.parent) if(!p.visible){ vis=false; break; } if(!vis) return;
     if(!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); const s=o.getWorldScale(new THREE.Vector3()); const mx=Math.max(s.x,s.y,s.z), mn=Math.min(s.x,s.y,s.z); if(mn<=0||mx/mn>2.2) return;
     const R=o.geometry.boundingSphere.radius*mx; if(R<0.012) return; const c=o.geometry.boundingSphere.center.clone(); o.localToWorld(c); const p=c.project(vmCam); if(Math.abs(p.x)>1.15||p.y<-1.15||p.y>1.1) return; out.push({o,R}); });
@@ -7245,19 +7572,215 @@ const AB_LINES={
   viktor:{on:'Tenta acompanhar.',off:'Ainda preciso ajustar isso.',sur:'Hora de forçar o hardware.',ult:'Desliguem.'},
   recruta:{ult:'Artilharia, na minha posição!'},helena:{ult:'Ninguém morre no meu plantão.'},moreira:{ult:'Podem vir.'},tomas:{ult:'Voltem para o descanso.'},iara:{ult:'Respira… e solta.'}
 };
+
+/* ================= PROGRESSÃO: conta, personagens, habilidades e maestria =================
+   Só XP é salvo (PROG.cp / PROG.acc); níveis são sempre calculados a partir dele, então nunca ficam inconsistentes.
+   - Personagens são comprados com drax (quanto mais forte, mais caro; o Padre é o mais caro).
+   - A habilidade (Z) vem bloqueada: desbloqueia com drax e sobe do Nv 0 ao Nv 4 com XP de habilidade (usando em jogo).
+   - A ultimate (X) libera e sobe do Nv 1 ao Nv 3 com o mesmo XP de habilidade.
+   - Com Z no Nv 4 e X no Nv 3, a Maestria (passiva final) fica à venda.
+   - Nível do personagem e nível da conta sobem com o XP de cada partida; a cada 10 níveis de conta há recompensa. */
+const PG={
+  price:{recruta:0,iara:3000,helena:4000,viktor:5000,moreira:6000,tomas:8000},
+  unlock:{recruta:600,iara:1200,helena:1500,viktor:1800,moreira:2100,tomas:2800},
+  mastery:{recruta:4000,iara:6000,helena:7000,viktor:8000,moreira:9000,tomas:12000},
+  aXp:[0,300,1000,2200,4000],      // XP de habilidade acumulado para a habilidade Nv 0..4
+  uXp:[600,2200,5000],             // XP de habilidade acumulado para a ultimate Nv 1..3
+  charMax:30, accMax:100,
+  xpUseA:25, xpUseU:60, xpKillA:6, xpKillU:4
+};
+const PGM={on:false,done:false,ax:0,zWin:0,uWin:0,iaraT:0};
+function pgC(id){ if(!PROG.cp||typeof PROG.cp!=='object') PROG.cp={}; let c=PROG.cp[id]; if(!c){ c=PROG.cp[id]={own:id==='recruta'?1:0,xp:0,ax:0,z:0,m:0}; } return c; }
+function pgLv(xp,base,inc,max){ let L=1, need=base; xp=Math.max(0,xp|0); while(L<max&&xp>=need){ xp-=need; L++; need=base+inc*(L-1); } return {L,cur:L>=max?1:xp,need:L>=max?1:need}; }
+const charLv=xp=>pgLv(xp,250,90,PG.charMax);
+const accLv=xp=>pgLv(xp,400,120,PG.accMax);
+function abLvAx(ax,z){ if(!z) return -1; let L=0; PG.aXp.forEach((t,i)=>{ if(ax>=t) L=i; }); return L; }
+function abLvUx(ax,z){ if(!z) return 0; let L=0; PG.uXp.forEach((t,i)=>{ if(ax>=t) L=i+1; }); return L; }
+const abLvA=c=>abLvAx(pgC(c).ax,pgC(c).z);                // -1 = bloqueada
+const abLvU=c=>abLvUx(pgC(c).ax,pgC(c).z);                // 0 = bloqueada
+const pgOwn=c=>!!pgC(c).own, pgMastery=c=>!!pgC(c).m, pgMaxed=c=>abLvA(c)>=4&&abLvU(c)>=3;
+function pgNextAbXp(ax){ const all=[...PG.aXp,...PG.uXp].filter(t=>t>ax).sort((a,b)=>a-b); return all.length?all[0]:null; }
+function pgPrevAbXp(ax){ const all=[0,...PG.aXp,...PG.uXp].filter(t=>t<=ax).sort((a,b)=>b-a); return all[0]||0; }
+function accReward(L){ return L%10===0?{drax:100*L,xp:50*L}:null; }   // Nv 10: 1000 drax e +500 XP de conta; Nv 20: 2000 e +1000…
+function nextAccReward(L){ const n=(Math.floor(L/10)+1)*10; return n<=PG.accMax?{L:n,...accReward(n)}:null; }
+
+/* ---- força das habilidades por nível: Nv 0 quase não muda a partida, Nv máximo é apelão ---- */
+const AB_BASE=JSON.parse(JSON.stringify(AB_CFG));
+const LVF={a:{E:[.3,.6,1,1.5,2.2],C:[1.8,1.4,1,.8,.6],D:[.6,.8,1,1.3,1.6],R:[.6,.8,1,1.2,1.45]},u:{E:[.6,1.1,1.9],D:[.6,1,1.6],R:[.7,1,1.5]}};
+const AB_LV={
+  recruta:{a:{buff:'D',cd:'C'},u:{radius:'R',dmg:'E',dmgRound:'E'},fx:(C,la,lu)=>{ C.reload=[.08,.18,.3,.42,.55][la]; C.shells=[4,7,12][lu-1]; }},
+  helena:{a:{heal:'E',range:'R',cd:'C'},u:{fieldT:'D',fieldR:'R',fieldHps:'E'}},
+  moreira:{a:{range:'R',dmg:'E',dmgRound:'E',cd:'C'},u:{furyT:'D',regen:'E'},fx:(C,la,lu)=>{ C.taken=[.6,.35,.15][lu-1]; C.knife=[1.6,2.5,4][lu-1]; }},
+  tomas:{a:{range:'R',dmg:'E',dmgRound:'E',burn:'E',cd:'C'},u:{auraT:'D',auraR:'R',auraDmg:'E',auraRound:'E'}},
+  iara:{a:{range:'R',markT:'D',cd:'C'},u:{ultT:'D'},fx:(C,la,lu)=>{ C.mark=[1.15,1.3,1.5,1.8,2.2][la]; C.head=[1.5,2.2,3.2][lu-1]; }},
+  viktor:{a:{dur:'D',speed:'E',reload:'E',cd:'C'},u:{empR:'R',empDmg:'E',empRound:'E',stun:'D'}}
+};
+const MASTERY={
+  recruta:{name:'Comandante de Artilharia',lines:['A ultimate carrega 2× mais rápido','A barragem tem o dobro de morteiros e área 60% maior','A Recarga Tática também repõe 30% da munição de reserva'],fx:C=>{ C.shells*=2; C.radius*=1.6; }},
+  helena:{name:'Milagre do Vale Negro',lines:['Regenera 6 de vida por segundo o tempo todo','A injeção cura o dobro e recarrega na metade do tempo','O campo de cura fica 3× maior e dura o dobro'],fx:C=>{ C.heal*=2; C.cd*=0.5; C.fieldR*=3; C.fieldT*=2; }},
+  moreira:{name:'Blindado Imparável',lines:['Recebe 35% menos dano o tempo todo','A Investida recarrega 60% mais rápido e alcança o dobro','A Fúria do Blindado dura o dobro'],fx:C=>{ C.cd*=0.4; C.range*=2; C.furyT*=2; }},
+  tomas:{name:'Fogo Purificador',lines:['O fogo pula de zumbi em zumbi e se espalha por quase o mapa todo','As chamas duram 3× mais e causam o dobro de dano','A aura do Exorcismo cobre 3× a área'],fx:C=>{ C.auraR*=3; C.burn*=2; C.range*=1.5; }},
+  iara:{name:'Predadora',lines:['Marca sozinha todos os zumbis a até 60 m a cada 6 s','Alvos marcados recebem 2,5× de dano','O Olho da Raposa dura o dobro'],fx:C=>{ C.mark=Math.max(C.mark,2.5); C.ultT*=2; }},
+  viktor:{name:'Núcleo de Fusão',lines:['+15% de velocidade o tempo todo','Overclock sem resfriamento e com recarga 65% menor','O Pulso EMP alcança quase o mapa todo e paralisa pelo dobro do tempo'],fx:C=>{ C.cool=0; C.cd*=0.35; C.empR*=3.5; C.stun*=2; }}
+};
+const AB_LV_HINT={
+  recruta:['duração e redução da recarga','morteiros, área e dano'],helena:['cura, alcance e recarga','duração, área e cura do campo'],
+  moreira:['alcance, dano e recarga','duração, resistência e dano da faca'],tomas:['alcance, dano, fogo e recarga','duração, área e dano da aura'],
+  iara:['alcance, duração e dano extra','duração e multiplicador de cabeça'],viktor:['duração, velocidade e recarga','área, dano e paralisia']
+};
+function abApplyLevels(){
+  for(const k of Object.keys(AB_BASE)) AB_CFG[k]=JSON.parse(JSON.stringify(AB_BASE[k]));
+  const c=abc(), la=Math.max(0,abLvA(c)), lu=Math.max(1,abLvU(c)), C=AB_CFG[c], T=AB_LV[c]; if(!T||!C) return;
+  for(const [k,f] of Object.entries(T.a)) C[k]*=LVF.a[f][la];
+  for(const [k,f] of Object.entries(T.u)) C[k]*=LVF.u[f][lu-1];
+  if(T.fx) T.fx(C,la,lu);
+  if(pgMastery(c)){ MASTERY[c].fx(C); if(c==='recruta'){ AB_CFG.ult.perKill*=2; AB_CFG.ult.perSec*=2; } }
+  if(C.shells) C.shells=Math.round(C.shells);
+}
+function pgLocked(k){ Snd.abil('deny'); banner(k==='a'?'Habilidade bloqueada':'Ultimate bloqueada',k==='a'?'Desbloqueie em Personagens com drax':'Libera com XP de habilidade: use a habilidade nas partidas'); }
+
+/* ---- XP de habilidade durante a partida ---- */
+function pgMatchStart(){ Object.assign(PGM,{on:true,done:false,ax:0,zWin:0,uWin:0,iaraT:0}); abApplyLevels(); }
+function pgOnUse(k){ const c=abc(); if(!PGM.on||abLvA(c)<0) return; if(k==='a'){ PGM.ax+=PG.xpUseA; PGM.zWin=4; } else { PGM.ax+=PG.xpUseU; PGM.uWin=3; }
+  if(k==='a'&&c==='recruta'&&pgMastery(c)) for(const q of Wp.inv){ const d=wstat(q); if(d.reserve) q.reserve=Math.min(d.reserve,q.reserve+Math.ceil(d.reserve*0.3)); } }
+function pgKills(dk){ if(!PGM.on||dk<=0||abLvA(abc())<0) return;
+  if(AB.act>0||AB.dash>0||PGM.zWin>0) PGM.ax+=PG.xpKillA*dk;
+  if(AB.ultAct>0||PGM.uWin>0) PGM.ax+=PG.xpKillU*dk; }
+function pgFrame(dt){ if(G.state!=='playing') return; const c=abc();
+  PGM.zWin=Math.max(0,PGM.zWin-dt); PGM.uWin=Math.max(0,PGM.uWin-dt);
+  if(!pgMastery(c)) return;
+  if(c==='helena'&&!P.down) P.hp=Math.min(P.maxHp,P.hp+6*dt);
+  if(c==='iara'){ PGM.iaraT-=dt; if(PGM.iaraT<=0){ PGM.iaraT=6; let n=0; for(const q of zlist()){ if(!q||q.dead||q.predDead||q.state==='rise') continue; if(Math.hypot(q.pos.x-P.pos.x,q.pos.z-P.pos.z)>60) continue; q.abMark=Math.max(q.abMark||0,6.5); abMarkSprite(q); n++; } if(n) Snd.abil('mark'); } }
+}
+const pgBurnSpread=()=>abc()==='tomas'&&pgMastery('tomas');
+const pgTakenMul=()=>abc()==='moreira'&&pgMastery('moreira')?0.65:1;
+const pgSpeedMul=()=>abc()==='viktor'&&pgMastery('viktor')?1.15:1;
+
+/* ---- fim de partida: aplica XP, níveis e recompensas; devolve o resumo para a animação ---- */
+function pgEndMatch(){
+  if(!PGM.on||PGM.done) return null; PGM.done=true; PGM.on=false;
+  const c=abc(), p=pgC(c); if(!PROG.acc) PROG.acc={xp:0};
+  const base=Math.round(45*(G.round|0)+3*(G.kills|0)+2*(G.heads|0)+(G.earned|0)/150);
+  const S={c,base,acc0:PROG.acc.xp|0,char0:p.xp|0,ax0:p.ax|0,z:!!p.z,axGain:p.z?Math.round(PGM.ax):0,matchDrax:Math.floor(G.drax||0),rewards:[],bonusDrax:0};
+  if(CHEAT.on&&!PG.cheatXp){ S.cheat=true; S.acc1=S.acc0; S.char1=S.char0; S.ax1=S.ax0; S.base=0; S.axGain=0; return S; }
+  const cl0=charLv(p.xp).L; p.xp=(p.xp|0)+base; const cl1=charLv(p.xp).L;
+  for(let L=cl0+1;L<=cl1;L++){ const d=40*L; S.bonusDrax+=d; S.rewards.push({t:'char',L,drax:d}); }
+  let a0=accLv(PROG.acc.xp).L; PROG.acc.xp=(PROG.acc.xp|0)+base;
+  for(let guard=0;guard<20;guard++){ const a1=accLv(PROG.acc.xp).L; if(a1<=a0) break; for(let L=a0+1;L<=a1;L++){ const r=accReward(L); if(r){ S.bonusDrax+=r.drax; PROG.acc.xp+=r.xp; S.rewards.push({t:'acc',L,drax:r.drax,xp:r.xp}); } } a0=a1; }
+  if(p.z) p.ax=(p.ax|0)+S.axGain;
+  PROG.drax+=S.bonusDrax; S.acc1=PROG.acc.xp; S.char1=p.xp; S.ax1=p.ax;
+  saveProg(); return S;
+}
+
+/* ---- loja e desbloqueios (tela de Personagens) ---- */
+function pgSpend(n){ if(PROG.drax<n){ Snd.ui('deny'); return false; } PROG.drax-=n; return true; }
+function pgBuyChar(id){ if(pgOwn(id)) return true; if(!pgSpend(PG.price[id])) return false; pgC(id).own=1; saveProg(); Snd.ui('unlock'); return true; }
+function pgUnlockAbility(id){ const p=pgC(id); if(!p.own||p.z) return; if(!pgSpend(PG.unlock[id])) return; p.z=1; saveProg(); Snd.ui('unlock'); }
+function pgBuyMastery(id){ const p=pgC(id); if(!p.own||p.m||!pgMaxed(id)) return; if(!pgSpend(PG.mastery[id])) return; p.m=1; saveProg(); Snd.ui('levelup'); }
+
+/* ---- salvar / carregar ---- */
+function loadPgFrom(d){
+  PROG.cp={}; const src=d&&d.cp&&typeof d.cp==='object'?d.cp:null;
+  for(const id of CHAR_KEYS){ const s=src&&src[id]; const c=pgC(id); if(s&&typeof s==='object'){ c.own=s.own?1:0; c.xp=Math.max(0,s.xp|0); c.ax=Math.max(0,s.ax|0); c.z=s.z?1:0; c.m=s.m?1:0; } }
+  pgC('recruta').own=1;
+  if(!src&&d&&typeof d.char==='string'&&CHARS[d.char]) pgC(d.char).own=1;    // saves antigos: mantém quem já estava em uso
+  PROG.acc={xp:Math.max(0,(d&&d.acc&&d.acc.xp)|0)};
+  if(!pgOwn(PROG.char)){ PROG.char='recruta'; PROG.cv=varKeys('recruta')[0]; }
+}
+
+/* ---- perfil no menu ---- */
+function pgPlayerName(){ try{ return localStorage.getItem('bdm_player_name')||'Sobrevivente'; }catch(e){ return 'Sobrevivente'; } }
+function renderProfile(){ const el=$('#pgprof'); if(!el) return; if(!PROG.acc) PROG.acc={xp:0};
+  const A=accLv(PROG.acc.xp), nr=nextAccReward(A.L);
+  el.innerHTML=`<div class="pgp-top"><span class="pgp-lv">${A.L}</span><div class="pgp-who"><b></b><small>Nível da conta</small></div></div><div class="pgbar"><i style="width:${(A.cur/A.need*100).toFixed(1)}%"></i></div><small class="pgp-next">${A.L>=PG.accMax?'Nível máximo':`${A.cur.toLocaleString('pt-BR')} / ${A.need.toLocaleString('pt-BR')} XP`}${nr?` · Nv ${nr.L}: ◆ ${nr.drax.toLocaleString('pt-BR')} e +${nr.xp} XP`:''}</small>`;
+  el.querySelector('.pgp-who b').textContent=pgPlayerName(); }
+
+/* ---- animação do resumo de fim de partida ---- */
+let pgAnimSkip=null;
+function pgSparks(host,col){ for(let i=0;i<16;i++){ const s=document.createElement('i'); s.className='pgspark'; const a=Math.random()*Math.PI*2, d=40+Math.random()*70; s.style.setProperty('--dx',(Math.cos(a)*d).toFixed(0)+'px'); s.style.setProperty('--dy',(Math.sin(a)*d*0.6-20).toFixed(0)+'px'); s.style.background=col||'#ffd24a'; s.style.animationDelay=(Math.random()*0.08).toFixed(2)+'s'; host.appendChild(s); setTimeout(()=>s.remove(),1100); } }
+function pgToast(host,txt,gold){ const t=document.createElement('div'); t.className='pgtoast'+(gold?' gold':''); t.textContent=txt; host.appendChild(t); setTimeout(()=>t.remove(),2600); }
+function pgAnimate(S){
+  const host=$('#xpsum'); if(!host) return; host.hidden=false; host.textContent='';
+  if(!S){ host.hidden=true; return; }
+  if(S.cheat){ host.innerHTML='<p class="pgnote">Cheats ligados: esta partida não rende XP (pg_cheatxp 1 no console libera).</p>'; return; }
+  const C=CHARS[S.c], cname=curVar().name;
+  const rows=[
+    {k:'acc',label:'Conta',a:S.acc0,b:S.acc1,lv:x=>{ const r=accLv(x); return {L:r.L,f:r.cur/r.need,txt:'Nv '+r.L}; },col:'#ffd24a'},
+    {k:'char',label:cname,a:S.char0,b:S.char1,lv:x=>{ const r=charLv(x); return {L:r.L,f:r.cur/r.need,txt:'Nv '+r.L}; },col:'#e0301f'}
+  ];
+  if(S.z) rows.push({k:'ab',label:'Habilidades',a:S.ax0,b:S.ax1,lv:x=>{ const la=abLvAx(x,1), lu=abLvUx(x,1), n=pgNextAbXp(x), pv=pgPrevAbXp(x); return {L:la*10+lu,la,lu,f:n?(x-pv)/(n-pv):1,txt:`Z Nv ${la} · X ${lu?'Nv '+lu:'🔒'}`}; },col:'#5af0ff'});
+  const el={};
+  for(const r of rows){ const d=document.createElement('div'); d.className='pgrow'; d.innerHTML='<div class="pgrow-h"><span class="pgname"></span><span class="pglv"></span><span class="pggain">+0 XP</span></div><div class="pgbar"><i></i></div>'; d.querySelector('.pgname').textContent=r.label; host.appendChild(d); el[r.k]={d,lv:d.querySelector('.pglv'),bar:d.querySelector('.pgbar i'),gain:d.querySelector('.pggain')}; const s=r.lv(r.a); el[r.k].lv.textContent=s.txt; el[r.k].bar.style.width=(s.f*100)+'%'; r.last=s; }
+  if(!S.z){ const n=document.createElement('p'); n.className='pgnote'; n.textContent='Habilidade bloqueada: desbloqueie em Personagens para ganhar XP de habilidade.'; host.appendChild(n); }
+  const dr=document.createElement('div'); dr.className='pgdrax'; dr.innerHTML='<span>Drax recebidos</span><b>◆ 0</b>'; host.appendChild(dr); const drv=dr.querySelector('b');
+  const totalDrax=S.matchDrax+S.bonusDrax;
+  let i=0, t0=performance.now(), lastTick=0, done=false; const DUR=1500, GAP=350;
+  const finish=()=>{ if(done) return; done=true; for(const r of rows){ const s=r.lv(r.b); el[r.k].lv.textContent=s.txt; el[r.k].bar.style.width=(s.f*100)+'%'; el[r.k].gain.textContent='+'+(r.b-r.a).toLocaleString('pt-BR')+' XP'; } drv.textContent='◆ '+totalDrax.toLocaleString('pt-BR'); };
+  pgAnimSkip=finish; host.onclick=finish;
+  const ease=k=>1-Math.pow(1-k,3);
+  const levelFx=(r,s,prev)=>{ const e=el[r.k]; e.d.classList.remove('up'); void e.d.offsetWidth; e.d.classList.add('up'); pgSparks(e.d,r.col); Snd.ui('levelup');
+    if(r.k==='ab'){ if(s.lu>prev.lu) pgToast(host,s.lu===1?'Ultimate desbloqueada!':'Ultimate Nv '+s.lu+'!',true); if(s.la>prev.la) pgToast(host,'Habilidade Nv '+s.la+'!',true); if(s.la>=4&&s.lu>=3) pgToast(host,'Tudo no máximo: Maestria à venda em Personagens!',true); }
+    else { pgToast(host,(r.k==='acc'?'Conta ':'Personagem ')+'Nv '+s.L+'!',r.k==='acc');
+      const rw=S.rewards.find(q=>q.t===r.k&&q.L===s.L); if(rw) setTimeout(()=>pgToast(host,`Recompensa: ◆ ${rw.drax.toLocaleString('pt-BR')}`+(rw.xp?` e +${rw.xp} XP de conta`:''),true),450); } };
+  const step=now=>{
+    if(done) return;
+    if(i<rows.length){ const r=rows[i], k=Math.min(1,Math.max(0,(now-t0)/DUR)), x=r.a+(r.b-r.a)*ease(k), s=r.lv(Math.floor(x));
+      el[r.k].lv.textContent=s.txt; el[r.k].bar.style.width=(s.f*100).toFixed(2)+'%'; el[r.k].gain.textContent='+'+Math.floor(x-r.a).toLocaleString('pt-BR')+' XP';
+      if(s.L>r.last.L) levelFx(r,s,r.last); r.last=s;
+      if(k<1&&r.b>r.a&&now-lastTick>70){ lastTick=now; Snd.ui('tick'); }
+      if(k>=1||r.b<=r.a){ i++; t0=now+GAP; }
+    } else { const k=Math.min(1,Math.max(0,(now-t0)/1100)); drv.textContent='◆ '+Math.floor(totalDrax*ease(k)).toLocaleString('pt-BR'); if(k<1&&now-lastTick>60){ lastTick=now; Snd.ui('tick'); } if(k>=1){ done=true; Snd.ui('buy'); return; } }
+    requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
+
+/* ---- painel de evolução na tela de Personagens ---- */
+function pgEl(tag,cls,txt){ const e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; }
+function pgBar(f){ const b=pgEl('div','pgbar'); const i=pgEl('i'); i.style.width=(Math.max(0,Math.min(1,f))*100).toFixed(1)+'%'; b.appendChild(i); return b; }
+function pgCharPanel(id,info,rerender){
+  const p=pgC(id), own=!!p.own, AD=AB_DEF[id], fmt=n=>n.toLocaleString('pt-BR');
+  if(own){ const L=charLv(p.xp); const box=pgEl('div','chlv'); const ln=pgEl('div','pgline'); ln.append(pgEl('span',null,'Nível do personagem'),pgEl('b',null,L.L>=PG.charMax?'Nv '+L.L+' (máx.)':'Nv '+L.L)); box.append(ln,pgBar(L.cur/L.need)); info.appendChild(box); }
+  const la=abLvA(id), lu=abLvU(id), nx=pgNextAbXp(p.ax), pv=pgPrevAbXp(p.ax);
+  for(const k of ['a','u']){ const ab=pgEl('div','chpas'+((k==='a'?la<0:lu<1)?' locked':''));
+    const lvTxt=k==='a'?(la<0?'Bloqueada':`Nv ${la} / 4`):(lu<1?'Bloqueada':`Nv ${lu} / 3`);
+    ab.append(pgEl('p','file',(k==='a'?'Habilidade · Z':'Ultimate · X')+' · '+lvTxt),pgEl('h4',null,AD[k].name));
+    const ul=pgEl('ul'); ul.appendChild(pgEl('li',null,AD[k].desc)); const hint=AB_LV_HINT[id]&&AB_LV_HINT[id][k==='a'?0:1]; if(hint) ul.appendChild(pgEl('li',null,(k==='a'?'Nv 0 quase não muda nada; Nv 4 é devastador':'Nv 1 é tímida; Nv 3 vira o jogo')+' ('+hint+')')); ab.appendChild(ul);
+    if(k==='a'){
+      if(!own) ab.appendChild(pgEl('p','pgnote','Compre o personagem para desbloquear.'));
+      else if(la<0){ const r=pgEl('div','chbuy'); const b=pgEl('button','cta small','Desbloquear · ◆ '+fmt(PG.unlock[id])); b.type='button'; b.disabled=PROG.drax<PG.unlock[id]; b.dataset.snd='none'; b.addEventListener('click',()=>{ pgUnlockAbility(id); rerender(); }); r.appendChild(b); ab.appendChild(r); }
+      else { ab.appendChild(pgBar(nx?(p.ax-pv)/(nx-pv):1)); ab.appendChild(pgEl('p','pgnote',nx?`XP de habilidade: ${fmt(p.ax)} / ${fmt(nx)} · ganha usando Z e X nas partidas`:'Habilidade e ultimate no máximo')); }
+    } else if(own&&lu<1) ab.appendChild(pgEl('p','pgnote',la<0?'Desbloqueie a habilidade Z primeiro.':`Libera com ${fmt(PG.uXp[0])} de XP de habilidade (você tem ${fmt(p.ax)}).`));
+    else if(own&&lu<3) ab.appendChild(pgEl('p','pgnote',`Próximo nível com ${fmt(PG.uXp[lu])} de XP de habilidade.`));
+    info.appendChild(ab); }
+  const M=MASTERY[id]; const mb=pgEl('div','chpas mast'+(p.m?'':' locked')); mb.append(pgEl('p','file','Maestria · passiva final'+(p.m?' · ativa':'')),pgEl('h4',null,M.name)); const mu=pgEl('ul'); for(const l of M.lines) mu.appendChild(pgEl('li',null,l)); mb.appendChild(mu);
+  if(!p.m){ if(own&&pgMaxed(id)){ mb.classList.remove('locked'); const b=pgEl('button','cta small','Comprar maestria · ◆ '+fmt(PG.mastery[id])); b.type='button'; b.disabled=PROG.drax<PG.mastery[id]; b.dataset.snd='none'; b.addEventListener('click',()=>{ pgBuyMastery(id); rerender(); }); mb.appendChild(b); }
+    else mb.appendChild(pgEl('p','pgnote','Fica à venda quando a habilidade chegar ao Nv 4 e a ultimate ao Nv 3.')); }
+  info.appendChild(mb);
+}
+
+
+/* ---- ajudantes dos comandos de console (help pg / help vm) ---- */
+function pgId(s){ if(s&&CHARS[s]) return s; if(s){ const k=CHAR_KEYS.find(id=>id.startsWith(String(s).toLowerCase())); if(k) return k; } return abc(); }
+function pgXpFor(L,base,inc){ let x=0; for(let n=1;n<L;n++) x+=base+inc*(n-1); return x; }
+function pgRefresh(){ saveProg(); abApplyLevels(); if(typeof abHud==='function') abHud(true); renderProfile(); if(!$('#chars').hidden) renderChars(); if(!$('#menu').hidden) menuLabels(); }
+const VMDBG={adsAuto:true,eye:null,saveL:{}};
+function vmHandCfg(side){ const S=String(side||'').toUpperCase(); const id=curSlot()&&curSlot().id, c=RIG_HANDS[id]; if(!c||(S!=='R'&&S!=='L')){ cprint('Use R ou L, com uma arma na mão','err'); return null; } if(!c[S]){ cprint(`${id} está com uma mão só (vm_uma_mao 0 para voltar)`,'err'); return null; } if(!c[S].k) c[S].k=[1,1,1,1,1]; return c[S]; }
+
 const AB={cd:0,act:0,cool:0,heat:0,ult:0,ultAct:0,dash:0,dashDir:null,wantA:false,wantU:false,lastKills:0,surT:0,ready:false,fields:[],marks:new Map(),mortars:[],remoteMortars:[],tick:0,pulseT:0,ghostT:0};
 const abc=()=>CHARS[PROG.char]?PROG.char:'recruta';
-function abReset(){ abFxClear(); Object.assign(AB,{cd:0,act:0,cool:0,heat:0,ult:0,ultAct:0,dash:0,wantA:false,wantU:false,lastKills:G.kills|0,surT:0,ready:false,mortars:[],remoteMortars:[]}); for(const f of AB.fields) abFieldKill(f); AB.fields=[]; for(const [z,s] of AB.marks){ scene.remove(s); } AB.marks.clear(); abOverlay(false); Snd.muffle(false); abHud(true); }
+function abReset(){ abApplyLevels(); abFxClear(); Object.assign(AB,{cd:0,act:0,cool:0,heat:0,ult:0,ultAct:0,dash:0,wantA:false,wantU:false,lastKills:G.kills|0,surT:0,ready:false,mortars:[],remoteMortars:[]}); for(const f of AB.fields) abFieldKill(f); AB.fields=[]; for(const [z,s] of AB.marks){ scene.remove(s); } AB.marks.clear(); abOverlay(false); Snd.muffle(false); abHud(true); }
 
 /* ---- hooks the rest of the game calls ---- */
-function abSpeed(m){ const c=abc();
+function abSpeed(m){ return abSpeed0(m)*pgSpeedMul(); }
+function abSpeed0(m){ const c=abc();
   if(AB.dash>0) return m*3.0;
   if(c==='viktor'&&AB.act>0) return Math.max(m,1+AB_CFG.viktor.speed); // never stacks: the biggest bonus wins
   if(c==='viktor'&&AB.cool>0) return Math.min(m,1); // cooling down: walking only, no speed bonus
   return m; }
 function abReload(){ const c=abc(); if(c==='recruta'&&AB.act>0) return 1-AB_CFG.recruta.reload; if(c==='viktor'&&AB.act>0) return 1/(1+AB_CFG.viktor.reload); return 1; }
 function abSwap(){ return abc()==='viktor'&&AB.act>0?1+AB_CFG.viktor.reload:1; }
-function abTaken(){ return abc()==='moreira'&&AB.ultAct>0?AB_CFG.moreira.taken:1; }
+function abTaken(){ return (abc()==='moreira'&&AB.ultAct>0?AB_CFG.moreira.taken:1)*pgTakenMul(); }
 function abFreeAmmo(){ return abc()==='iara'&&AB.ultAct>0; }
 function abHit(z,dmg,part,src){ const c=abc();
   if(z&&z.abMark>0) dmg*=AB_CFG.iara.mark;
@@ -7320,6 +7843,7 @@ function abLine(k){ voxSay({on:'a',off:'off',sur:'sur',ult:'u'}[k]||k,true); }
 function abFwd(){ return {x:-Math.sin(P.yaw),z:-Math.cos(P.yaw)}; }
 function abNear(r,cone){ const f=abFwd(), out=[]; for(const z of zlist()){ if(z.dead||z.predDead||z.state==='rise') continue; const dx=z.pos.x-P.pos.x, dz=z.pos.z-P.pos.z, d=Math.hypot(dx,dz); if(d>r) continue; if(cone!=null&&d>0.4&&(dx*f.x+dz*f.z)/d<cone) continue; out.push([z,d]); } return out.sort((a,b)=>a[1]-b[1]); }
 function abUse(){ const c=abc(), C=AB_CFG[c];
+  if(abLvA(c)<0){ pgLocked('a'); return; }
   if(P.down||AB.cd>0||AB.act>0||(c==='viktor'&&AB.heat>0)){ Snd.abil('deny'); return; }
   const R=G.round|0, me=P.pos;
   if(c==='recruta'){ for(const q of Wp.inv){ const d=wstat(q); const take=Math.max(0,Math.min(d.mag-q.mag,q.reserve)); q.mag+=take; q.reserve-=take; } Wp.reloading=false; hudAmmo(); AB.act=C.buff; AB.cd=C.cd; Snd.abil('reload'); abSend('reload',me.x,me.z); banner(AB_DEF[c].a.name,'Pentes cheios'); }
@@ -7332,9 +7856,11 @@ function abUse(){ const c=abc(), C=AB_CFG[c];
   else if(c==='viktor'){ AB.act=C.dur; AB.cd=0; Snd.abil('ocOn'); Snd.muffle(true); abOverlay(true); abLine('on'); abSend('oc',me.x,me.z); AB.pulseT=0; }
   abFxStart(c,false);
   if(c!=='viktor') voxSay('a',true);
+  pgOnUse('a');
   abHud(true);
 }
 function abUlt(){ const c=abc(), C=AB_CFG[c];
+  if(abLvU(c)<1){ pgLocked('u'); return; }
   if(P.down||AB.ult<100||AB.ultAct>0){ Snd.abil('deny'); return; }
   AB.ult=0; AB.ready=false; abFxStart(c,true); const R=G.round|0, me=P.pos; Snd.abil('ult'); abSend('ult',me.x,me.z,{yaw:r100(P.yaw)}); abLine('ult'); banner(AB_DEF[c].u.name,'Ultimate','gold');
   if(c==='recruta'){ const f=abFwd(); const dist=14; const tx=me.x+f.x*dist, tz=me.z+f.z*dist, shells=[]; for(let i=0;i<C.shells;i++){ const a=rand(0,6.28), r=Math.sqrt(Math.random())*C.radius, sx=tx+Math.cos(a)*r, sz=tz+Math.sin(a)*r, delay=0.9+i*0.45; AB.mortars.push({t:delay,x:sx,z:sz,w:false}); shells.push([r10(sx),r10(sz),Math.round(delay*100)]); } abSend('mortar',me.x,me.z,shells); }
@@ -7346,6 +7872,7 @@ function abUlt(){ const c=abc(), C=AB_CFG[c];
     const from=new THREE.Vector3(me.x,P.base+1.3,me.z);
     abNear(C.empR).forEach(([z],i)=>{ const to=new THREE.Vector3(z.pos.x,zy(z)+(z.crawl?0.35:1.25),z.pos.z); if(i<8) arcFx(from,to); emit('elec',to.x,to.y,to.z,5,2.6,0.25,2); if(z.mats) z.mats.forEach(m=>m.emissive.setHex(0x1a4a7a)); z.flashT=0.2; if(NET.mode!=='client') z.stagT=Math.max(z.stagT||0,C.stun); zHitReact(z,z.pos.x-me.x,z.pos.z-me.z,200,'body','zap'); if(applyHit(z,C.empDmg+C.empRound*R,'body','zap',null)) hitmarker(true); });
     AB.heat=C.heat; }
+  pgOnUse('u');
   abHud(true);
 }
 
@@ -7369,7 +7896,7 @@ function updateAbilities(dt){
   if(G.state!=='playing'){ AB.wantA=AB.wantU=false; return; }
   const c=abc(), C=AB_CFG[c];
   // ultimate charge
-  const k=G.kills|0; if(k>AB.lastKills) AB.ult=Math.min(100,AB.ult+(k-AB.lastKills)*AB_CFG.ult.perKill); AB.lastKills=k;
+  const k=G.kills|0; pgKills(k-AB.lastKills); if(k>AB.lastKills) AB.ult=Math.min(100,AB.ult+(k-AB.lastKills)*AB_CFG.ult.perKill); AB.lastKills=k;
   if(!P.down) AB.ult=Math.min(100,AB.ult+AB_CFG.ult.perSec*dt);
   if(AB.ult>=100&&!AB.ready){ AB.ready=true; Snd.abil('ready'); }
   if(AB.wantA){ AB.wantA=false; abUse(); } if(AB.wantU){ AB.wantU=false; abUlt(); }
@@ -7397,7 +7924,7 @@ function updateAbilities(dt){
     if(f.t<=0){ abFieldKill(f); AB.fields.splice(i,1); } }
   // marks
   for(const [z,s] of AB.marks){ z.abMark=(z.abMark||0)-dt; if(z.abMark<=0||z.dead||z.predDead){ scene.remove(s); s.material.dispose(); AB.marks.delete(z); z.abMark=0; continue; } s.position.set(z.pos.x,zy(z)+(z.crawl?0.9:2.25)+Math.sin(G.t*5)*0.05,z.pos.z); }
-  abOverlayFrame(dt); abHud(false);
+  pgFrame(dt); abOverlayFrame(dt); abHud(false);
   if(NET.mode) for(const rp of NET.players.values()) abRemoteFx(rp,dt);
 }
 
@@ -7498,10 +8025,10 @@ function abHud(force){ const host=$('#bl'); if(!host) return; const c=abc();
   const aAct=AB.act>0||AB.dash>0, aMax=c==='viktor'?C.cd:C.cd, aFrac=aAct?(c==='viktor'?AB.act/C.dur:c==='recruta'?AB.act/C.buff:1):AB.cd>0?AB.cd/aMax:0;
   const aTxt=aAct?(AB.act>0?Math.ceil(AB.act)+'s':''):(c==='viktor'&&AB.heat>0)?'QUENTE':AB.cd>0?Math.ceil(AB.cd)+'':(c==='viktor'&&AB.cool>0)?'RESFRIANDO':'';
   const uTxt=AB.ultAct>0?Math.ceil(AB.ultAct)+'s':AB.ult>=100?'PRONTA':Math.floor(AB.ult)+'%';
-  const sig=[c,aAct?1:0,Math.round(aFrac*60),aTxt,uTxt,AB.ult>=100?1:0,AB.ultAct>0?1:0].join('|'); if(!force&&sig===abHudSig) return; abHudSig=sig;
+  const la=abLvA(c), lu=abLvU(c); const sig=[c,la,lu,aAct?1:0,Math.round(aFrac*60),aTxt,uTxt,AB.ult>=100?1:0,AB.ultAct>0?1:0].join('|'); if(!force&&sig===abHudSig) return; abHudSig=sig;
   const A=$('#ab-a'), U=$('#ab-u');
-  A.classList.toggle('on',aAct); A.classList.toggle('wait',!aAct&&(AB.cd>0||AB.heat>0)); A.querySelector('.cd').style.setProperty('--p',(aFrac*100).toFixed(1)+'%'); A.querySelector('.t').textContent=aTxt; A.querySelector('small').textContent=D.a.name;
-  U.classList.toggle('on',AB.ultAct>0); U.classList.toggle('ready',AB.ult>=100&&!(AB.ultAct>0)); U.querySelector('.cd').style.setProperty('--p',(AB.ultAct>0?AB.ultAct/((C.furyT||C.auraT||C.ultT||8)):(1-AB.ult/100))*100+'%'); U.querySelector('.t').textContent=uTxt; U.querySelector('small').textContent=D.u.name;
+  A.classList.toggle('on',aAct); A.classList.toggle('wait',!aAct&&(AB.cd>0||AB.heat>0)); A.querySelector('.cd').style.setProperty('--p',(aFrac*100).toFixed(1)+'%'); A.querySelector('.t').textContent=aTxt; A.querySelector('small').textContent=(la<0?'🔒 ':'')+D.a.name+(la>=0?' · Nv '+la:''); A.classList.toggle('lock',la<0);
+  U.classList.toggle('on',AB.ultAct>0); U.classList.toggle('ready',AB.ult>=100&&!(AB.ultAct>0)); U.querySelector('.cd').style.setProperty('--p',(AB.ultAct>0?AB.ultAct/((C.furyT||C.auraT||C.ultT||8)):(1-AB.ult/100))*100+'%'); U.querySelector('.t').textContent=uTxt; U.querySelector('small').textContent=(lu<1?'🔒 ':'')+D.u.name+(lu>=1?' · Nv '+lu:''); U.classList.toggle('lock',lu<1);
 }
 
 /* ================= VOICES: short random lines for every character and situation, never the same one twice in a row =================
@@ -8207,7 +8734,7 @@ function startGame(){
   clearLobbyEnvironment(); $('#roomLobby').hidden=true; NET.phase='playing';
   Snd.init(); Snd.stopMusic(); resetGame();
   if(NET.mode){ const sp=MAPS[CUR].start, idx=playerSpawnIndex(), offs=[[-.48,0],[.48,0],[0,.58],[0,-.58]][idx]||[0,0]; P.pos.set(sp[0]+offs[0],0,sp[1]+offs[1]); resetMotion(); }
-  warmShaders(); abReset(); voxReset();
+  warmShaders(); abReset(); voxReset(); pgMatchStart();
   if(NET.mode==='host'){ NET.gen++; NET.evs=[]; }
   G.state='playing'; COOP_STATE.next=38; COOP_STATE.wait=0; COOP_STATE.queue.length=0; COOP_STATE.lastPair=''; COOP_STATE.active=false; COOP_STATE.voiceLockUntil=0; show(null); $('#hud').hidden=false; if(isTouch) $('#touch').hidden=false;
   const rs=G.resume; G.resume=null;
@@ -8276,7 +8803,7 @@ function gameOver(){
   if(G.state!=='playing'&&G.state!=='paused') return;
   abReset(); resetMotion(); G.over=true; G.state='dying'; P.downT=0; $('#touch').hidden=true; closeCards(); Snd.startMusic();
   if(document.pointerLockElement) document.exitPointerLock();
-  const survived=Math.max(G.round,1); bankDrax();
+  const survived=Math.max(G.round,1); bankDrax(); const pgSum=pgEndMatch();
   const isBest=survived>best; if(isBest){ best=survived; store.set('bdm_best',best); }
   setTimeout(()=>{
     if(G.state!=='dying') return;
@@ -8285,10 +8812,10 @@ function gameOver(){
     $('#st-kills').textContent=G.kills; $('#st-heads').textContent=G.heads; $('#st-pts').textContent=G.earned; $('#st-cards').textContent=G.cards.length; $('#st-drax').textContent='◆ '+Math.floor(G.drax);
     $('#overrec').innerHTML=isBest?'<b>Novo recorde</b> neste navegador.':`Seu recorde: rodada <b>${best}</b>.`;
     const again=$('#again'); if(NET.mode==='client'){ again.disabled=true; again.textContent='Aguardando o anfitrião'; } else { again.disabled=false; again.textContent='Jogar de novo'; }
-    show('#over'); updateRec();
+    show('#over'); updateRec(); pgAnimate(pgSum);
   },2200);
 }
-function toMenu(){ abReset(); resetMotion(); cineStop(); if(G.state==='playing'||G.state==='paused') bankDrax(); if(NET.mode) leaveNet(); else { clearLobbyEnvironment(); $('#roomLobby').hidden=true; } G.state='menu'; closeCards(); $('#hud').hidden=true; $('#touch').hidden=true; show('#menu'); updateRec(); if(Snd.ready) Snd.startMusic(); if(document.pointerLockElement) document.exitPointerLock(); }
+function toMenu(){ if(G.state==='playing'||G.state==='paused'){ bankDrax(); pgEndMatch(); } if(pgAnimSkip) pgAnimSkip(); abReset(); resetMotion(); cineStop(); if(NET.mode) leaveNet(); else { clearLobbyEnvironment(); $('#roomLobby').hidden=true; } G.state='menu'; closeCards(); $('#hud').hidden=true; $('#touch').hidden=true; show('#menu'); updateRec(); if(Snd.ready) Snd.startMusic(); if(document.pointerLockElement) document.exitPointerLock(); }
 function updateRec(){ $('#rec').innerHTML=best>0?`Recorde neste navegador: rodada <b>${best}</b>.`:'Nenhuma noite registrada ainda.'; }
 
 let pickMode='solo';
@@ -8378,7 +8905,7 @@ function frame(now){
 
 /* ================= BOOT ================= */
 const fontsReady=(document.fonts&&document.fonts.ready)?Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2000))]):Promise.resolve();
-Promise.all([fontsReady,PH.ready,loadGunPack()]).then(()=>{
+Promise.all([fontsReady,PH.ready,loadGunPack(),loadRiggedHands()]).then(()=>{
   try{ buildWorld(); }catch(e){ console.error(e); fail('Falha ao montar o mapa: '+e.message); return; }
   P.pos.set(MAPS[CUR].menu.x,0,MAPS[CUR].menu.z);
   resetGame();

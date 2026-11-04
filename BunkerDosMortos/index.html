@@ -608,6 +608,9 @@ body.touch #roundc{width:120px;height:60px}
 .exlist span{font-size:13px;color:var(--muted);line-height:1.45}
 .exlist a{align-self:flex-start;margin-top:4px;text-decoration:none}
 .exlist kbd,.exlist code{font-family:inherit;color:#f0d28a}
+#clickhint{position:fixed;left:50%;top:58%;transform:translate(-50%,-50%);z-index:8;pointer-events:none;text-align:center;font-family:var(--f-type);color:var(--chalk);text-shadow:0 1px 3px #000,0 0 10px #000;padding:10px 18px;background:rgba(0,0,0,.45);border:1px solid rgba(235,229,212,.25)}
+#clickhint b{display:block;font:20px var(--f-display);letter-spacing:.08em;text-transform:uppercase}
+#clickhint small{font-size:12px;color:var(--muted)}
 #toasts{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(34px + env(safe-area-inset-bottom,0px));z-index:70;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none;max-width:min(380px,calc(100vw - 32px))}
 .toast{pointer-events:auto;display:flex;flex-direction:column;gap:7px;padding:10px 13px;background:rgba(8,9,7,.94);border:1px solid rgba(235,229,212,.2);border-left:3px solid #f0d28a;font:13px var(--f-type);color:var(--chalk);box-shadow:0 8px 24px rgba(0,0,0,.5);animation:toastin .25s ease-out both}
 .toast.bad{border-left-color:var(--blood-hi)}
@@ -972,6 +975,7 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
   <div class="row"><button id="ex-close" class="ghost" type="button" data-snd="back">Fechar</button></div>
 </div></div>
 <div id="toasts" aria-live="polite"></div>
+<div id="clickhint" hidden><b>Clique na tela para travar o mouse</b><small>Esc ou P pausa</small></div>
 <div id="pickscr" hidden><div class="pkbox">
   <div class="pkhead"><div><p class="file">Antes de descer ao bunker</p><h2>Escolha seu personagem</h2><p class="pksub" id="pk-sub">Cada jogador usa um personagem diferente.</p></div><div class="pktime"><b id="pk-t">30</b><small>segundos</small></div></div>
   <div id="pk-grid"></div><div id="pk-players"></div>
@@ -4824,7 +4828,7 @@ $('#cardrow').addEventListener('mouseover',e=>{ const b=e.target.closest('.card,
 function hudCards(){ const el=$('#cardhud'); el.textContent=''; for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v6.7';
+const GAME_VERSION='v6.7.1';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -5034,7 +5038,7 @@ function partyTrack(players){
 /* ================= INPUT ================= */
 const keys={}; const IN={fire:false,ads:false,use:false,mx:0,my:0,lookX:0,lookY:0,edges:new Set()};
 const press=a=>IN.edges.add(a);
-let locked=false, noLock=isTouch, lockEverWorked=false;
+let locked=false, noLock=isTouch||!(canvas&&canvas.requestPointerLock), lockEverWorked=false;
 addEventListener('keydown',e=>{
   if(CHAT.open) return;
   if(e.code==='KeyY'&&!e.repeat&&!CON.open&&chatAllowed()&&!(G.state==='lobby'&&(LP.on||!$('#settings').hidden))){ e.preventDefault(); openChat(); return; }
@@ -9765,7 +9769,7 @@ function enterRoomLobby(map,isRemote=false){
   buildLobbyEnvironment(map); for(const item of (MAP_OBJECTIVE_RUNTIME[CUR]||[])){ if(item.group) item.group.visible=false; }
   $('#hud').hidden=true;$('#touch').hidden=true;$('#roomLobby').hidden=false; show(null);
   updateRoomLobbyUI();
-  requestLock().then(ok=>{if(!ok&&!isTouch) noLock=true;});
+  requestLock();
 }
 async function hostGame(){
   if(!NET.connected||lobbyBusy) return; lobbyBusy=true; lobbyMsg('Criando sala e preparando o lobby…');
@@ -10099,7 +10103,7 @@ function startGame(){
   else if(NET.mode!=='client'){ startRound(1); banner(MAPS[CUR].name,NET.mode==='host'?'Sala online aberta. Seu amigo já pode entrar pelo menu':'Compre armas na parede e reconstrua as janelas','red'); }
   else banner('Você entrou na partida','Segurem as janelas juntos','red');
   if(NET.mode!=='client'&&CUR!=='x1') farmStart();
-  requestLock().then(ok=>{ if(!ok&&!lockEverWorked&&!isTouch) noLock=true; });
+  requestLock();
 }
 /* pausa no lobby: Esc/P abre um menu com Continuar, Configurações e Sair da sala; o personagem fica parado enquanto ele está aberto */
 const LP={on:false};
@@ -10162,7 +10166,7 @@ function resumeGame(){
   Snd.init();
   if(G.state!=='paused') return;
   if(isTouch||noLock){ G.state='playing'; show(null); return; }
-  requestLock().then(ok=>{ if(G.state!=='paused') return; if(ok){ G.state='playing'; show(null); } else if(!lockEverWorked){ noLock=true; G.state='playing'; show(null); } else { $('#lockhint').hidden=false; } });
+  requestLock().then(ok=>{ if(G.state!=='paused') return; if(ok){ G.state='playing'; show(null); } else { G.state='playing'; show(null); } });
 }
 function gameOver(){
   if(G.state!=='playing'&&G.state!=='paused') return;
@@ -10240,6 +10244,8 @@ function frame(now){
   const sim=G.state==='playing'||(G.state==='paused'&&!!NET.mode), lobbySim=G.state==='lobby';
   if((KV.on||CP.full)&&!sim&&!lobbySim) return;
   if(LP.on&&G.state!=='lobby') closeLobbyPause(false);
+  { let free=!locked&&!noLock&&!isTouch&&(G.state==='playing'||G.state==='lobby')&&!CHAT.open&&!G.cardsOpen&&!CON.open&&!(typeof PICK!=='undefined'&&PICK.on)&&!LP.on&&!(typeof X1!=='undefined'&&X1.buyOpen)&&$('#settings').hidden&&!(typeof letterOpen!=='undefined'&&letterOpen);
+    if(free&&x1Live()) free=false; if(free!==frame.freeHint){ frame.freeHint=free; $('#clickhint').hidden=!free; } }
   { const ca=chatAllowed(); if(ca!==frame.chatVis){ frame.chatVis=ca; $('#chat').hidden=!ca; if(!ca) closeChat(); } }
   if(lobbySim){ G.t+=dt; if(CUR==='x1') x1ThumbStep(); if(!LP.on&&!PICK.on){ updatePlayer(dt); updateLobbyInteract(); } else { IN.lookX=0; IN.lookY=0; } IN.edges.clear(); if(flowDirty) computeFlow(); }
   else if(sim){

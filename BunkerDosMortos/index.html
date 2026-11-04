@@ -231,7 +231,21 @@ body.scoped #cross{visibility:hidden}
   background:linear-gradient(160deg,var(--paper),var(--paper2));color:var(--paper-ink);border:2px solid #3b2e1c;
   box-shadow:0 10px 30px rgba(0,0,0,.6),inset 0 0 0 5px var(--paper),inset 0 0 0 6px rgba(59,46,28,.55);
   cursor:pointer;display:flex;flex-direction:column;gap:8px;animation:cardin .5s cubic-bezier(.2,.9,.3,1.15) both;transition:transform .15s}
-.card:nth-child(2){animation-delay:.08s}.card:nth-child(3){animation-delay:.16s}
+.cslot:nth-child(2) .card{animation-delay:.08s}.cslot:nth-child(3) .card{animation-delay:.16s}
+.cslot{display:flex;flex-direction:column;align-items:center;gap:8px;perspective:900px}
+.card:hover{transform:translateY(-6px) rotate(-1deg)}
+.cswap{pointer-events:auto;font:13px var(--f-type);letter-spacing:.06em;color:var(--chalk);background:rgba(8,9,7,.8);border:1px solid rgba(235,229,212,.35);padding:6px 12px;cursor:pointer;text-shadow:0 1px 2px #000;transition:background .15s,border-color .15s}
+.cswap:hover:not(:disabled){background:rgba(168,20,14,.85);border-color:var(--blood-hi)}
+.cswap:disabled{opacity:.35;cursor:default}
+.card.swapin{animation:cardswap .45s cubic-bezier(.2,.9,.3,1.15) both}
+@keyframes cardswap{0%{transform:rotateY(90deg) scale(.92);opacity:.4}100%{transform:none;opacity:1}}
+#cards.leaving{background:none;transition:background .4s}
+#cards.leaving .card,#cards.leaving .cswap{pointer-events:none}
+#cards.leaving .cswap,#cards.leaving .cardtitle{opacity:0;transition:opacity .2s}
+.card.picked{animation:cardpick 1.1s cubic-bezier(.45,.05,.55,.95) forwards;z-index:2}
+@keyframes cardpick{0%{transform:translateY(-6px) scale(1.04) rotateY(0deg)}12%{transform:translateY(-22px) scale(1.12) rotateY(0deg)}52%{transform:translateY(-22px) scale(1.12) rotateY(360deg);opacity:1}100%{transform:translateY(115vh) scale(.95) rotateY(360deg) rotateZ(14deg);opacity:.85}}
+.card.gone{animation:cardgone .35s ease-in forwards}
+@keyframes cardgone{to{transform:translateY(30px) scale(.9);opacity:0}}
 .card:hover,.card:focus-visible{transform:translateY(-6px) rotate(-1deg);outline:none}
 .card:focus-visible{box-shadow:0 0 0 3px var(--chalk),0 10px 30px rgba(0,0,0,.6)}
 .card .ck{position:absolute;top:7px;left:10px;font-family:var(--f-display);font-size:18px;opacity:.55}
@@ -564,7 +578,7 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
 .mi.cont>span{color:#ffd24a}
 @media (max-width:620px){.setp .sl{grid-template-columns:1fr 64px}.xhgrid{grid-template-columns:1fr}}
 
-@media (prefers-reduced-motion:reduce){.mi,.mi::before{transition:none}.cta{transition:none}#banner.show{animation-duration:2.6s}.card{animation:none}}
+@media (prefers-reduced-motion:reduce){.mi,.mi::before{transition:none}.cta{transition:none}#banner.show{animation-duration:2.6s}.card{animation:none}.card.picked,.card.gone{animation:none;opacity:0}}
 #letter{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(4,3,2,.72);padding:16px}
 #letter[hidden]{display:none}
 #letter .pg{position:relative;max-width:560px;width:100%;max-height:86vh;overflow:auto;padding:34px 38px 30px;background:#d4c8a4;color:#2a1e12;box-shadow:0 20px 60px rgba(0,0,0,.7),inset 0 0 80px rgba(90,60,20,.35);font-family:"Special Elite","Courier New",monospace;transform:rotate(-.6deg)}
@@ -4524,28 +4538,56 @@ function offerCards(){
   const fresh=CARDS.filter(c=>!G.cards.includes(c.id));
   const ups=CARDS.filter(c=>c.lv&&G.cards.includes(c.id)&&cardLv(c.id)<3);
   const commons=fresh.filter(c=>!c.pact), pacts=fresh.filter(c=>c.pact);
-  const offer=[]; const used=c=>offer.some(o=>o.c===c);
-  for(let k=0;k<3;k++){
-    let pool;
+  // gera uma carta que ainda não está na mão (usado na oferta e na troca)
+  const gen=(offer,k)=>{ const used=c=>offer.some(o=>o&&o.c===c); let pool;
     if(ups.length&&Math.random()<0.34) pool=ups;
     else pool=(Math.random()<(k===2?0.6:0.28)&&pacts.length)?pacts:commons;
-    pool=pool.filter(c=>!used(c)); if(!pool.length) pool=fresh.concat(ups).filter(c=>!used(c)); if(!pool.length) break;
-    const c=pick(pool); offer.push({c,l:G.cards.includes(c.id)?cardLv(c.id)+1:1});
-  }
+    pool=pool.filter(c=>!used(c)); if(!pool.length) pool=fresh.concat(ups).filter(c=>!used(c)); if(!pool.length) return null;
+    const c=pick(pool); return {c,l:G.cards.includes(c.id)?cardLv(c.id)+1:1}; };
+  const offer=[];
+  for(let k=0;k<3;k++){ const o=gen(offer,k); if(!o) break; offer.push(o); }
   offer.sort(()=>Math.random()-0.5);
-  G.cardOffer=offer; G.cardsOpen=true;
-  $('#cardrow').innerHTML=offer.map(cardHTML).join('');
-  $('#cardhint').textContent=isTouch?'Toque em uma carta':(locked?'Aperte 1, 2 ou 3':'Aperte 1, 2 ou 3, ou clique');
-  $('#cards').hidden=false; Snd.cardFlip();
+  if(!offer.length) return;
+  showCardOffer(offer,gen,isTouch?'Toque em uma carta':'Clique em uma carta ou aperte 1, 2 ou 3');
 }
+/* abre a oferta: o mouse fica livre para clicar nas cartas (clicar fora delas volta a mirar e o teclado continua valendo) */
+function showCardOffer(offer,gen,hint){
+  cardAnimStop();
+  G.cardOffer=offer; G.cardsOpen=true; G.cardGen=gen; G.cardSwap=false; G.cardsRelock=false;
+  renderCardRow();
+  $('#cardhint').textContent=hint+' · ↻ troca uma carta (1 por rodada)';
+  const el=$('#cards'); el.classList.remove('leaving'); el.hidden=false; Snd.cardFlip();
+  if(!isTouch&&document.pointerLockElement){ G.cardsFreed=true; document.exitPointerLock(); }
+}
+function cardSlotHTML(o,i){ return `<div class="cslot">${cardHTML(o,i)}<button class="cswap" data-s="${i}" type="button"${G.cardSwap?' disabled':''} title="Troca esta carta por outra. Só uma troca por rodada.">↻ Trocar</button></div>`; }
+function renderCardRow(){ $('#cardrow').innerHTML=G.cardOffer.map(cardSlotHTML).join(''); }
+function swapCard(i){
+  if(!G.cardsOpen||!G.cardOffer||!G.cardOffer[i]||$('#cards').classList.contains('leaving')) return;
+  if(G.cardSwap||!G.cardGen){ Snd.deny(); return; }
+  const rest=G.cardOffer.filter((o,k)=>k!==i), cur=G.cardOffer[i];
+  let o=null; for(let t=0;t<12&&!o;t++){ const n=G.cardGen(rest.concat([cur]),i); if(n&&n.c!==cur.c) o=n; }
+  if(!o){ Snd.deny(); const b=$('#cardrow').querySelector(`.cswap[data-s="${i}"]`); if(b){ b.textContent='Sem outras cartas'; b.disabled=true; } return; }
+  G.cardSwap=true; G.cardOffer[i]=o; renderCardRow();
+  const nb=$('#cardrow').querySelector(`.card[data-i="${i}"]`); if(nb) nb.classList.add('swapin');
+  Snd.cardFlip();
+}
+let cardAnimT=null;
+function cardAnimStop(){ if(cardAnimT){ clearTimeout(cardAnimT); cardAnimT=null; } const el=$('#cards'); if(el) el.classList.remove('leaving'); }
 function pickCard(i){
   if(!G.cardsOpen||!G.cardOffer||!G.cardOffer[i]) return;
-  const o=G.cardOffer[i], c=o.c; const l=addCard(c.id); G.cardsOpen=false; G.cardOffer=null; $('#cards').hidden=true;
+  const o=G.cardOffer[i], c=o.c; const l=addCard(c.id); G.cardsOpen=false; G.cardOffer=null; G.cardGen=null;
+  /* a carta escolhida gira uma vez e cai; as outras somem */
+  const el=$('#cards'), row=$('#cardrow');
+  for(const b of row.querySelectorAll('.card')) b.classList.add(+b.dataset.i===i?'picked':'gone');
+  el.classList.add('leaving'); if(cardAnimT) clearTimeout(cardAnimT);
+  cardAnimT=setTimeout(()=>{ cardAnimT=null; if(!G.cardsOpen){ el.hidden=true; el.classList.remove('leaving'); } },1150);
+  if(G.cardsFreed){ G.cardsFreed=false; if(G.state==='playing'&&!isTouch&&!noLock&&!G.ckptPending&&!(typeof x1Live==='function'&&x1Live())&&!CON.open) requestLock(); }
   recomputeMods(); Snd.cardPick(c.pact); if(l>1) Snd.levelUp(l+2); banner(c.name+(c.lv?' '+ROM[l]:''),cardPros(c,l).concat(c.cons||[]).join(' · '),c.pact?'red':'gold');
   if(G.ckptPending) setTimeout(openCheckpoint,900);
 }
-function closeCards(){ G.cardsOpen=false; G.cardOffer=null; $('#cards').hidden=true; }
-$('#cardrow').addEventListener('click',e=>{ const b=e.target.closest('.card'); if(b) pickCard(+b.dataset.i); });
+function closeCards(){ G.cardsOpen=false; G.cardOffer=null; G.cardGen=null; G.cardsFreed=false; cardAnimStop(); $('#cards').hidden=true; }
+$('#cardrow').addEventListener('click',e=>{ const sw=e.target.closest('.cswap'); if(sw){ e.stopPropagation(); swapCard(+sw.dataset.s); return; } const b=e.target.closest('.card'); if(b) pickCard(+b.dataset.i); });
+$('#cardrow').addEventListener('mouseover',e=>{ const b=e.target.closest('.card,.cswap'); if(b&&b!==swapCard.h){ swapCard.h=b; Snd.ui('hover'); } });
 function hudCards(){ const el=$('#cardhud'); el.textContent=''; for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= INPUT ================= */
@@ -4578,6 +4620,7 @@ canvas.addEventListener('contextmenu',e=>e.preventDefault());
 canvas.addEventListener('mousedown',e=>{
   if((G.state!=='playing'&&G.state!=='lobby')||CON.open) return;
   if(G.state==='lobby'&&LP.on){ closeLobbyPause(true); return; }
+  if(G.cardsOpen&&!locked) G.cardsRelock=true;
   if(!locked&&!noLock){ requestLock(); return; }
   if(e.button===0){ IN.fire=true; press('fire'); } else if(e.button===2){ IN.ads=true; press('alt'); }
 });
@@ -4585,7 +4628,9 @@ addEventListener('mouseup',e=>{ if(e.button===0) IN.fire=false; if(e.button===2)
 addEventListener('mousemove',e=>{ if((G.state==='playing'||G.state==='lobby')&&(locked||noLock)){ IN.lookX+=clamp(e.movementX||0,-250,250); IN.lookY+=clamp(e.movementY||0,-250,250); } });
 addEventListener('wheel',e=>{ if(G.state==='playing'&&Math.abs(e.deltaY)>2) press(e.deltaY>0?'next':'prev'); },{passive:true});
 document.addEventListener('pointerlockchange',()=>{ locked=document.pointerLockElement===canvas; if(locked) lockEverWorked=true;
-  if(G.state==='lobby'&&typeof LP!=='undefined'){ if(locked) closeLobbyPause(false); else if(!noLock&&!CON.open&&$('#settings').hidden&&!lobbyBusy) openLobbyPause(); } if(!locked&&G.state==='playing'&&!noLock&&!CON.open&&!(typeof letterOpen!=='undefined'&&letterOpen)&&!(typeof X1!=='undefined'&&x1Live())) pauseGame(); });
+  // um pedido de mira que chegou depois das cartas abrirem (ex.: ao fechar o console) não pode prender o mouse; só um clique fora das cartas faz isso
+  if(locked&&G.cardsOpen&&G.state==='playing'&&!G.cardsRelock&&!isTouch&&!(typeof x1Live==='function'&&x1Live())){ G.cardsFreed=true; document.exitPointerLock(); return; }
+  if(G.state==='lobby'&&typeof LP!=='undefined'){ if(locked) closeLobbyPause(false); else if(!noLock&&!CON.open&&$('#settings').hidden&&!lobbyBusy) openLobbyPause(); } if(!locked&&G.state==='playing'&&!noLock&&!CON.open&&!G.cardsOpen&&!(typeof letterOpen!=='undefined'&&letterOpen)&&!(typeof X1!=='undefined'&&x1Live())) pauseGame(); });
 function requestLock(){
   if(isTouch||noLock) return Promise.resolve(false);
   return new Promise(res=>{ let done=false;
@@ -9221,11 +9266,11 @@ const X1_CARD_BAN=new Set(['greed','luck','lamp','miser','blood','berserk','zap'
 function x1OfferCards(){
   if(G.cardsOpen) return; const ok=c=>!X1_CARD_BAN.has(c.id)&&(c.id!=='nader'||X1.cfg.nades>0);
   const fresh=CARDS.filter(c=>ok(c)&&!G.cards.includes(c.id)), ups=CARDS.filter(c=>ok(c)&&c.lv&&G.cards.includes(c.id)&&cardLv(c.id)<3);
-  const offer=[]; const pool=fresh.concat(ups).sort(()=>Math.random()-0.5);
-  for(const c of pool){ if(offer.length>=3) break; offer.push({c,l:G.cards.includes(c.id)?cardLv(c.id)+1:1}); }
+  const all=fresh.concat(ups), mk=c=>({c,l:G.cards.includes(c.id)?cardLv(c.id)+1:1});
+  const gen=offer=>{ const pool=all.filter(c=>!offer.some(o=>o&&o.c===c)); return pool.length?mk(pick(pool)):null; };
+  const offer=[]; for(const c of all.slice().sort(()=>Math.random()-0.5)){ if(offer.length>=3) break; offer.push(mk(c)); }
   if(!offer.length) return;
-  G.cardOffer=offer; G.cardsOpen=true; $('#cardrow').innerHTML=offer.map(cardHTML).join('');
-  $('#cardhint').textContent='Escolha uma carta para o X1 · 1, 2, 3 ou clique'; $('#cards').hidden=false; Snd.cardFlip();
+  showCardOffer(offer,gen,'Escolha uma carta para o X1 · clique ou 1, 2, 3');
   if(document.pointerLockElement) document.exitPointerLock();
 }
 

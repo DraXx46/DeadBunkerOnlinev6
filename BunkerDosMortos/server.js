@@ -30,6 +30,26 @@ const users = new Map();      // nome em minúsculas -> { name, salt, hash }
 const online = new Map();     // nome em minúsculas -> client
 const parties = new Map();    // id -> { id, leader: clientId, members: [clientId] }
 const PARTY_MAX = 4;
+const CHAR_IDS = ['recruta', 'helena', 'moreira', 'tomas', 'iara', 'viktor'];
+const PICK_MS = 30000, PICK_ALL_MS = 5000;
+/* escolha de personagem antes da partida: 30 s; quando todos escolhem, cai para 5 s; ninguém repete personagem */
+function pickPayload(room) {
+  const pk = room.pick; return { type: 'pickState', left: Math.max(0, pk.ends - Date.now()), picks: Object.fromEntries(pk.picks), players: Array.from(room.players.values()).map(p => ({ id: p.id, name: p.name })) };
+}
+function broadcastPick(room) { const pl = pickPayload(room); for (const p of room.players.values()) send(p.ws, pl); }
+function finishPick(room) {
+  const pk = room.pick; if (!pk) return; room.pick = null;
+  const taken = new Set(pk.picks.values());
+  for (const p of room.players.values()) {
+    if (pk.picks.has(p.id)) continue;
+    const own = (pk.own.get(p.id) || []).filter(c => CHAR_IDS.includes(c));
+    const c = own.find(c => !taken.has(c)) || CHAR_IDS.find(c => !taken.has(c)) || 'recruta';
+    pk.picks.set(p.id, c); taken.add(c);
+  }
+  const msg = { type: 'pickDone', picks: Object.fromEntries(pk.picks) };
+  for (const p of room.players.values()) send(p.ws, msg);
+}
+setInterval(() => { const now = Date.now(); for (const room of rooms.values()) if (room.pick && now >= room.pick.ends) finishPick(room); }, 250).unref();
 const keyOf = n => String(n || '').trim().toLowerCase();
 function hashPass(pass, salt) { return crypto.scryptSync(String(pass), salt, 32).toString('hex'); }
 function validName(n) { return /^[\p{L}\p{N} _.\-]{3,18}$/u.test(n); }
@@ -239,7 +259,7 @@ wss.on('connection', (ws) => {
       const code = String(msg.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
       const room = rooms.get(code);
       if (!room) { sendError(ws, reqId, 'Não encontramos uma sala com esse código. Confira e tente novamente.'); return; }
-      if (room.started) { sendError(ws, reqId, 'Essa partida já começou. Peça ao anfitrião para criar outra sala.'); return; }
+      if (room.started || room.pick) { sendError(ws, reqId, 'Essa partida já começou. Peça ao anfitrião para criar outra sala.'); return; }
       if (room.players.size >= room.maxPlayers) { sendError(ws, reqId, 'Essa sala está cheia.'); return; }
       client.name = cleanName(msg.name || client.name);
       client.roomCode = room.code; client.role = 'player'; client.ready = false; client.presence = null;
@@ -268,6 +288,25 @@ wss.on('connection', (ws) => {
       send(ws, { type: 'readyAck', reqId, ready: client.ready });
       broadcastRoom(room);
       return;
+    }
+    if (msg.type === 'pickStart') {
+      const room = roomOf(client);
+      if (!room || room.hostId !== client.id) { sendError(ws, reqId, 'Somente o anfitrião pode iniciar a partida.'); return; }
+      if (room.started || room.pick) { sendError(ws, reqId, 'A escolha já começou.'); return; }
+      const notReady = Array.from(room.players.values()).filter(p => p.id !== room.hostId && !p.ready);
+      if (notReady.length) { sendError(ws, reqId, 'Ainda há jogadores que não estão prontos.'); return; }
+      room.pick = { ends: Date.now() + PICK_MS, picks: new Map(), own: new Map() };
+      send(ws, { type: 'ok', reqId }); broadcastPick(room); return;
+    }
+    if (msg.type === 'pick' || msg.type === 'pickOwn') {
+      const room = roomOf(client); if (!room || !room.pick) return;
+      if (msg.type === 'pickOwn') { room.pick.own.set(client.id, (Array.isArray(msg.own) ? msg.own : []).map(String).slice(0, 12)); return; }
+      const c = String(msg.c || '');
+      if (!CHAR_IDS.includes(c)) return;
+      for (const [id, v] of room.pick.picks) if (v === c && id !== client.id) { send(ws, { type: 'pickTaken', c }); broadcastPick(room); return; }
+      room.pick.picks.set(client.id, c);
+      if (Array.from(room.players.keys()).every(id => room.pick.picks.has(id))) room.pick.ends = Math.min(room.pick.ends, Date.now() + PICK_ALL_MS);
+      broadcastPick(room); return;
     }
     if (msg.type === 'startRoom') {
       const room = roomOf(client);

@@ -508,6 +508,114 @@ body.touch #roundc{width:120px;height:60px}
 .admsg{margin:0;font-size:13px;color:#ffb0a0;min-height:1.2em}
 @media (max-width:900px){#menu{display:block}.mmgrid{grid-template-columns:1fr;padding-inline:0}.ad{max-width:520px}}
 
+/* ---------- menu principal estilo CoD: abas no topo, loja e Jogar à esquerda, o grupo no centro ---------- */
+#menu.mm2{display:block;padding:0;background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.55) 30%,rgba(6,7,5,.12) 62%,rgba(6,7,5,.45) 100%)}
+.mtop{position:absolute;left:0;right:0;top:0;height:64px;display:flex;align-items:center;gap:18px;padding:0 max(18px,env(safe-area-inset-right,0px)) 0 max(18px,env(safe-area-inset-left,0px));background:linear-gradient(180deg,rgba(4,5,4,.95),rgba(8,9,7,.78));border-bottom:1px solid rgba(235,229,212,.14);z-index:3;box-sizing:border-box}
+.mtabs{display:flex;gap:2px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
+.mtab{all:unset;cursor:pointer;font:15px var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:21px 14px 19px;border-bottom:3px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s,background .15s}
+.mtab:hover,.mtab:focus-visible{color:var(--chalk);background:rgba(235,229,212,.05)}
+.mtab.on{color:#f0d28a;border-bottom-color:#f0d28a;background:linear-gradient(180deg,rgba(240,210,138,0),rgba(240,210,138,.1))}
+.mtab:focus-visible{outline:2px solid var(--chalk);outline-offset:-2px}
+.macct{display:flex;align-items:center;gap:12px;flex:none}
+.mtop .pgprof{max-width:none;padding:6px 10px;gap:3px;min-width:170px}
+.mtop .pgp-next{display:none}
+.mdrax{font:16px var(--f-display);color:#c9b7ff;white-space:nowrap}
+.msoc{all:unset;cursor:pointer;display:flex;align-items:center;gap:6px;padding:8px 11px;border:1px solid rgba(235,229,212,.25);color:var(--chalk);font:14px var(--f-type);background:rgba(0,0,0,.35)}
+.msoc svg{width:20px;height:20px}
+.msoc:hover,.msoc.on{border-color:#f0d28a;color:#f0d28a}
+.msoc.ping{animation:socping 1s ease-in-out 3}
+@keyframes socping{50%{box-shadow:0 0 0 4px rgba(240,210,138,.35)}}
+.mleft{position:absolute;left:max(22px,env(safe-area-inset-left,0px));top:84px;bottom:46px;width:min(330px,calc(100vw - 44px));display:flex;flex-direction:column;gap:12px;z-index:2}
+.ad.mini{flex:none}
+.ad.mini .adbody{padding:10px 12px 12px;gap:8px}
+.ad.mini .adtag{padding:7px 12px;font-size:11px;white-space:nowrap}
+.ad.mini .adtitle{font-size:26px}
+.ad.mini .adprice{font-size:18px}
+.ad.mini .adline{margin:0;font-size:12px;color:var(--muted);line-height:1.4}
+.ad.mini .row{gap:8px}
+.ad.mini .cta.small{font-size:15px;padding:9px 12px}
+.ad.mini .ghost{font-size:14px;padding:8px 12px}
+.mcont{all:unset;box-sizing:border-box;cursor:pointer;width:100%;padding:10px 14px;border:1px solid rgba(255,210,74,.4);background:rgba(30,26,10,.7);display:flex;flex-direction:column;gap:2px}
+.mcont span{font:18px var(--f-display);letter-spacing:.06em;color:#ffd24a;text-transform:uppercase}
+.mcont small{font-size:12px;color:var(--muted)}
+.mplay{all:unset;box-sizing:border-box;cursor:pointer;margin-top:auto;width:100%;padding:16px 18px 14px;background:linear-gradient(180deg,#b3141c,#7d0a10);border:1px solid #e0301f;box-shadow:0 10px 30px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.15);display:flex;flex-direction:column;gap:3px;transition:transform .12s,background .15s}
+.mplay span{font:44px/1 var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:#fff}
+.mplay small{font-size:13px;color:#ffd8d0}
+.mplay:hover,.mplay:focus-visible{background:linear-gradient(180deg,#d01c24,#930c12);transform:translateY(-2px)}
+.mplay:focus-visible{outline:2px solid var(--chalk);outline-offset:3px}
+.mplay.wait{background:linear-gradient(180deg,#3a3a32,#22221d);border-color:#6a675c}
+.mcode{display:flex;gap:8px}
+.mcode input{flex:1;min-width:0;background:rgba(0,0,0,.5);border:1px solid rgba(235,229,212,.25);color:var(--chalk);font:16px var(--f-display);letter-spacing:.2em;padding:9px 10px;text-transform:uppercase}
+.mcode .ghost{padding:9px 14px;font-size:14px}
+.mm2 .mmfoot p{margin:0;font-size:11px}
+#squad{position:absolute;left:min(380px,40vw);right:0;top:64px;bottom:34px;z-index:1}
+#squadstage{position:absolute;inset:0}
+#squadstage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#squadtags{position:absolute;inset:0;pointer-events:none}
+.sqtag{position:absolute;transform:translate(-50%,-100%);text-align:center;font-family:var(--f-type);white-space:nowrap;text-shadow:0 1px 3px #000,0 0 8px #000}
+.sqtag b{display:block;font:17px var(--f-display);letter-spacing:.06em;color:var(--chalk)}
+.sqtag.me b{color:#f0d28a}
+.sqtag small{font-size:11px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.sqtag i{font-style:normal;color:#f0d28a;margin-right:4px}
+#gamever{position:absolute;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));font:11px var(--f-type);letter-spacing:.12em;color:var(--muted);opacity:.85;pointer-events:none;z-index:2;text-align:right}
+@media (max-width:760px){#squad{left:0;top:64px;bottom:50%;opacity:.9}.mleft{top:auto;bottom:20px}.mtop .pgprof,.mdrax{display:none}.mplay span{font-size:34px}}
+/* social */
+#social{position:fixed;right:0;top:0;bottom:0;width:min(360px,100vw);z-index:40;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(10,11,9,.98),rgba(6,7,6,.98));border-left:1px solid rgba(235,229,212,.18);box-shadow:-20px 0 50px rgba(0,0,0,.6);font-family:var(--f-type);color:var(--ink)}
+#social header,#social footer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+#social footer{border-bottom:0;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+#social header b{font:20px var(--f-display);letter-spacing:.1em;text-transform:uppercase}
+#social header .ghost{padding:4px 10px;font-size:14px}
+.socbody{flex:1;overflow-y:auto;padding:6px 16px 16px;display:flex;flex-direction:column;gap:16px}
+.socbody section{display:flex;flex-direction:column;gap:6px}
+.socbody .file{margin:8px 0 2px}
+.soclist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.soclist li{display:flex;align-items:center;gap:8px;padding:7px 8px;background:rgba(235,229,212,.04);border:1px solid rgba(235,229,212,.08);font-size:13px}
+.soclist li .dot{width:8px;height:8px;border-radius:50%;background:#6a675c;flex:none}
+.soclist li.on .dot{background:#7fbf6a;box-shadow:0 0 6px rgba(127,191,106,.6)}
+.soclist li .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.soclist li .st{font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;white-space:nowrap}
+.soclist li button{all:unset;cursor:pointer;font-size:11px;letter-spacing:.06em;padding:4px 8px;border:1px solid rgba(235,229,212,.25);color:var(--chalk);text-transform:uppercase}
+.soclist li button:hover{border-color:#f0d28a;color:#f0d28a}
+.soclist li button.ok{border-color:#5f9a4e;color:#a6e494}
+.soclist li button.no{border-color:rgba(224,48,31,.5);color:#ff8a78}
+.soclist li.empty{color:var(--muted);background:none;border:0;padding:2px 0}
+.socadd{display:flex;gap:6px}
+.socadd input{flex:1;min-width:0;background:rgba(0,0,0,.5);border:1px solid rgba(235,229,212,.25);color:var(--chalk);font:14px var(--f-type);padding:8px}
+.socadd .ghost{padding:8px 12px;font-size:13px}
+.socmsg{margin:0;font-size:12px;color:var(--muted);min-height:1.2em}
+.ghost.small{padding:6px 10px;font-size:13px}
+/* login, extras, toasts */
+#login,#extras{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(3,4,3,.78);padding:16px;box-sizing:border-box}
+.loginbox,.exbox{width:min(420px,100%);box-sizing:border-box;display:flex;flex-direction:column;gap:12px;padding:24px 26px;background:linear-gradient(180deg,rgba(22,20,14,.98),rgba(9,9,7,.98));border:1px solid var(--line);border-top:3px solid var(--blood);box-shadow:0 20px 60px rgba(0,0,0,.7);font-family:var(--f-type)}
+.exbox{width:min(560px,100%)}
+.loginbox h2,.exbox h2{margin:0}
+.lgtxt{margin:0;font-size:14px;line-height:1.5;color:var(--muted)}
+.lgtxt b{color:var(--ink);font-weight:normal}
+.loginbox label{display:flex;flex-direction:column;gap:4px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.loginbox input{background:rgba(0,0,0,.5);border:1px solid rgba(235,229,212,.25);color:var(--chalk);font:16px var(--f-type);padding:10px;letter-spacing:normal;text-transform:none}
+.lgmsg{margin:0;min-height:1.3em;font-size:13px;color:#ff8a78}
+.exlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.exlist li{display:flex;flex-direction:column;gap:3px;padding:10px 12px;background:rgba(235,229,212,.04);border:1px solid rgba(235,229,212,.08)}
+.exlist b{font:16px var(--f-display);letter-spacing:.06em;color:var(--chalk)}
+.exlist span{font-size:13px;color:var(--muted);line-height:1.45}
+.exlist a{align-self:flex-start;margin-top:4px;text-decoration:none}
+.exlist kbd,.exlist code{font-family:inherit;color:#f0d28a}
+#toasts{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(34px + env(safe-area-inset-bottom,0px));z-index:70;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none;max-width:min(380px,calc(100vw - 32px))}
+.toast{pointer-events:auto;display:flex;flex-direction:column;gap:7px;padding:10px 13px;background:rgba(8,9,7,.94);border:1px solid rgba(235,229,212,.2);border-left:3px solid #f0d28a;font:13px var(--f-type);color:var(--chalk);box-shadow:0 8px 24px rgba(0,0,0,.5);animation:toastin .25s ease-out both}
+.toast.bad{border-left-color:var(--blood-hi)}
+.toast .tb2{display:flex;gap:6px}
+.toast button{all:unset;cursor:pointer;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border:1px solid rgba(235,229,212,.3)}
+.toast button.ok{border-color:#5f9a4e;color:#a6e494}
+.toast.out{opacity:0;transform:translateX(20px);transition:opacity .3s,transform .3s}
+@keyframes toastin{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+#mappick .dossier{max-width:980px}
+#mappick .maps{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
+.mpopts{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:flex-end}
+.mpopts label{display:flex;flex-direction:column;gap:4px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.mpopts select{background:rgba(0,0,0,.5);border:1px solid rgba(235,229,212,.25);color:var(--chalk);font:15px var(--f-type);padding:8px}
+.mpopts .mpchk{flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;font-size:14px;color:var(--ink)}
+.mpopts p{width:100%;margin:0}
+
 /* ---------- online ---------- */
 #online .lede{font-size:16px}
 
@@ -753,37 +861,75 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
   <button class="tb" data-act="pause">II</button>
 </div>
 
-<section id="menu" class="screen mm" hidden>
-  <div id="gamever"></div>
-  <div class="mmgrid">
-    <nav class="mmleft" aria-label="Menu principal">
-      <div class="mmbrand"><p class="file">Arquivo nº 47 · Setor leste · Noite</p><h1>Bunker<br>dos <em>Mortos</em></h1></div>
-      <div class="pgprof" id="pgprof" aria-label="Perfil"></div>
-      <ul class="mmlist">
-        <li id="contli" hidden><button id="contbtn" class="mi cont" type="button" data-snd="confirm"><span>Continuar</span><small id="contsub"></small></button></li>
-        <li><button id="play" class="mi" type="button" data-snd="confirm"><span>Jogar</span><small>Solo · escolha o mapa</small></button></li>
-        <li><button id="onlinebtn" class="mi" type="button"><span>Online</span><small id="onlinesub">Crie uma sala ou entre por código</small></button></li>
-        <li><button id="charbtn" class="mi" type="button"><span>Personagens</span><small id="charsub">Cabo Davi Ramos</small></button></li>
-        <li><button id="arsbtn" class="mi" type="button"><span>Arsenal</span><small>◆ <span class="draxv">0</span> drax · facas e caixas</small></button></li>
-        <li><button id="setbtn" class="mi" type="button"><span>Configurações</span><small>Áudio, mira, controles e ajuda</small></button></li>
-      </ul>
-      <div class="mmfoot"><p id="soundhint">Clique em qualquer lugar para ligar o som.</p><p class="rec" id="rec">Nenhuma noite registrada ainda.</p></div>
+<section id="menu" class="screen mm2" hidden>
+  <header class="mtop">
+    <nav class="mtabs" aria-label="Menu principal">
+      <button class="mtab on" id="tab-play" type="button">Jogar</button>
+      <button class="mtab" id="charbtn" type="button">Personagens<small id="charsub" hidden></small></button>
+      <button class="mtab" id="arsbtn" type="button">Arsenal</button>
+      <button class="mtab" id="shopbtn" type="button">Loja</button>
+      <button class="mtab" id="setbtn" type="button">Configurações</button>
+      <button class="mtab" id="helpbtn" type="button">Ajuda</button>
+      <button class="mtab" id="extrabtn" type="button">Extras</button>
     </nav>
-    <div class="mmright"><aside id="party" aria-label="Seu grupo"><p class="file">Seu grupo</p><ul id="partylist"></ul><p class="pn" id="partynote"></p></aside><aside class="ad" id="ad" aria-label="Bundle de Halloween Noite Eterna">
-      <div class="adtag"><span class="adev">Evento de Halloween</span><span id="adtime"></span></div>
-      <div class="adstage" id="adstage"><span class="admoon" aria-hidden="true"></span></div>
+    <div class="macct">
+      <div class="pgprof" id="pgprof" aria-label="Perfil"></div>
+      <div class="mdrax" title="Drax">◆ <span class="draxv">0</span></div>
+      <button id="socbtn" class="msoc" type="button" title="Amigos e grupo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM1 20c0-3.3 3.6-6 8-6s8 2.7 8 6v1H1zm16.5-6c3 .3 5.5 2.3 5.5 5v2h-4v-1c0-2.4-.6-4.4-1.5-6z" fill="currentColor"/></svg><span id="socnum">0</span></button>
+    </div>
+  </header>
+  <aside class="mleft">
+    <aside class="ad mini" id="ad" aria-label="Pacote em destaque na loja">
+      <div class="adtag"><span class="adev">Loja · Halloween</span><span id="adtime"></span></div>
       <div class="adbody">
         <div class="adhead"><div><p class="adkick">Bundle</p><h2 class="adtitle">Noite <em>Eterna</em></h2></div><p class="adprice" id="adprice">◆ 4.500</p></div>
-        <ul class="adlist">
-          <li><b>Conde Valério</b> e <b>Condessa Valéria</b>: terno, cabelo branco e olhos vermelhos. Visuais do Recruta.</li>
-          <li><b>Adaga Carmesim | Noite Eterna</b>: faca lendária de padrão raro, com brilho que pulsa como um coração.</li>
-        </ul>
-        <div class="row"><button id="adbuy" class="cta small" type="button" data-snd="none">Comprar · ◆ 4.500</button><button id="adsee" class="ghost" type="button">Ver visuais</button></div>
+        <p class="adline">Conde Valério, Condessa Valéria e a Adaga Carmesim.</p>
+        <div class="row"><button id="adbuy" class="cta small" type="button" data-snd="none">Comprar · ◆ 4.500</button><button id="adsee" class="ghost" type="button">Ver</button></div>
         <p class="admsg" id="admsg" aria-live="polite"></p>
       </div>
-    </aside></div>
-  </div>
+    </aside>
+    <div id="contli" hidden><button id="contbtn" class="mcont" type="button" data-snd="confirm"><span>Continuar partida</span><small id="contsub"></small></button></div>
+    <button id="play" class="mplay" type="button" data-snd="confirm"><span>Jogar</span><small id="playsub">Solo · escolha o mapa e a dificuldade</small></button>
+    <div class="mcode"><input id="mm-code" maxlength="6" autocomplete="off" spellcheck="false" placeholder="CÓDIGO DA SALA"><button id="mm-join" class="ghost" type="button">Entrar</button></div>
+    <div class="mmfoot"><p id="soundhint">Clique em qualquer lugar para ligar o som.</p><p class="rec" id="rec">Nenhuma noite registrada ainda.</p></div>
+  </aside>
+  <div id="squad"><div id="squadstage"></div><div id="squadtags"></div></div>
+  <div id="gamever"></div>
+  <button id="onlinebtn" type="button" hidden></button>
 </section>
+
+<aside id="social" hidden aria-label="Amigos e grupo">
+  <header><b>Social</b><button id="soc-close" class="ghost" type="button" aria-label="Fechar">✕</button></header>
+  <div class="socbody">
+    <section><p class="file">Seu grupo <span id="soc-pcount"></span></p><ul id="soc-party" class="soclist"></ul><button id="soc-leave" class="ghost small" type="button" hidden>Sair do grupo</button></section>
+    <section id="soc-reqbox" hidden><p class="file">Pedidos e convites</p><ul id="soc-req" class="soclist"></ul></section>
+    <section><p class="file">Adicionar amigo</p><div class="socadd"><input id="soc-name" maxlength="18" autocomplete="off" spellcheck="false" placeholder="Nome do jogador"><button id="soc-add" class="ghost" type="button">Adicionar</button></div><p id="soc-msg" class="socmsg"></p></section>
+    <section><p class="file">Amigos <span id="soc-fcount"></span></p><ul id="soc-friends" class="soclist"></ul></section>
+  </div>
+  <footer><span id="soc-me"></span><button id="soc-logout" class="ghost small" type="button">Trocar conta</button></footer>
+</aside>
+
+<div id="login" hidden><form id="loginform" class="loginbox" autocomplete="on">
+  <p class="file">Bem-vindo ao bunker</p><h2>Entrar</h2>
+  <p class="lgtxt">Na primeira vez, escolha um <b>nome</b> e uma <b>senha</b>. Eles ficam salvos neste navegador e você entra sozinho nas próximas vezes.</p>
+  <label>Nome<input id="lg-name" maxlength="18" autocomplete="username" required></label>
+  <label>Senha<input id="lg-pass" type="password" maxlength="64" autocomplete="current-password" required></label>
+  <p id="lg-msg" class="lgmsg" aria-live="polite"></p>
+  <div class="row"><button class="cta small" type="submit">Entrar</button><button id="lg-off" class="ghost" type="button">Jogar offline</button></div>
+</form></div>
+
+<div id="extras" hidden><div class="exbox">
+  <p class="file">Extras</p><h2>Extras</h2>
+  <ul class="exlist">
+    <li><b>Console do desenvolvedor</b><span>Durante a partida, aperte <kbd>'</kbd> (aspas). Digite <code>help</code> para ver os comandos.</span></li>
+    <li><b>Editor de viewmodel</b><span>Ajuste a posição das mãos e das armas.</span><a class="ghost small" href="viewmodel-editor.html" target="_blank" rel="noopener">Abrir editor</a></li>
+    <li><b>Atalhos</b><span>Y abre o chat · P pausa · L lanterna · B compra no X1.</span></li>
+    <li><b>Recorde</b><span id="ex-rec">—</span></li>
+    <li><b>Créditos</b><span>Feito por Drax.</span></li>
+  </ul>
+  <div class="row"><button id="ex-close" class="ghost" type="button" data-snd="back">Fechar</button></div>
+</div></div>
+<div id="toasts" aria-live="polite"></div>
 
 <section id="online" class="screen" hidden>
   <div class="dossier" style="max-width:760px">
@@ -928,6 +1074,7 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
   <div class="dossier">
     <p class="file" id="mp-file">Escolha o mapa</p>
     <h2>Para onde?</h2>
+    <div class="mpopts"><label>Dificuldade<select id="mp-diff"><option value="normal">Normal</option><option value="hard">Difícil</option><option value="nightmare">Pesadelo</option></select></label><label class="mpchk"><input type="checkbox" id="mp-online"> Sala online · gera um código para chamar amigos</label><p id="mp-note" class="rec"></p></div>
     <div class="maps">
       <button class="mapc" data-map="bunker" type="button"><span class="mt">Bunker dos Mortos</span><span class="md">Pós-guerra. Paredes destruídas, buracos de bomba que dão para a cidade queimando e uma rua com um tanque abandonado.</span></button>
       <button class="mapc" data-map="farm" type="button"><span class="mt">Fazenda Santa Luzia</span><span class="md">Você acorda no celeiro. A mansão de dois andares fica no fim da estrada, e debaixo da mata existe um laboratório que ninguém devia ter aberto.</span></button>
@@ -4625,7 +4772,7 @@ $('#cardrow').addEventListener('mouseover',e=>{ const b=e.target.closest('.card,
 function hudCards(){ const el=$('#cardhud'); el.textContent=''; for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v6.3 · lote 3 (chat, grupo, rastejar, espectador)';
+const GAME_VERSION='v6.4';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -4658,16 +4805,125 @@ $('#chatin').addEventListener('keydown',e=>{ e.stopPropagation();
   else if(e.key==='Escape'){ e.preventDefault(); closeChat(); } });
 $('#chatin').addEventListener('keyup',e=>e.stopPropagation());
 $('#chatin').addEventListener('blur',()=>{ if(CHAT.open) setTimeout(()=>{ if(CHAT.open&&document.activeElement!==$('#chatin')) closeChat(); },120); });
-/* grupo no menu principal: você, status do servidor e o último grupo com quem jogou */
+/* ================= CONTA, AMIGOS E GRUPO =================
+   A conta (nome + senha) e a lista de amigos ficam salvas no navegador; o servidor só confere a senha
+   enquanto está ligado e refaz tudo sozinho quando o jogador entra de novo. */
+const SOC={acc:null,friends:[],online:[],party:null,pending:[],offline:false,loginBusy:false,lookSig:''};
+const store2={get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } },set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }};
+SOC.acc=store2.get('bdm_acc',null); if(SOC.acc&&!(SOC.acc.name&&SOC.acc.pass)) SOC.acc=null;
+SOC.friends=store2.get('bdm_friends',[]); if(!Array.isArray(SOC.friends)) SOC.friends=[];
+const fkey=n=>String(n||'').trim().toLowerCase();
+function myLook(){ let lvl=0; try{ lvl=accLv(PROG.acc.xp).L; }catch(e){} return {c:PROG.char,v:PROG.cv,lvl}; }
+function toast(text,opts){
+  opts=opts||{}; const box=$('#toasts'); if(!box||!text) return null; const t=document.createElement('div'); t.className='toast'+(opts.bad?' bad':'');
+  const p=document.createElement('span'); p.textContent=text; t.appendChild(p);
+  if(opts.actions&&opts.actions.length){ const r=document.createElement('div'); r.className='tb2'; for(const [label,fn,cls] of opts.actions){ const bt=document.createElement('button'); bt.type='button'; bt.textContent=label; if(cls) bt.className=cls; bt.addEventListener('click',()=>{ try{ fn(); }catch(e){} kill(); }); r.appendChild(bt); } t.appendChild(r); }
+  box.appendChild(t); while(box.children.length>4) box.firstChild.remove();
+  const kill=()=>{ t.classList.add('out'); setTimeout(()=>t.remove(),320); };
+  setTimeout(kill,opts.ms||(opts.actions?15000:5000)); try{ Snd.ui('tick'); }catch(e){} return t;
+}
+function inParty(){ return !!(SOC.party&&SOC.party.members&&SOC.party.members.length>1); }
+function isLeader(){ return !inParty()||fkey(SOC.party.leader)===fkey(SOC.acc&&SOC.acc.name); }
+function showLogin(msg){ const l=$('#login'); l.hidden=false; $('#lg-msg').textContent=msg||''; const n=$('#lg-name'); if(!n.value){ const ln=(SOC.acc&&SOC.acc.name)||localStorage.getItem('bdm_player_name')||''; n.value=ln==='Sobrevivente'?'':ln; } setTimeout(()=>(n.value?$('#lg-pass'):n).focus(),30); }
+function hideLogin(){ $('#login').hidden=true; }
+async function accLogin(name,pass,silent){
+  if(!NET.connected||SOC.loginBusy) return false; SOC.loginBusy=true;
+  try{
+    const r=await netRequest('login',{name,pass,friends:SOC.friends,look:myLook()});
+    SOC.acc={name:r.name,pass}; store2.set('bdm_acc',SOC.acc); SOC.offline=false;
+    try{ localStorage.setItem('bdm_player_name',r.name); }catch(e){} const pn=$('#player-name'); if(pn) pn.value=r.name; NET.displayName=r.name;
+    SOC.lookSig=JSON.stringify(myLook()); hideLogin(); renderParty(); if(!silent) toast('Bem-vindo, '+r.name+'!'); return true;
+  }catch(e){ if(silent){ toast('Não foi possível entrar com a conta salva: '+e.message,{bad:true}); showLogin(e.message); } else $('#lg-msg').textContent=e.message; return false; }
+  finally{ SOC.loginBusy=false; }
+}
+function accBoot(){
+  const go=()=>{ if(document.getElementById('splash')){ setTimeout(go,300); return; } if(!SOC.acc&&!SOC.offline&&G.state==='menu') showLogin(); };
+  setTimeout(go,300);
+}
+$('#loginform').addEventListener('submit',async e=>{ e.preventDefault(); const name=$('#lg-name').value.replace(/\s+/g,' ').trim(), pass=$('#lg-pass').value;
+  if(name.length<3){ $('#lg-msg').textContent='O nome precisa ter pelo menos 3 letras.'; return; } if(pass.length<3){ $('#lg-msg').textContent='A senha precisa ter pelo menos 3 caracteres.'; return; }
+  if(!NET.connected){ SOC.acc={name,pass}; store2.set('bdm_acc',SOC.acc); try{ localStorage.setItem('bdm_player_name',name); }catch(err){} hideLogin(); renderParty(); toast('Servidor offline agora. Sua conta foi salva e entra sozinha quando ele voltar.'); return; }
+  $('#lg-msg').textContent='Entrando…'; await accLogin(name,pass,false); });
+$('#lg-off').addEventListener('click',()=>{ SOC.offline=true; hideLogin(); renderParty(); });
+$('#soc-logout').addEventListener('click',()=>{ if(inParty()) netSendRaw({type:'partyLeave'}); SOC.acc=null; SOC.party=null; SOC.online=[]; SOC.pending=[]; store2.set('bdm_acc',null); closeSocial(); renderParty(); showLogin(); });
+function saveFriends(){ SOC.friends=Array.from(new Map(SOC.friends.map(n=>[fkey(n),n])).values()).slice(0,100); store2.set('bdm_friends',SOC.friends); if(SOC.acc&&NET.connected) netSendRaw({type:'friends',list:SOC.friends}); }
+function needAcc(){ if(SOC.acc&&NET.connected) return true; if(!SOC.acc) showLogin('Entre com uma conta para usar amigos e grupo.'); else toast('Servidor online indisponível agora.',{bad:true}); return false; }
+async function socReq(type,payload,msgEl){ try{ const r=await netRequest(type,payload); if(r&&r.text){ if(msgEl) msgEl.textContent=r.text; else toast(r.text); } return true; }catch(e){ if(msgEl) msgEl.textContent=e.message; else toast(e.message,{bad:true}); return false; } }
+function addFriend(){ if(!needAcc()) return; const n=$('#soc-name').value.trim(); if(n.length<3){ $('#soc-msg').textContent='Digite o nome do jogador.'; return; }
+  if(SOC.friends.some(f=>fkey(f)===fkey(n))){ $('#soc-msg').textContent='Vocês já são amigos.'; return; }
+  socReq('friendReq',{to:n},$('#soc-msg')).then(ok=>{ if(ok) $('#soc-name').value=''; }); }
+$('#soc-add').addEventListener('click',addFriend);
+$('#soc-name').addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter'){ e.preventDefault(); addFriend(); } });
+function inviteParty(name){ if(!needAcc()) return; socReq('partyInvite',{to:name}); }
+function answerPending(i,accept){ const q=SOC.pending[i]; if(!q) return; SOC.pending.splice(i,1);
+  if(q.kind==='friend') netSendRaw({type:'friendAnswer',to:q.from,accept:!!accept});
+  else if(accept) socReq('partyAnswer',{pid:q.pid,accept:true}); else netSendRaw({type:'partyAnswer',pid:q.pid,accept:false});
+  renderSocial(); }
+function openSocial(){ $('#social').hidden=false; $('#socbtn').classList.add('on'); renderSocial(); }
+function closeSocial(){ $('#social').hidden=true; $('#socbtn').classList.remove('on'); }
+$('#socbtn').addEventListener('click',()=>{ $('#socbtn').classList.remove('ping'); $('#social').hidden?openSocial():closeSocial(); });
+$('#soc-close').addEventListener('click',closeSocial);
+$('#soc-leave').addEventListener('click',()=>{ netSendRaw({type:'partyLeave'}); SOC.party=null; renderParty(); });
+function li(cls){ const l=document.createElement('li'); if(cls) l.className=cls; return l; }
+function liBtn(l,label,fn,cls){ const b=document.createElement('button'); b.type='button'; b.textContent=label; if(cls) b.className=cls; b.addEventListener('click',fn); l.appendChild(b); }
+function liText(l,text,cls){ const sp=document.createElement('span'); sp.className=cls; sp.textContent=text; l.appendChild(sp); return sp; }
+function renderSocial(){
+  if($('#social').hidden) return;
+  const me=SOC.acc&&SOC.acc.name;
+  $('#soc-me').textContent=me?(NET.connected?'Conectado como '+me:me+' · offline'):'Sem conta';
+  $('#soc-logout').textContent=me?'Trocar conta':'Entrar';
+  // grupo
+  const pu=$('#soc-party'); pu.textContent='';
+  const ms=inParty()?SOC.party.members:[{name:me||pgPlayerName(),leader:true}];
+  $('#soc-pcount').textContent=`${ms.length}/4`;
+  for(const m of ms){ const l=li('on'); liText(l,'','dot'); liText(l,(m.leader&&inParty()?'♛ ':'')+m.name+(fkey(m.name)===fkey(me)?' (você)':''),'nm'); liText(l,m.status||'','st');
+    if(inParty()&&isLeader()&&fkey(m.name)!==fkey(me)) liBtn(l,'Remover',()=>netSendRaw({type:'partyKick',name:m.name}),'no');
+    pu.appendChild(l); }
+  $('#soc-leave').hidden=!inParty();
+  // pedidos
+  const rq=$('#soc-req'); rq.textContent=''; $('#soc-reqbox').hidden=!SOC.pending.length;
+  SOC.pending.forEach((q,i)=>{ const l=li('on'); liText(l,'','dot'); liText(l,q.kind==='friend'?`${q.from} quer ser seu amigo`:`${q.from} te chamou para o grupo`,'nm'); liBtn(l,'Aceitar',()=>answerPending(i,true),'ok'); liBtn(l,'Recusar',()=>answerPending(i,false),'no'); rq.appendChild(l); });
+  // amigos
+  const fu=$('#soc-friends'); fu.textContent='';
+  const map=new Map(SOC.online.map(f=>[f.key,f]));
+  const rows=SOC.friends.map(n=>{ const f=map.get(fkey(n)); return {name:f?f.name:n,on:!!(f&&f.online),st:f?f.status:'offline',same:!!(f&&f.sameParty)}; }).sort((x,y)=>(y.on-x.on)||x.name.localeCompare(y.name));
+  $('#soc-fcount').textContent=`${rows.filter(r=>r.on).length} online`;
+  if(!rows.length){ const l=li('empty'); l.textContent='Nenhum amigo ainda. Adicione pelo nome que ele usa no jogo.'; fu.appendChild(l); }
+  for(const r of rows){ const l=li(r.on?'on':''); liText(l,'','dot'); liText(l,r.name,'nm'); liText(l,r.same?'no seu grupo':r.st,'st');
+    if(r.on&&!r.same) liBtn(l,'Convidar',()=>inviteParty(r.name),'ok');
+    liBtn(l,'✕',()=>{ if(confirmRemove(r.name)){ SOC.friends=SOC.friends.filter(f=>fkey(f)!==fkey(r.name)); saveFriends(); renderSocial(); } });
+    fu.appendChild(l); }
+}
+function confirmRemove(n){ const b=document.activeElement; if(b&&b.dataset.armed===n) return true; if(b){ b.dataset.armed=n; b.textContent='Remover?'; setTimeout(()=>{ if(b.isConnected){ b.dataset.armed=''; b.textContent='✕'; } },2500); } return false; }
 function renderParty(){
-  const ul=$('#partylist'); if(!ul) return; ul.textContent='';
-  const add=(name,tag,off)=>{ const li=document.createElement('li'); if(off) li.className='off'; const i=document.createElement('i'); const sp=document.createElement('span'); sp.textContent=name; const sm=document.createElement('small'); sm.textContent=tag; li.append(i,sp,sm); ul.appendChild(li); };
-  const me=(localStorage.getItem('bdm_player_name')||'Sobrevivente');
-  add(me+' (você)',NET.connected?'online':'offline',!NET.connected);
-  let last=[]; try{ last=JSON.parse(localStorage.getItem('bdm_last_party')||'[]'); }catch(e){}
-  if(Array.isArray(last)) for(const n of last.slice(0,3)) add(String(n).slice(0,18),'último jogo',true);
-  $('#partynote').textContent=last&&last.length?'Para jogar junto de novo: Cooperativo Online → crie uma sala e mande o código.':'Sozinho por enquanto. Em Cooperativo Online, crie uma sala e mande o código para os amigos.';
-  $('#gamever').textContent='Bunker dos Mortos · '+GAME_VERSION;
+  const me=(SOC.acc&&SOC.acc.name)||pgPlayerName();
+  const on=SOC.online.filter(f=>f.online).length; const sn=$('#socnum'); if(sn) sn.textContent=String(on);
+  const pl=$('#play'), sub=$('#playsub');
+  if(pl&&sub){ if(inParty()){ const n=SOC.party.members.length; if(isLeader()){ pl.classList.remove('wait'); sub.textContent=`Grupo de ${n} · você escolhe o mapa`; } else { pl.classList.add('wait'); sub.textContent=`Grupo de ${n} · ${SOC.party.leader} escolhe o mapa`; } }
+    else { pl.classList.remove('wait'); sub.textContent='Solo ou sala online · escolha o mapa'; } }
+  $('#gamever').textContent='feito por Drax · Bunker dos Mortos · '+GAME_VERSION; try{ renderProfile(); }catch(e){}
+  const er=$('#ex-rec'); if(er) er.textContent=best>0?`Rodada ${best} neste navegador.`:'Nenhuma noite registrada ainda.';
+  if(G.state==='menu'&&!$('#menu').hidden){ try{ cpShowSquad(); }catch(e){} const l=myLook(), sig=JSON.stringify(l); if(SOC.acc&&NET.connected&&sig!==SOC.lookSig){ SOC.lookSig=sig; netSendRaw({type:'look',look:l}); } }
+  renderSocial();
+}
+function socialMsg(m){
+  if(m.type==='social'){ SOC.online=Array.isArray(m.friends)?m.friends:[]; renderParty(); }
+  else if(m.type==='friendReq'){ if(!SOC.pending.some(q=>q.kind==='friend'&&fkey(q.from)===fkey(m.from))) SOC.pending.push({kind:'friend',from:m.from}); const i=()=>SOC.pending.findIndex(q=>q.kind==='friend'&&q.from===m.from);
+    toast(`${m.from} quer ser seu amigo`,{actions:[['Aceitar',()=>answerPending(i(),true),'ok'],['Recusar',()=>answerPending(i(),false)]]}); $('#socbtn').classList.add('ping'); renderSocial(); }
+  else if(m.type==='friendAdded'){ if(!SOC.friends.some(f=>fkey(f)===fkey(m.name))) SOC.friends.push(m.name); saveFriends(); toast(`${m.name} agora é seu amigo`); renderParty(); }
+  else if(m.type==='partyInvite'){ SOC.pending=SOC.pending.filter(q=>!(q.kind==='party'&&fkey(q.from)===fkey(m.from))); SOC.pending.push({kind:'party',from:m.from,pid:m.pid}); const i=()=>SOC.pending.findIndex(q=>q.kind==='party'&&q.pid===m.pid);
+    toast(`${m.from} te chamou para o grupo`,{actions:[['Entrar',()=>answerPending(i(),true),'ok'],['Recusar',()=>answerPending(i(),false)]]}); $('#socbtn').classList.add('ping'); renderSocial(); }
+  else if(m.type==='party'){ const was=inParty(); SOC.party=m.party||null; if(m.note) toast(m.note); else if(!was&&inParty()) toast('Você entrou no grupo de '+SOC.party.leader); renderParty(); }
+  else if(m.type==='partyNote'){ toast(m.text); }
+  else if(m.type==='partyGo'){ partyFollow(m.code,m.map); }
+  else if(m.type==='kicked'){ SOC.party=null; SOC.online=[]; toast(m.reason||'Sua conta entrou em outro lugar.',{bad:true}); renderParty(); }
+}
+/* o líder abriu a sala: quem está no menu entra junto e já fica pronto */
+async function partyFollow(code,map){
+  if(NET.mode){ return; }
+  if(G.state!=='menu'){ toast(`Seu grupo abriu a sala ${code}. Saia para o menu e use o código para entrar.`,{ms:12000}); return; }
+  closeSocial(); toast('Entrando na sala do grupo…'); await joinGame(code);
+  if(NET.mode==='client'){ setTimeout(()=>{ if(NET.mode==='client'&&!NET.ready) setReady(true); },600); }
 }
 function partyTrack(players){
   try{
@@ -5394,7 +5650,8 @@ function crawlerize(z,fx){
 const zombies=[]; let zidN=0;
 const SCODE={rise:0,approach:1,wait:1,toTear:1,tear:2,climb:3,inside:4,dying:5,chained:6};
 const SNAME=['rise','approach','tear','climb','inside','dying','chained'];
-function onlineDifficulty(){ return NET.mode==='host'&&NET.roomMeta?NET.roomMeta.difficulty:'normal'; }
+let SOLO_DIFF='normal';
+function onlineDifficulty(){ return NET.mode==='host'&&NET.roomMeta?NET.roomMeta.difficulty:(!NET.mode?SOLO_DIFF:'normal'); }
 function zombieCount(r){ const t=[0,10,14,19,25,32]; const base=r<=5?t[r]:Math.min(220,Math.floor(32+(r-5)*7+Math.pow(r-5,1.72))); const d=onlineDifficulty(); return Math.ceil(base*(d==='nightmare'?1.4:d==='hard'?1.2:1)); }
 function zombieHp(r){ const base=r<10?150+100*(r-1):Math.floor(950*Math.pow(1.1,r-9)); const d=onlineDifficulty(); return Math.floor(base*(d==='nightmare'?1.55:d==='hard'?1.25:1)); }
 function runnerChance(r){ return r<3?0:Math.min(0.92,(r-2)*0.13); }
@@ -5984,7 +6241,7 @@ function hurtPlayer(amt,z){
 function goDown(){
   P.down=1; P.bleed=30; P.hp=0; Wp.reloading=false; IN.ads=false; Wp.kAct=null;
   G.perks={armor:false,speed:false,rof:false}; P.maxHp=maxHp(); hudPerks();
-  banner('Você caiu','Rasteje com WASD · seu parceiro pode te levantar segurando E perto de você','red'); actLog('{n} caiu! Precisa ser levantado',true);
+  banner('Você caiu','Seu parceiro pode te levantar segurando E perto de você','red'); actLog('{n} caiu! Precisa ser levantado',true);
 }
 function reviveSelf(){ if(P.down!==1) return; P.down=0; P.hp=P.maxHp; P.lastHit=G.t; P.y=0; banner('De pé','Seu parceiro te levantou'); Snd.puGet(); }
 function respawnIfDead(){
@@ -6631,7 +6888,7 @@ function renderSel(){
 }
 function openArsenal(){ show('#arsenal'); arsSel=null; renderArsenal(); kprevStart(); }
 function closeArsenal(){ kprevStop(); $('#opener').hidden=true; show('#menu'); }
-$('#arsbtn').addEventListener('click',openArsenal);
+$('#arsbtn').addEventListener('click',()=>{ arsTab='cases'; openArsenal(); });
 $('#ars-close').addEventListener('click',()=>{ if(!arsBusy) closeArsenal(); });
 document.querySelector('#arsenal .tabs').addEventListener('click',e=>{ const b=e.target.closest('button[data-tab]'); if(!b||arsBusy) return; arsTab=b.dataset.tab; renderArsenal(); });
 $('#arsenal').addEventListener('click',e=>{
@@ -7452,6 +7709,27 @@ function cpShowBundle(){ if(CP.key==='bundle') return; CP.key='bundle'; cpClear(
   const kn={uid:'bundle-preview',t:'adaga',s:'noite',seed:7,wear:0.02,pas:[],rp:true};
   const a=buildChar('recruta','vm',{pose:'knife',knife:kn}); a.position.set(-0.36,0,0); a.rotation.y=0.32; const b=buildChar('recruta','vf',{pose:'idle'}); b.position.set(0.38,0,-0.12); b.rotation.y=-0.4;
   CP.scene.add(a,b); CP.objs.push(a,b); CP.floor.scale.setScalar(1.6); CP.rim.color.setHex(0xff1a2a); }
+/* fila do grupo no menu: você no centro e os amigos do grupo dos lados, com o nome em cima */
+function squadMembers(){
+  const me=(SOC.acc&&SOC.acc.name)||pgPlayerName();
+  const mine={name:me,c:PROG.char,v:PROG.cv,leader:inParty()&&isLeader(),me:true};
+  if(!inParty()) return [mine];
+  return SOC.party.members.slice(0,4).map(m=>{ if(fkey(m.name)===fkey(me)) return Object.assign({},mine,{leader:!!m.leader});
+    const c=m.look&&CHARS[m.look.c]?m.look.c:'recruta'; const v=m.look&&CHARS[c].vars[m.look.v]?m.look.v:varKeys(c)[0];
+    return {name:m.name,c,v,leader:!!m.leader,me:false,lvl:m.look&&m.look.lvl}; });
+}
+function cpShowSquad(){
+  const host=$('#squadstage'); if(!host||!cpAttach(host)) return;
+  const ms=squadMembers(); const order=[ms.find(m=>m.me)||ms[0]].concat(ms.filter(m=>!m.me));
+  const key='squad:'+order.map(m=>m.name+'/'+m.c+'/'+m.v+'/'+(m.leader?1:0)).join('|'); if(CP.key===key) return;
+  CP.key=key; cpClear(); CP.mode='squad'; CP.squad=[];
+  const slots=[[0,0],[1.15,-0.35],[-1.15,-0.35],[2.25,-0.75]];
+  order.forEach((m,i)=>{ const o=buildChar(m.c,m.v,{pose:'idle'}); const [x,z]=slots[i]; o.position.set(x,0,z); o.rotation.y=-x*0.12; CP.scene.add(o); CP.objs.push(o); CP.squad.push({o,m,ph:i*1.7}); });
+  CP.floor.scale.setScalar(order.length>1?3.4:1.4); CP.rim.color.setHex(0xff7a4a);
+  const tags=$('#squadtags'); tags.textContent='';
+  for(const q of CP.squad){ const d=document.createElement('div'); d.className='sqtag'+(q.m.me?' me':''); const b=document.createElement('b'); if(q.m.leader){ const i=document.createElement('i'); i.textContent='♛'; b.appendChild(i); } b.appendChild(document.createTextNode(q.m.name)); const sm=document.createElement('small'); sm.textContent=q.m.me?'você':(q.m.lvl?'nível '+q.m.lvl:'grupo'); d.append(b,sm); tags.appendChild(d); q.tag=d; }
+}
+const _sqv=new THREE.Vector3();
 function cpFrame(dt){
   CP.t+=dt; const c=CP.r.domElement; const w=c.clientWidth|0, h=c.clientHeight|0; if(!w||!h) return;
   if(c.width!==Math.round(w*CP.r.getPixelRatio())||c.height!==Math.round(h*CP.r.getPixelRatio())){ CP.r.setSize(w,h,false); CP.cam.aspect=w/h; CP.cam.updateProjectionMatrix(); }
@@ -7460,6 +7738,11 @@ function cpFrame(dt){
     const fit=CP.cam.aspect<0.62?1.25:1; CP.cam.position.set(0,1.02,5.2*fit); CP.cam.lookAt(0,0.93,0); }
   else if(CP.mode==='bundle'){ const [a,b]=CP.objs; if(a){ a.rotation.y=0.32+Math.sin(CP.t*0.5)*0.12+(CP.drag?CP.yaw:0); poseChar(a.userData,'knife',CP.t); } if(b){ b.rotation.y=-0.4+Math.sin(CP.t*0.45+1)*0.1+(CP.drag?CP.yaw:0); poseChar(b.userData,'idle',CP.t+2); }
     const fit=CP.cam.aspect<1.1?1.3:1; CP.cam.position.set(0,1.45,2.75*fit); CP.cam.lookAt(0,1.32,0); }
+  else if(CP.mode==='squad'){ const n=CP.squad?CP.squad.length:1; const fit=CP.cam.aspect<0.9?1.45:1;
+    CP.cam.position.set(n>1?0.45:0,1.32,(n>1?7.4:5.6)*fit); CP.cam.lookAt(n>1?0.45:0,1.02,0);
+    const c=CP.r.domElement, w=c.clientWidth, h=c.clientHeight;
+    for(const q of CP.squad||[]){ poseChar(q.o.userData,'idle',CP.t+q.ph); q.o.rotation.y=-q.o.position.x*0.12+Math.sin(CP.t*0.35+q.ph)*0.08;
+      if(q.tag){ _sqv.set(q.o.position.x,2.15,q.o.position.z).project(CP.cam); q.tag.style.left=((_sqv.x+1)/2*w).toFixed(1)+'px'; q.tag.style.top=((1-_sqv.y)/2*h).toFixed(1)+'px'; } } }
   CP.r.render(CP.scene,CP.cam);
 }
 /* portraits for the character list */
@@ -7520,7 +7803,7 @@ function menuLabels(){
 }
 function adTime(){ const ms=BUNDLE.ends-Date.now(); const el=$('#adtime'); if(ms<=0){ el.textContent='Edição de Halloween'; return; } const d=Math.floor(ms/864e5), h=Math.floor(ms%864e5/36e5), m=Math.floor(ms%36e5/6e4); el.textContent=`Termina em ${d?d+'d ':''}${h}h ${String(m).padStart(2,'0')}min`; }
 setInterval(()=>{ if(!$('#menu').hidden) adTime(); },30000);
-function menuEnter(){ CP.full=false; renderParty(); menuLabels(); if(cpAttach($('#adstage'))) cpShowBundle(); }
+function menuEnter(){ CP.full=false; menuLabels(); for(const t of document.querySelectorAll('.mtab')) t.classList.toggle('on',t.id==='tab-play'); renderParty(); try{ cpShowSquad(); }catch(e){} }
 function buyBundle(){
   const msg=$('#admsg');
   if(PROG.own.includes(BUNDLE.id)){ if(varOK('recruta','vm')){ PROG.char='recruta'; PROG.cv=curVar().look.fem?'vf':'vm'; if(!PROG.cv) PROG.cv='vm'; saveProg(); recomputeMods(); applyHands(); menuLabels(); Snd.ui('select'); msg.textContent='Visual aplicado. Troque entre Conde e Condessa em Personagens.'; } return; }
@@ -7541,7 +7824,8 @@ document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closes
   let k=b.dataset.snd; if(k==='none') return;
   if(!k){ if(b.disabled) k='deny'; else if(b.closest('.tabs')||b.classList.contains('chv')||b.classList.contains('seg')) k='tab'; else if(b.classList.contains('mapc')) k='play'; else if(b.classList.contains('kcard')||b.classList.contains('chc')||b.classList.contains('sw')) k='tab'; else k='confirm'; }
   Snd.ui(k); },true);
-addEventListener('keydown',e=>{ if(e.key!=='Escape'||CON.open||KV.on||G.state==='playing') return; const map={'#settings':'#set-back','#chars':'#ch-back','#online':'#on-back','#mappick':'#mp-back'}; for(const s in map) if(!$(s).hidden){ e.preventDefault(); $(map[s]).click(); return; } });
+addEventListener('keydown',e=>{ if(e.key!=='Escape'||CON.open||KV.on||G.state==='playing') return;
+  if(!$('#extras').hidden){ e.preventDefault(); $('#extras').hidden=true; return; } if(!$('#social').hidden){ e.preventDefault(); closeSocial(); return; } const map={'#settings':'#set-back','#chars':'#ch-back','#online':'#on-back','#mappick':'#mp-back'}; for(const s in map) if(!$(s).hidden){ e.preventDefault(); $(map[s]).click(); return; } });
 
 /* ================= FLASHLIGHT ================= */
 const FL={on:false,bat:1,flick:0,warned:false};
@@ -8696,7 +8980,7 @@ function hudTeam(){
   el.textContent='';
   for(const [n,pts,dn] of rows){ const r=document.createElement('div'); r.className='tm'+(dn?' dn':''); const a=document.createElement('span'); a.textContent=n+(dn===1?' · caído':dn===2?' · morto':''); const b=document.createElement('b'); b.textContent=pts; r.append(a,b); el.appendChild(r); }
 }
-function hudDown(){ const el=$('#downmsg'); if(!P.down){ if(!el.hidden) el.hidden=true; return; } el.hidden=false; el.textContent=P.down===1?`Caído · ${Math.ceil(P.bleed)} s`+(NET.mode&&!x1Live()?' · rasteje com WASD':''):'Morto · espere a próxima rodada'; }
+function hudDown(){ const el=$('#downmsg'); if(!P.down){ if(!el.hidden) el.hidden=true; return; } el.hidden=false; el.textContent=P.down===1?`Caído · ${Math.ceil(P.bleed)} s`:'Morto · espere a próxima rodada'; }
 function banner(t,sub,cls){ const b=$('#banner'); b.className=''; b.innerHTML=''; b.appendChild(document.createTextNode(t)); if(sub){ const s=document.createElement('small'); s.textContent=sub; b.appendChild(s); } void b.offsetWidth; b.className='show'+(cls?' '+cls:''); }
 function hitmarker(kill,crit){ const h=$('#hitm'); h.className='on'+(kill?' kill':'')+(crit?' crit':''); clearTimeout(hitmarker.t); hitmarker.t=setTimeout(()=>h.className='',kill?180:110); Snd.tick(crit,kill); }
 let threatSig=-1;
@@ -9000,7 +9284,7 @@ function setLobbyPeerList(players){
 function showPending(id,result){ const q=NET.pending.get(id); if(!q) return; clearTimeout(q.timer); NET.pending.delete(id); result&&result.error?q.reject(new Error(result.error)):q.resolve(result); }
 function handleNetMessage(m){
   if(!m||typeof m!=='object') return;
-  if(m.type==='welcome'){ NET.me=m.id; NET.connected=true; NET.room={}; $('#host').disabled=false; $('#join-code-btn').disabled=false; lobbyMsg('Conectado ao servidor. Escolha seu nome e crie uma sala ou entre com um código.'); renderParty(); }
+  if(m.type==='welcome'){ NET.me=m.id; NET.connected=true; NET.room={}; $('#host').disabled=false; $('#join-code-btn').disabled=false; lobbyMsg('Conectado ao servidor. Escolha seu nome e crie uma sala ou entre com um código.'); renderParty(); if(SOC.acc) accLogin(SOC.acc.name,SOC.acc.pass,true); }
   else if(m.type==='roomCreated'||m.type==='roomJoined'){ showPending(m.reqId,m); if(m.room){ NET.roomMeta=m.room; setLobbyPeerList(m.room.players||[]); } }
   else if(m.type==='readyAck'||m.type==='startAck'){ showPending(m.reqId,m); }
   else if(m.type==='requestError'){ showPending(m.reqId,{error:m.error||'Não foi possível completar a solicitação.'}); }
@@ -9009,6 +9293,8 @@ function handleNetMessage(m){
   else if(m.type==='roomClosed'){ if(NET.mode==='client') hostGone(); else lobbyMsg('A sala foi encerrada.'); }
   else if(m.type==='disconnect'){ NET.connected=false; $('#host').disabled=true; $('#join-code-btn').disabled=true; lobbyMsg('Conexão perdida com o servidor online.'); }
   else if(m.type==='chat'){ chatRecv(m); }
+  else if(m.type==='loginOk'||m.type==='ok'){ showPending(m.reqId,m); }
+  else if(['social','friendReq','friendAdded','partyInvite','party','partyNote','partyGo','kicked'].includes(m.type)){ socialMsg(m); }
   else if(m.type==='pong'){ /* keepalive response */ }
 }
 async function initNet(){
@@ -9017,7 +9303,7 @@ async function initNet(){
     NET.ws=new WebSocket(SERVER_WSS());
     NET.ws.addEventListener('open',()=>{ NET.connected=true; netSendRaw({type:'hello',name:getPlayerName()}); if(NET.pingTimer) clearInterval(NET.pingTimer); NET.pingTimer=setInterval(()=>{ if(NET.connected) netSendRaw({type:'ping'}); },25000); });
     NET.ws.addEventListener('message',e=>{ try{ handleNetMessage(JSON.parse(e.data)); }catch(err){ console.warn('mensagem online inválida',err); } });
-    NET.ws.addEventListener('close',()=>{ NET.connected=false; try{ renderParty(); }catch(e){} if(NET.pingTimer){clearInterval(NET.pingTimer);NET.pingTimer=null;} $('#host').disabled=true; $('#join-code-btn').disabled=true; if(NET.mode) { banner('Conexão perdida','O servidor online foi desconectado.','red'); } lobbyMsg('Servidor desconectado. Atualize a página para tentar novamente.'); });
+    NET.ws.addEventListener('close',()=>{ NET.connected=false; try{ SOC.party=null; SOC.online=[]; renderParty(); }catch(e){} if(NET.pingTimer){clearInterval(NET.pingTimer);NET.pingTimer=null;} $('#host').disabled=true; $('#join-code-btn').disabled=true; if(NET.mode) { banner('Conexão perdida','O servidor online foi desconectado.','red'); } lobbyMsg('Servidor desconectado. Atualize a página para tentar novamente.'); });
     NET.ws.addEventListener('error',()=>{ NET.connected=false; lobbyMsg('Não foi possível conectar ao servidor. Confira se o jogo foi publicado pelo servidor Node.'); });
   }catch(e){ netUnavailable('Falha ao abrir a conexão online: '+e.message); }
 }
@@ -9117,7 +9403,7 @@ async function hostGame(){
     const r=await netRequest('createRoom',{name,map,maxPlayers,difficulty});
     NET.mode='host';NET.code=r.room.code;NET.roomMeta=r.room;NET.ready=true;NET.gr=new WsGameRoom();NET.lastActSeq={};NET.gen=0;
     setupGameRoom();lobbyBusy=false;enterRoomLobby(map);
-  }catch(e){lobbyBusy=false;lobbyMsg(e.message);}
+  }catch(e){lobbyBusy=false;lobbyMsg(e.message);if($('#online').hidden) toast(e.message,{bad:true});}
 }
 async function joinGame(code){
   if(!NET.connected||lobbyBusy) return; lobbyBusy=true; lobbyMsg('Entrando na sala '+code+'…');
@@ -9125,7 +9411,7 @@ async function joinGame(code){
     const r=await netRequest('joinRoom',{code:String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6),name:getPlayerName()});
     NET.mode='client';NET.code=r.room.code;NET.roomMeta=r.room;NET.ready=false;NET.gr=new WsGameRoom();NET.hostPeer=r.room.hostId;NET.hostSeen=performance.now();NET.lastActSeq={};
     setupGameRoom();lobbyBusy=false;enterRoomLobby(r.room.map,true);
-  }catch(e){lobbyBusy=false;lobbyMsg(e.message);}
+  }catch(e){lobbyBusy=false;lobbyMsg(e.message);if($('#online').hidden) toast(e.message,{bad:true});}
 }
 async function setReady(v){ if(NET.mode!=='client') return; try{await netRequest('ready',{ready:!!v});NET.ready=!!v;updateRoomLobbyUI();}catch(e){$('#lobbyStatus').textContent=e.message;} }
 async function beginRoomGame(){ if(NET.mode!=='host') return; const ps=NET.gr?NET.gr.peers():[]; if(!ps.every(p=>p.peer===NET.me||p.ready)){ $('#lobbyStatus').textContent='Ainda há jogadores que não estão prontos.';return; }
@@ -9527,9 +9813,27 @@ function toMenu(){ closeChat(); chatClear(); if(G.state==='playing'||G.state==='
 function updateRec(){ $('#rec').innerHTML=best>0?`Recorde neste navegador: rodada <b>${best}</b>.`:'Nenhuma noite registrada ainda.'; }
 
 let pickMode='solo';
-function openMapPick(mode){ pickMode=mode; $('#mp-file').textContent=mode==='host'?'Partida online · escolha o mapa':'Escolha o mapa'; show('#mappick'); for(const b of document.querySelectorAll('.mapc')) b.classList.toggle('on',b.dataset.map===CUR); }
+function openMapPick(mode){ pickMode=mode; const grp=inParty(); $('#mp-file').textContent=grp?`Grupo de ${SOC.party.members.length} · escolha o mapa`:'Escolha o mapa e a dificuldade'; const chk=$('#mp-online'); chk.checked=grp; chk.disabled=grp; $('#mp-note').textContent=grp?'Seu grupo entra junto na sala e já fica pronto.':'A Arena X1 é sempre online (1 contra 1).'; show('#mappick'); for(const b of document.querySelectorAll('.mapc')) b.classList.toggle('on',b.dataset.map===CUR); }
+let mpBusy=false;
+async function playChoice(k){
+  if(mpBusy) return; const grp=inParty(), online=grp||$('#mp-online').checked||k==='x1', diff=$('#mp-diff').value;
+  if(!online){ SOLO_DIFF=diff; previewMap(k); showIntro(k,()=>{ if(NET.mode) leaveNet(); startGame(); }); return; }
+  if(!NET.connected){ toast('Servidor online indisponível agora. Desmarque "Sala online" para jogar sozinho.',{bad:true}); return; }
+  if(grp&&!isLeader()){ toast('Só o líder do grupo escolhe o mapa.',{bad:true}); return; }
+  if(k==='x1'&&grp&&SOC.party.members.length>2){ toast('A Arena X1 é só para 2 jogadores. Saia do grupo ou chame só um amigo.',{bad:true}); return; }
+  $('#room-map').value=k; $('#room-cap').value=k==='x1'?'2':'4'; $('#room-difficulty').value=diff; if(SOC.acc) $('#player-name').value=SOC.acc.name;
+  mpBusy=true; try{ await hostGame(); if(NET.mode==='host'&&grp) netSendRaw({type:'partyGo'}); } finally{ mpBusy=false; }
+}
 function previewMap(k){ if(k===CUR) return; setMap(k); const m=MAPS[k].menu; P.pos.set(m.x,0,m.z); for(const b of document.querySelectorAll('.mapc')) b.classList.toggle('on',b.dataset.map===k); }
-$('#play').addEventListener('click',()=>openMapPick('solo'));
+$('#play').addEventListener('click',()=>{ if(inParty()&&!isLeader()){ toast(`${SOC.party.leader} é o líder do grupo e escolhe o mapa. Quando ele começar, você entra junto.`); return; } openMapPick(inParty()?'host':'solo'); });
+$('#tab-play').addEventListener('click',()=>{ closeSocial(); });
+$('#shopbtn').addEventListener('click',()=>{ arsTab='shop'; openArsenal(); });
+$('#helpbtn').addEventListener('click',()=>{ openSettings('#menu'); setSetTab('info'); });
+$('#extrabtn').addEventListener('click',()=>{ renderParty(); $('#extras').hidden=false; });
+$('#ex-close').addEventListener('click',()=>{ $('#extras').hidden=true; });
+$('#mm-join').addEventListener('click',()=>{ const c=$('#mm-code').value.trim(); if(c.length<4){ toast('Digite o código da sala.',{bad:true}); return; } if(!NET.connected){ toast('Servidor online indisponível agora.',{bad:true}); return; } if(SOC.acc) $('#player-name').value=SOC.acc.name; joinGame(c); });
+$('#mm-code').addEventListener('input',()=>{ $('#mm-code').value=$('#mm-code').value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6); });
+$('#mm-code').addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter') $('#mm-join').click(); });
 $('#host').addEventListener('click',hostGame);
 $('#join-code-btn').addEventListener('click',()=>joinGame($('#join-code').value));
 $('#join-code').addEventListener('input',()=>{$('#join-code').value=$('#join-code').value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);});
@@ -9540,10 +9844,10 @@ $('#lobby-start').addEventListener('click',beginRoomGame);
 $('#lobby-leave').addEventListener('click',()=>toMenu());
 $('#lobby-copy').addEventListener('click',()=>{const t=NET.code||'';if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>{$('#lobby-copy').textContent='COPIADO';setTimeout(()=>$('#lobby-copy').textContent='COPIAR CONVITE',1500);}).catch(()=>{$('#lobby-copy').textContent='CÓDIGO: '+t;});});
 addEventListener('beforeunload',()=>{try{netSendRaw({type:'leave'});}catch(e){}});
-$('#mp-back').addEventListener('click',()=>show(pickMode==='host'?'#online':'#menu'));
-for(const b of document.querySelectorAll('.mapc[data-map=x1]')) b.addEventListener('click',()=>{ show('#online'); const sel=$('#room-map'); sel.value='x1'; sel.dispatchEvent(new Event('change')); lobbyMsg('Arena X1 selecionada: crie a sala e passe o código para o seu amigo.'); });
+$('#mp-back').addEventListener('click',()=>show('#menu'));
+for(const b of document.querySelectorAll('.mapc[data-map=x1]')) b.addEventListener('click',()=>playChoice('x1'));
 $('#room-map').addEventListener('change',()=>{ const x=$('#room-map').value==='x1', cap=$('#room-cap'); if(x) cap.value='2'; cap.disabled=x; $('#room-difficulty').disabled=x; });
-for(const b of document.querySelectorAll('.mapc:not([data-map=x1])')){ b.addEventListener('pointerenter',()=>previewMap(b.dataset.map)); b.addEventListener('focus',()=>previewMap(b.dataset.map)); b.addEventListener('click',()=>{ previewMap(b.dataset.map); showIntro(b.dataset.map,()=>{ if(NET.mode) leaveNet(); startGame(); }); }); }
+for(const b of document.querySelectorAll('.mapc:not([data-map=x1])')){ b.addEventListener('pointerenter',()=>previewMap(b.dataset.map)); b.addEventListener('focus',()=>previewMap(b.dataset.map)); b.addEventListener('click',()=>playChoice(b.dataset.map)); }
 $('#again').addEventListener('click',startGame);
 $('#restart').addEventListener('click',()=>{ if(NET.mode!=='client') startGame(); });
 $('#resume').addEventListener('click',resumeGame);
@@ -9625,7 +9929,7 @@ Promise.all([fontsReady,PH.ready,loadGunPack(),loadRiggedHands()]).then(()=>{
   try{ buildWorld(); }catch(e){ console.error(e); fail('Falha ao montar o mapa: '+e.message); return; }
   P.pos.set(MAPS[CUR].menu.x,0,MAPS[CUR].menu.z);
   resetGame();
-  G.state='menu'; $('#loading').hidden=true; applyCfg(); applyHands(); $('#player-name').value=localStorage.getItem('bdm_player_name')||''; show('#menu'); showSplash(); updateRec();
+  G.state='menu'; $('#loading').hidden=true; applyCfg(); applyHands(); $('#player-name').value=localStorage.getItem('bdm_player_name')||''; show('#menu'); showSplash(); updateRec(); try{ accBoot(); }catch(e){}
   initNet(); initProg();
 });
 requestAnimationFrame(frame);

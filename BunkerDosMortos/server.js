@@ -23,6 +23,66 @@ const MIME = {
   '.txt': 'text/plain; charset=utf-8', '.woff': 'font/woff', '.woff2': 'font/woff2'
 };
 
+/* ---- contas, amigos e grupo ----
+   As contas ficam só na memória do servidor (o navegador de cada jogador guarda nome e senha e
+   refaz o login sozinho se o servidor reiniciar). Senha guardada como hash scrypt com sal. */
+const users = new Map();      // nome em minúsculas -> { name, salt, hash }
+const online = new Map();     // nome em minúsculas -> client
+const parties = new Map();    // id -> { id, leader: clientId, members: [clientId] }
+const PARTY_MAX = 4;
+const keyOf = n => String(n || '').trim().toLowerCase();
+function hashPass(pass, salt) { return crypto.scryptSync(String(pass), salt, 32).toString('hex'); }
+function validName(n) { return /^[\p{L}\p{N} _.\-]{3,18}$/u.test(n); }
+function friendStatus(c) {
+  if (!c) return 'offline';
+  if (c.roomCode) { const r = rooms.get(c.roomCode); return r && r.started ? 'em partida' : 'no lobby'; }
+  return c.partyId && (parties.get(c.partyId) || { members: [] }).members.length > 1 ? 'em grupo' : 'no menu';
+}
+function sendSocial(c) {
+  if (!c || !c.user) return;
+  const list = Array.from(c.friends || []).slice(0, 100).map(k => {
+    const f = online.get(k); return { name: f ? f.user : k, key: k, online: !!f, status: friendStatus(f), sameParty: !!(f && c.partyId && f.partyId === c.partyId) };
+  });
+  send(c.ws, { type: 'social', friends: list });
+}
+let socialTimer = null;
+function socialChanged() {
+  if (socialTimer) return;
+  socialTimer = setTimeout(() => { socialTimer = null; for (const c of online.values()) sendSocial(c); }, 250);
+}
+function partyState(party) {
+  if (!party) return null;
+  return { id: party.id, leader: (clients.get(party.leader) || {}).user || '', members: party.members.map(id => clients.get(id)).filter(Boolean).map(c => ({
+    id: c.id, name: c.user || c.name, look: c.look || null, leader: c.id === party.leader, status: friendStatus(c) })) };
+}
+function broadcastParty(party) {
+  if (!party) return;
+  const st = partyState(party);
+  for (const id of party.members) { const c = clients.get(id); if (c) send(c.ws, { type: 'party', party: st }); }
+  socialChanged();
+}
+function leaveParty(c, silent) {
+  const party = c.partyId ? parties.get(c.partyId) : null;
+  c.partyId = null;
+  if (!party) return;
+  party.members = party.members.filter(id => id !== c.id);
+  if (!silent) send(c.ws, { type: 'party', party: null });
+  if (party.members.length <= 1) {
+    for (const id of party.members) { const o = clients.get(id); if (o) { o.partyId = null; send(o.ws, { type: 'party', party: null, note: (c.user || 'Seu amigo') + ' saiu do grupo' }); } }
+    parties.delete(party.id);
+  } else {
+    if (party.leader === c.id) party.leader = party.members[0];
+    for (const id of party.members) { const o = clients.get(id); if (o) send(o.ws, { type: 'partyNote', text: (c.user || 'Alguém') + ' saiu do grupo' }); }
+    broadcastParty(party);
+  }
+  socialChanged();
+}
+function ensureParty(c) {
+  let party = c.partyId ? parties.get(c.partyId) : null;
+  if (!party) { party = { id: crypto.randomUUID(), leader: c.id, members: [c.id] }; parties.set(party.id, party); c.partyId = party.id; }
+  return party;
+}
+
 function cleanName(value) {
   const name = String(value || '')
     .replace(/[<>\u0000-\u001f\u007f]/g, '')
@@ -70,13 +130,17 @@ function broadcastRoom(room) {
 }
 function closeRoom(room, reason = 'A sala foi encerrada pelo anfitrião.') {
   if (!room) return;
-  rooms.delete(room.code);
+  rooms.delete(room.code); socialChanged();
   for (const p of room.players.values()) {
     p.roomCode = null; p.role = 'player'; p.ready = false; p.presence = null;
     send(p.ws, { type: 'roomClosed', reason });
   }
 }
 function removeClient(client, reason = 'left', dropConnection = true) {
+  if (dropConnection) {
+    leaveParty(client, true);
+    if (client.user && online.get(keyOf(client.user)) === client) { online.delete(keyOf(client.user)); socialChanged(); }
+  }
   const room = roomOf(client);
   if (room) {
     if (client.id === room.hostId) {
@@ -167,7 +231,7 @@ wss.on('connection', (ws) => {
       client.roomCode = code; client.role = 'host'; client.ready = true; client.presence = null;
       room.players.set(client.id, client); rooms.set(code, room);
       send(ws, { type: 'roomCreated', reqId, room: publicRoom(room) });
-      broadcastRoom(room);
+      broadcastRoom(room); socialChanged();
       return;
     }
     if (msg.type === 'joinRoom') {
@@ -181,7 +245,7 @@ wss.on('connection', (ws) => {
       client.roomCode = room.code; client.role = 'player'; client.ready = false; client.presence = null;
       room.players.set(client.id, client);
       send(ws, { type: 'roomJoined', reqId, room: publicRoom(room) });
-      broadcastRoom(room);
+      broadcastRoom(room); socialChanged();
       return;
     }
     if (msg.type === 'presence') {
@@ -211,7 +275,7 @@ wss.on('connection', (ws) => {
       if (room.started) { sendError(ws, reqId, 'A partida já foi iniciada.'); return; }
       const notReady = Array.from(room.players.values()).filter(p => p.id !== room.hostId && !p.ready);
       if (notReady.length) { sendError(ws, reqId, 'Ainda há jogadores que não estão prontos.'); return; }
-      room.started = true;
+      room.started = true; socialChanged();
       for (const p of room.players.values()) send(p.ws, { type: 'roomStarted', room: publicRoom(room) });
       send(ws, { type: 'startAck', reqId });
       broadcastRoom(room);
@@ -231,6 +295,88 @@ wss.on('connection', (ws) => {
       client.roomCode = null;
       client.role = 'player'; client.ready = false; client.presence = null;
       send(ws, { type: 'leftRoom' });
+      socialChanged();
+      return;
+    }
+    if (msg.type === 'login') {
+      const name = String(msg.name || '').replace(/\s+/g, ' ').trim().slice(0, 18), pass = String(msg.pass || '');
+      if (!validName(name)) { sendError(ws, reqId, 'Use de 3 a 18 letras ou números no nome.'); return; }
+      if (pass.length < 3 || pass.length > 64) { sendError(ws, reqId, 'A senha precisa ter pelo menos 3 caracteres.'); return; }
+      const k = keyOf(name); let u = users.get(k);
+      if (u) { if (hashPass(pass, u.salt) !== u.hash) { sendError(ws, reqId, 'Esse nome já está em uso com outra senha.'); return; } }
+      else { if (users.size > 5000) { sendError(ws, reqId, 'Servidor cheio. Tente mais tarde.'); return; } const salt = crypto.randomBytes(12).toString('hex'); u = { name, salt, hash: hashPass(pass, salt) }; users.set(k, u); }
+      const old = online.get(k);
+      if (old && old !== client) { send(old.ws, { type: 'kicked', reason: 'Sua conta entrou em outro lugar.' }); leaveParty(old, true); old.user = null; }
+      if (client.user && keyOf(client.user) !== k) { leaveParty(client, true); online.delete(keyOf(client.user)); }
+      client.user = u.name; client.name = u.name; online.set(k, client);
+      if (Array.isArray(msg.friends)) client.friends = new Set(msg.friends.map(keyOf).filter(f => f && f !== k).slice(0, 100));
+      else if (!client.friends) client.friends = new Set();
+      if (msg.look && typeof msg.look === 'object') client.look = { c: String(msg.look.c || '').slice(0, 24), v: String(msg.look.v || '').slice(0, 24), lvl: Math.max(0, Math.min(999, Number(msg.look.lvl) || 0)) };
+      send(ws, { type: 'loginOk', reqId, name: u.name });
+      sendSocial(client); socialChanged();
+      return;
+    }
+    if (!client.user && ['friends', 'friendReq', 'friendAnswer', 'partyInvite', 'partyAnswer', 'partyLeave', 'partyKick', 'partyGo', 'look'].includes(msg.type)) {
+      sendError(ws, reqId, 'Entre com sua conta primeiro.'); return;
+    }
+    if (msg.type === 'friends') {
+      client.friends = new Set((Array.isArray(msg.list) ? msg.list : []).map(keyOf).filter(f => f && f !== keyOf(client.user)).slice(0, 100));
+      sendSocial(client); return;
+    }
+    if (msg.type === 'look') {
+      const l = msg.look || {}; client.look = { c: String(l.c || '').slice(0, 24), v: String(l.v || '').slice(0, 24), lvl: Math.max(0, Math.min(999, Number(l.lvl) || 0)) };
+      if (client.partyId) broadcastParty(parties.get(client.partyId)); return;
+    }
+    if (msg.type === 'friendReq') {
+      const t = online.get(keyOf(msg.to));
+      if (!t || t === client) { sendError(ws, reqId, t ? 'Você não pode se adicionar.' : 'Esse jogador não está online agora. O pedido só chega para quem está no jogo.'); return; }
+      send(t.ws, { type: 'friendReq', from: client.user });
+      send(ws, { type: 'ok', reqId, text: 'Pedido enviado para ' + t.user + '.' }); return;
+    }
+    if (msg.type === 'friendAnswer') {
+      const t = online.get(keyOf(msg.to));
+      if (msg.accept && t) {
+        client.friends = client.friends || new Set(); t.friends = t.friends || new Set();
+        client.friends.add(keyOf(t.user)); t.friends.add(keyOf(client.user));
+        send(ws, { type: 'friendAdded', name: t.user }); send(t.ws, { type: 'friendAdded', name: client.user });
+        socialChanged();
+      } else if (t) send(t.ws, { type: 'partyNote', text: client.user + ' recusou o pedido de amizade.' });
+      return;
+    }
+    if (msg.type === 'partyInvite') {
+      const t = online.get(keyOf(msg.to));
+      if (!t || t === client) { sendError(ws, reqId, 'Esse jogador não está online.'); return; }
+      const party = ensureParty(client);
+      if (party.members.includes(t.id)) { sendError(ws, reqId, t.user + ' já está no seu grupo.'); return; }
+      if (party.members.length >= PARTY_MAX) { sendError(ws, reqId, 'O grupo já está cheio (4 jogadores).'); return; }
+      send(t.ws, { type: 'partyInvite', from: client.user, pid: party.id });
+      send(ws, { type: 'ok', reqId, text: 'Convite enviado para ' + t.user + '.' });
+      broadcastParty(party); return;
+    }
+    if (msg.type === 'partyAnswer') {
+      const party = parties.get(String(msg.pid || ''));
+      if (!msg.accept) { if (party) { const l = clients.get(party.leader); if (l) send(l.ws, { type: 'partyNote', text: client.user + ' recusou o convite.' }); } return; }
+      if (!party) { sendError(ws, reqId, 'Esse grupo não existe mais.'); return; }
+      if (party.members.length >= PARTY_MAX) { sendError(ws, reqId, 'O grupo já está cheio.'); return; }
+      if (client.partyId === party.id) return;
+      leaveParty(client, true);
+      party.members.push(client.id); client.partyId = party.id;
+      for (const id of party.members) { const o = clients.get(id); if (o && o !== client) send(o.ws, { type: 'partyNote', text: client.user + ' entrou no grupo' }); }
+      broadcastParty(party); return;
+    }
+    if (msg.type === 'partyLeave') { leaveParty(client); return; }
+    if (msg.type === 'partyKick') {
+      const party = client.partyId ? parties.get(client.partyId) : null;
+      if (!party || party.leader !== client.id) { sendError(ws, reqId, 'Só o líder pode remover alguém do grupo.'); return; }
+      const t = online.get(keyOf(msg.name)); if (!t || t.partyId !== party.id || t === client) return;
+      send(t.ws, { type: 'party', party: null, note: 'Você foi removido do grupo.' });
+      leaveParty(t, true); return;
+    }
+    if (msg.type === 'partyGo') {
+      // o líder criou a sala: os outros membros do grupo recebem o código e entram sozinhos
+      const party = client.partyId ? parties.get(client.partyId) : null; const room = roomOf(client);
+      if (!party || party.leader !== client.id || !room) return;
+      for (const id of party.members) { const o = clients.get(id); if (o && o !== client) send(o.ws, { type: 'partyGo', code: room.code, map: room.map }); }
       return;
     }
     if (msg.type === 'chat') {

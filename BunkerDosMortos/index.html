@@ -156,6 +156,12 @@ body.scoped #cross{visibility:hidden}
 #party p.pn{margin:9px 0 0;font-size:11px;line-height:1.4;color:var(--muted)}
 #gamever{position:absolute;right:calc(22px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font:11px var(--f-type);letter-spacing:.12em;color:var(--muted);opacity:.8;pointer-events:none;z-index:2}
 
+#bossbar{position:absolute;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);width:min(520px,70vw);text-align:center;font-family:var(--f-type);color:var(--chalk);text-shadow:0 1px 3px #000;pointer-events:none;--bc:#ff5a1a}
+#bossbar b{display:block;font:22px var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--bc)}
+#bossbar .bb{height:10px;margin:5px 0 4px;background:rgba(0,0,0,.6);border:1px solid rgba(235,229,212,.3);overflow:hidden}
+#bossbar i{display:block;height:100%;background:linear-gradient(180deg,var(--bc),#5a0c08);transform-origin:left center;transition:transform .2s}
+#bossbar small{font-size:11px;color:var(--muted)}
+body.furia #vignette{box-shadow:inset 0 0 160px rgba(160,10,0,.55)}
 #hurt{position:absolute;inset:0;opacity:0;background:radial-gradient(ellipse at center,rgba(120,0,0,0) 30%,rgba(150,8,4,.9) 100%)}
 #flash{position:absolute;inset:0;background:#fffbe8;opacity:0;transition:opacity .7s ease-out}
 #cross{position:absolute;left:50%;top:50%;width:0;height:0;transition:opacity .15s}
@@ -847,6 +853,7 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
   <div id="mission" aria-live="polite"><span class="mt">ORDEM DE OPERAÇÃO</span><b class="mh" id="mission-title">Aguarde...</b><span class="md" id="mission-desc">Carregando objetivos da área.</span><span class="mp" id="mission-progress"></span></div>
   <div id="banner"></div>
   <div id="x1hud" hidden></div>
+  <div id="bossbar" hidden><b></b><div class="bb"><i></i></div><small></small></div>
   <div id="pwr"></div>
   <div id="hpw" aria-label="Vida"><div class="hprow"><span class="hpic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z" fill="currentColor"/></svg></span><b id="hpv">100</b><small id="hpmax">/ 100</small><span id="hpsh" hidden></span><span id="hpst"></span></div><div class="hpbar"><i class="ghost"></i><i class="fill"></i><i class="sh"></i><i class="seg"></i></div></div>
   <div id="bl"><div id="cardhud"></div><div id="perks"></div><canvas id="roundc" width="240" height="120"></canvas></div>
@@ -2504,6 +2511,7 @@ function updateLights(dt){
     l.L.intensity=base*f; l.bulb.material.color.setScalar(0.25+0.75*f*(base/1.25));
   }
   hemi.intensity=CUR==='hosp'?(G.power?0.25:0.20):CUR==='farm'?(P.base<-1?0.13:(isOutside(P.pos.x,P.pos.z)?0.30:(G.power?0.26:0.22))):(G.power?0.29:0.24);
+  try{ eventsVisual(dt); }catch(e){}
   updateFires(dt); updateCity(dt); updateStaticLighting();
 }
 
@@ -4807,7 +4815,7 @@ $('#cardrow').addEventListener('mouseover',e=>{ const b=e.target.closest('.card,
 function hudCards(){ const el=$('#cardhud'); el.textContent=''; for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v6.5';
+const GAME_VERSION='v6.6';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -5656,6 +5664,40 @@ ZG.torso.translate(0,.28,0); ZG.neck.translate(0,.06,0); ZG.head.translate(0,.13
 ZG.uarm.translate(0,-.15,0); ZG.farm.translate(0,-.135,0); ZG.palm.translate(0,-.045,0); ZG.finger.translate(0,-.032,0);
 ZG.thigh.translate(0,-.22,0); ZG.shin.translate(0,-.21,0); ZG.boot.translate(0,-.045,.045);
 const eyeMat=new THREE.MeshBasicMaterial({color:0xffa31a,fog:false});
+/* detalhes extras: cabelo ralo, costelas e ossos expostos, olho pendurado pelo nervo, tripas */
+let ZX=null;
+function zx(){ if(ZX) return ZX; ZX={
+  hairG:new THREE.DodecahedronGeometry(0.034,0), strandG:new THREE.BoxGeometry(0.009,0.13,0.009).translate(0,-0.065,0),
+  skullG:new THREE.SphereGeometry(0.06,10,6,0,Math.PI*2,0,Math.PI*0.5), ribG:new THREE.TorusGeometry(0.1,0.009,4,10,Math.PI*0.75),
+  boneG:new THREE.CylinderGeometry(0.012,0.014,0.17,6).translate(0,-0.085,0), knobG:new THREE.SphereGeometry(0.022,8,6),
+  eyeG:new THREE.SphereGeometry(0.023,10,8), nerveG:new THREE.CylinderGeometry(0.0045,0.0045,0.075,5).translate(0,-0.0375,0), socketG:new THREE.SphereGeometry(0.02,8,6),
+  gutG:new THREE.TorusGeometry(0.045,0.02,6,10), patchG:new THREE.SphereGeometry(0.09,10,8),
+  hair:[0x0e0c0a,0x2a2018,0x5a5650,0x3a2a1a].map(c=>new THREE.MeshLambertMaterial({color:c})),
+  bone:new THREE.MeshPhongMaterial({color:0xd8ceb0,shininess:40,specular:0x332a20}),
+  eye:new THREE.MeshPhongMaterial({color:0xe8e0c8,shininess:80,specular:0xffffff}),
+  iris:new THREE.MeshBasicMaterial({color:0x6a1a0a}),
+  gut:new THREE.MeshPhongMaterial({color:0x8a2a2a,shininess:70,specular:0x552222}),
+  dark:new THREE.MeshBasicMaterial({color:0x120403}) }; return ZX; }
+function zombieDetails(z,rng,o){
+  const X=zx(); const add=(par,geo,mat,x,y,zz,rx,ry,rz,sx,sy,sz)=>{ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,zz); m.rotation.set(rx||0,ry||0,rz||0); if(sx) m.scale.set(sx,sy||sx,sz||sx); par.add(m); return m; };
+  const headP=z.headP, spine=z.spine;
+  // cabelo: tufos ralos no topo e mechas compridas caindo pela nuca
+  if(!o.hat&&rng()<0.75){ const hm=X.hair[Math.floor(rng()*X.hair.length)]; const n=8+Math.floor(rng()*8);
+    for(let i=0;i<n;i++){ const a=rng()*Math.PI*2, el=0.35+rng()*0.9; const r=0.125; const x=Math.cos(a)*Math.sin(el)*r*0.92, y=0.13+Math.cos(el)*r*1.1, zz=Math.sin(a)*Math.sin(el)*r-0.01; if(zz>0.07&&y<0.2) continue; add(headP,X.hairG,hm,x,y+0.01,zz,rng()*3,rng()*3,0,0.9+rng()*0.8,0.5+rng()*0.5,0.9+rng()*0.6); }
+    const ns=2+Math.floor(rng()*5); for(let i=0;i<ns;i++){ const a=Math.PI*(0.25+rng()*1.5); add(headP,X.strandG,hm,Math.cos(a)*0.1,0.2,Math.sin(a)*0.09-0.03,(rng()-0.5)*0.5,0,(rng()-0.5)*0.6,1,0.8+rng()*1.3,1); }
+    if(rng()<0.35) add(headP,X.skullG,X.bone,(rng()-0.5)*0.08,0.215,-0.02+(rng()-0.5)*0.05,-0.3,0,(rng()-0.5)*0.5,1,0.6,1); }
+  // olho pendurado pelo nervo
+  if(rng()<0.4){ const sx=rng()<0.5?-1:1; if(o.eyes){ const e=o.eyes[sx<0?0:1]; if(e) e.visible=false; }
+    add(headP,X.socketG,X.dark,sx*0.034,0.17,0.118,0,0,0,1,0.8,0.6);
+    const piv=new THREE.Group(); piv.position.set(sx*0.034,0.165,0.128); headP.add(piv); add(piv,X.nerveG,X.gut,0,0,0); const eb=add(piv,X.eyeG,X.eye,0,-0.085,0.004); add(eb,X.socketG,X.iris,0,0,0.016,0,0,0,0.5,0.5,0.4); z.eyeP=piv; }
+  // costelas expostas no peito, com a carne escura por trás
+  if(rng()<0.45){ const sx=rng()<0.5?-1:1; add(spine,X.patchG,X.dark,sx*0.07,0.4,0.115,0,0,0,0.85,1.1,0.3);
+    for(let i=0;i<3;i++){ const rb=add(spine,X.ribG,X.bone,sx*0.02,0.34+i*0.055,0.06,0,sx>0?Math.PI*0.05:Math.PI*0.95,0); rb.rotation.x=Math.PI/2+0.25; rb.scale.set(1,1,0.9); } }
+  // osso saindo do antebraço ou do ombro
+  if(rng()<0.35){ const arm=rng()<0.5?z.armL:z.armR; if(arm&&arm.el){ const b=add(arm.el,X.boneG,X.bone,0.03,-0.04,0.03,0.4,0,0.5); add(b,X.knobG,X.bone,0,-0.17,0); add(arm.el,X.patchG,X.gut,0.02,-0.05,0.02,0,0,0,0.35,0.3,0.35); } }
+  // tripas penduradas da barriga
+  if(!o.brute&&rng()<0.25){ for(let i=0;i<3;i++){ const g=add(spine,X.gutG,X.gut,(rng()-0.5)*0.08,0.12-i*0.07,0.13+i*0.01,Math.PI/2+(rng()-0.5)*0.6,rng()*3,0); g.scale.setScalar(1-i*0.12); } add(spine,X.patchG,X.dark,0,0.16,0.11,0,0,0,0.7,0.5,0.3); }
+}
 function zombieBody(z){
   buildZTex();
   const rng=mulberry(z.seed); const rpick=a=>a[Math.floor(rng()*a.length)];
@@ -5680,11 +5722,12 @@ function zombieBody(z){
   const neckP=new THREE.Group(); neckP.position.y=.58; spine.add(neckP); neckP.add(mesh(ZG.neck,skinMat));
   const headP=new THREE.Group(); headP.position.y=.05; neckP.add(headP);
   const headM=mesh(ZG.head,faceMat); headM.scale.set(.92,1.12,1.0); headP.add(headM);
-  for(const sx of [-1,1]){ const e=mesh(ZG.eye,eyeMat); e.position.set(sx*.034,.17,.122); headP.add(e); }
+  const eyes=[]; for(const sx of [-1,1]){ const e=mesh(ZG.eye,eyeMat); e.position.set(sx*.034,.17,.122); headP.add(e); eyes.push(e); }
   const jawP=new THREE.Group(); jawP.position.set(0,.088,.012); headP.add(jawP);
   if(rng()<0.88){ jawP.add(mesh(ZG.jaw,skinMat)); const te=mesh(ZG.teeth,ZT.teeth); te.position.set(0,0.004,0.085); jawP.add(te); }
   else { const st=mesh(ZG.stump,ZT.gore); st.position.set(0,0,.06); st.scale.set(1.4,.5,1); jawP.add(st); }
-  const acc=rng();
+  const acc=rng(); let hatOn=false;
+  if((outfit==='soldier'||outfit==='soldier2')&&acc<0.6) hatOn=true; else if(outfit==='officer'&&acc<0.8) hatOn=true;
   if((outfit==='soldier'||outfit==='soldier2')&&acc<0.6){ const h=mesh(ZG.helmet,ZT.helmet); h.position.y=.17; h.scale.set(1,.9,1.06); h.rotation.x=rng()*0.4-0.2; headP.add(h); const b=mesh(ZG.brim,ZT.helmet); b.position.y=.17; headP.add(b); }
   else if(outfit==='officer'&&acc<0.8){ const c=mesh(ZG.cap,ZT.cap); c.position.y=.265; c.rotation.z=rng()*.3-.15; headP.add(c); const v=mesh(ZG.visor,ZT.visor); v.position.set(0,.235,.12); v.rotation.x=.2; headP.add(v); }
   else if(acc>(hosp?0.55:0.82)){ const b=mesh(ZG.bandage,ZT.bandage); b.position.y=.2; b.rotation.z=.2; headP.add(b); }
@@ -5707,6 +5750,7 @@ function zombieBody(z){
   for(const l of [legL,legR]) for(const m of l.meshes) tag(m,'legs');
   z.hit=[headM,torsoM,chestM,hipM,...armL.meshes,...armR.meshes,...legL.meshes,...legR.meshes];
   z.headM=headM;
+  try{ zombieDetails(z,rng,{hat:hatOn,eyes,brute}); }catch(e){}
   const root=new THREE.Group(); root.add(g); z.root=root; scene.add(root);
 }
 /* half a zombie: legs fall off, it keeps crawling */
@@ -5744,10 +5788,11 @@ function makeZombie(spawn){
   const z={id:++zidN,win,state:'rise',t:0,seed:((Math.random()*99998)|0)+1,kind:brute?'brute':'normal',boss,name:boss?(spawn.bossName||'O Guardião'):null,dead:false,crawl:false,
     runner:fk==='runner'?true:fk?false:!brute&&Math.random()<Math.min(0.96,runnerChance(G.round)+(CUR==='hosp'?0.18:0)),animT:Math.random()*10,attackT:0,hitDone:false,tearT:0,groanT:rand(1,5),flashT:0,jawT:0,tgtKey:null,tgtT:0};
   z.hp=z.maxHp=G.zhp*(brute?3.5:1)*threatHp(L)*(boss?3.5:1);
+  if(spawn.bossKi!=null){ z.bossKi=spawn.bossKi; const np=1+TG.filter(t=>!t.local).length; z.hp=z.maxHp=G.zhp*threatHp(L)*(14+spawn.bossN*7)*(1+0.6*(np-1)); }
   z.yaw=win?Math.atan2(win.ix,win.iz):rand(0,6.28);
   const diffSpeed=onlineDifficulty()==='nightmare'?1.15:onlineDifficulty()==='hard'?1.08:1;
   z.speed=(brute?rand(1.35,1.55):z.runner?rand(2.3,2.7):rand(1.25,1.6)+Math.min(0.45,G.round*0.03))*(1+Math.min(0.3,0.03*L))*diffSpeed*(boss?0.88:1);
-  zombieBody(z); if(boss) z.g.scale.setScalar(1.24);
+  zombieBody(z); if(boss) z.g.scale.setScalar(1.24); if(z.bossKi!=null){ bossLook(z,z.bossKi); z.speed=BOSS_KINDS[z.bossKi].spd*diffSpeed; G.boss=z; }
   if(win){ const lat=rand(-1.3,1.3); const lx=win.iz!==0?1:0, lz=win.ix!==0?1:0; z.pos=new THREE.Vector3(win.wx-win.ix*S*1.65+lx*lat,0,win.wz-win.iz*S*1.65+lz*lat); }
   else z.pos=new THREE.Vector3(spawn.x+rand(-.5,.5),0,spawn.z+rand(-.5,.5));
   z.g.position.set(z.pos.x,-1.8,z.pos.z); z.g.rotation.y=z.yaw;
@@ -5758,7 +5803,7 @@ function makeZombie(spawn){
 function zy(z){ return (z.root?z.root.position.y:0)+z.g.position.y; }
 function zFloor(z){ if(z.root) z.root.position.y=FLOORS?floorAt(z.pos.x,z.pos.z):0; }
 function disposeZ(z){ scene.remove(z.root||z.g); z.mats.forEach(m=>m.dispose()); }
-function removeZombie(z){ disposeZ(z); const i=zombies.indexOf(z); if(i>=0) zombies.splice(i,1); }
+function removeZombie(z){ if(G.boss===z) G.boss=null; disposeZ(z); const i=zombies.indexOf(z); if(i>=0) zombies.splice(i,1); }
 function removeGhost(z){ disposeZ(z); NET.ghosts.delete(z.id); }
 function angLerp(a,b,t){ let d=b-a; while(d>Math.PI) d-=Math.PI*2; while(d<-Math.PI) d+=Math.PI*2; return a+d*clamp(t,0,1); }
 /* anti-stuck: a zombie that keeps trying to move but goes nowhere first slips through props, then hops a few cells
@@ -5776,7 +5821,7 @@ function unstick(z,dt,T){
   else if(z.stkN>=6&&!seenByAnyone(z.pos.x,z.pos.z)){ z.stkN=0; if(NET.mode!=='client'){ removeZombie(z); G.toSpawn++; } }
 }
 function seenByAnyone(x,z){ for(const t of TG){ const d=Math.hypot(t.x-x,t.z-z); if(d<14&&losClear({x,z},t)) return true; } return false; }
-function moveToward(z,tx,tz,dt,spd){ const dx=tx-z.pos.x, dz=tz-z.pos.z, d=Math.hypot(dx,dz); if(d<0.05) return d; const s=Math.min(d,spd*dt); z.pos.x+=dx/d*s; z.pos.z+=dz/d*s; z.yaw=angLerp(z.yaw,Math.atan2(dx,dz),dt*8); z.moving=true; return d; }
+function moveToward(z,tx,tz,dt,spd){ if(EVT.k==='furia'&&!z.bossKi) spd*=1.4; const dx=tx-z.pos.x, dz=tz-z.pos.z, d=Math.hypot(dx,dz); if(d<0.05) return d; const s=Math.min(d,spd*dt); z.pos.x+=dx/d*s; z.pos.z+=dz/d*s; z.yaw=angLerp(z.yaw,Math.atan2(dx,dz),dt*8); z.moving=true; return d; }
 function zvoice(z,cat,vol){ const c=z.kind==='brute'&&cat!=='attack'?'brute':cat; Snd.zvoice(c,z.pos.x,z.pos.z,vol,z.kind==='brute'?rand(.72,.82):z.crawl?rand(.85,.95):rand(.9,1.12)); z.jawT=0.9; }
 
 /* ---- who the zombies hunt: every player still standing ---- */
@@ -5791,7 +5836,88 @@ function buildTargets(){
   }
 }
 function nearestTarget(x,z){ let b=null,bd=1e9; for(const t of TG){ const d=Math.hypot(t.x-x,t.z-z); if(d<bd){ bd=d; b=t; } } return b; }
+function bossDown(name){ banner('CHEFE DERROTADO',`${name} caiu · +1.000 pontos para todos`,'gold'); sysLog(`${name} foi derrotado`); addPoints(1000,true); addDrax(25); try{ Snd.ui('levelup'); }catch(e){} }
 function hurtTarget(T,amt,z){ if(T.local) hurtPlayer(amt,z); else pushEv(['hu',T.key,amt]); }
+/* ================= BOSSES (a cada 10 rodadas, cada um mais forte e com uma mecânica) ================= */
+const BOSS_KINDS=[
+  {k:'tanque',name:'O Brutamontes',desc:'Investe em linha reta e esmaga o chão. Saia da frente!',col:0xff5a1a,scale:1.6,spd:1.25},
+  {k:'grito',name:'A Gritadora',desc:'O grito deixa vocês lentos e chama mais mortos.',col:0xc040ff,scale:1.35,spd:1.85},
+  {k:'fogo',name:'O Incendiário',desc:'Arremessa bolas de fogo que queimam o chão.',col:0xff8a10,scale:1.45,spd:1.45},
+  {k:'necro',name:'O Necromante',desc:'Ergue mortos da terra e se cura com eles.',col:0x30ffb0,scale:1.45,spd:1.35}];
+const BROM=['','','II','III','IV','V','VI','VII','VIII'];
+function bossFor(r){ const n=Math.max(1,Math.floor(r/10)); const B=BOSS_KINDS[(n-1)%BOSS_KINDS.length]; const tier=Math.floor((n-1)/BOSS_KINDS.length)+1; return {B,n,name:B.name+(tier>1?' '+(BROM[tier]||tier):''),ki:BOSS_KINDS.indexOf(B)}; }
+function bossLook(z,ki){ const B=BOSS_KINDS[ki]; if(!B) return; z.g.scale.setScalar(B.scale);   const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:B.col,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,opacity:0.45})); gl.scale.set(2.4,3,1); gl.position.y=1.1; z.g.add(gl); z.aura=gl;
+  for(const e of [z.headP]) if(e){ const eg=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:B.col,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,fog:false,opacity:0.9})); eg.scale.set(0.28,0.14,1); eg.position.set(0,0.17,0.13); e.add(eg); } }
+function playersNear(x,zz,r){ return TG.filter(T=>Math.hypot(T.x-x,T.z-zz)<r); }
+const BFX=[], BPATCH=[];
+function bossFx(kind,a,b,c,d){
+  if(kind==='slam'){ explodeFx({x:a,y:0.2,z:b},3.5,0x8a7a5a); emit('dust',a,0.2,b,24,4,1.2,-0.5); if(Math.hypot(P.pos.x-a,P.pos.z-b)<14) shake(0.9); Snd.distant(a,b); }
+  else if(kind==='grito'){ zvoiceAt(a,b); if(Math.hypot(P.pos.x-a,P.pos.z-b)<22&&!P.down){ G.slowT=3.2; shake(0.6); banner('O GRITO!','Você está mais lento por alguns segundos','red'); } }
+  else if(kind==='fb'){ const m=new THREE.Mesh(new THREE.SphereGeometry(0.28,10,8),new THREE.MeshBasicMaterial({color:0xffa030,fog:false})); const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0xff6a10,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,fog:false})); gl.scale.set(1.8,1.8,1); m.add(gl); scene.add(m);
+    BFX.push({m,x0:a,z0:b,x1:c,z1:d,t:0,dur:1.15,real:NET.mode!=='client'}); }
+  else if(kind==='raise'){ emit('green',a,0.4,b,20,2.5,1.2,-0.3); }
+  else if(kind==='charge'){ emit('dust',a,0.2,b,12,2,0.8,-0.5); }
+}
+function zvoiceAt(x,zz){ try{ Snd.at(1,()=>Snd.zvoice&&Snd.zvoice('sprint',x,zz,1.6,0.55,60)); }catch(e){} }
+function updateBossFx(dt){
+  for(let i=BFX.length-1;i>=0;i--){ const f=BFX[i]; f.t+=dt; const k=Math.min(1,f.t/f.dur); const x=lerp(f.x0,f.x1,k), zz=lerp(f.z0,f.z1,k); f.m.position.set(x,floorAt(x,zz)+1.8+Math.sin(k*Math.PI)*3.2-k*1.6,zz);
+    if(k>=1){ scene.remove(f.m); BFX.splice(i,1); explodeFx({x:f.x1,y:0.3,z:f.z1},2.6,0xff6a10);
+      const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0xff5a10,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,opacity:0.8})); spr.scale.set(3.2,1.2,1); spr.position.set(f.x1,floorAt(f.x1,f.z1)+0.35,f.z1); scene.add(spr);
+      BPATCH.push({s:spr,x:f.x1,z:f.z1,t:6,real:f.real,dmgT:0});
+      if(f.real) for(const T of playersNear(f.x1,f.z1,2.6)) hurtTarget(T,45,null); } }
+  for(let i=BPATCH.length-1;i>=0;i--){ const p=BPATCH[i]; p.t-=dt; p.s.material.opacity=Math.min(0.85,p.t/2)*(0.75+Math.sin(G.t*14+i)*0.2); if(Math.random()<dt*14) emit('fire',p.x+rand(-1,1),0.3,p.z+rand(-1,1),1,0.8,0.6,-1);
+    if(p.real){ p.dmgT-=dt; if(p.dmgT<=0){ p.dmgT=1; for(const T of playersNear(p.x,p.z,1.7)) hurtTarget(T,12,null); } }
+    if(p.t<=0){ scene.remove(p.s); BPATCH.splice(i,1); } }
+}
+function bossTick(z,dt){
+  if(z.dead||z.state!=='inside') return; const B=BOSS_KINDS[z.bossKi]; if(!B) return;
+  const T=nearestTarget(z.pos.x,z.pos.z); if(!T) return; const d=Math.hypot(T.x-z.pos.x,T.z-z.pos.z);
+  z.bcd=(z.bcd==null?4:z.bcd)-dt; z.bcd2=(z.bcd2==null?6:z.bcd2)-dt;
+  if(B.k==='tanque'){
+    if(z.chargeT>0){ z.chargeT-=dt; const sp=z.speed*4.4*dt; z.pos.x+=z.cdx*sp; z.pos.z+=z.cdz*sp; z.moving=true; z.yaw=Math.atan2(z.cdx,z.cdz); collide(z.pos,0.45,solidIn,true);
+      if(!z.chargeHit) for(const t of playersNear(z.pos.x,z.pos.z,1.6)){ z.chargeHit=true; hurtTarget(t,70,z); }
+      if(z.chargeT<=0) z.stagT=0.9; return; }
+    if(z.windT>0){ z.windT-=dt; z.yaw=angLerp(z.yaw,Math.atan2(T.x-z.pos.x,T.z-z.pos.z),dt*8); if(z.windT<=0){ const k=1/Math.max(0.01,d); z.cdx=(T.x-z.pos.x)*k; z.cdz=(T.z-z.pos.z)*k; z.chargeT=Math.min(1.3,d/(z.speed*4.4)+0.25); z.chargeHit=false; pushEv(['bx','charge',r10(z.pos.x),r10(z.pos.z)]); bossFx('charge',z.pos.x,z.pos.z); } return; }
+    if(z.bcd<=0&&d>3&&d<15&&losClear(z.pos,T)){ z.bcd=rand(6,8); z.windT=0.7; zvoice(z,'sprint',1); return; }
+    if(z.bcd2<=0&&d<3.2){ z.bcd2=rand(7,9); pushEv(['bx','slam',r10(z.pos.x),r10(z.pos.z)]); bossFx('slam',z.pos.x,z.pos.z); for(const t of playersNear(z.pos.x,z.pos.z,4.2)) hurtTarget(t,45,null); }
+  } else if(B.k==='grito'){
+    if(z.bcd<=0&&d<20){ z.bcd=rand(9,11); pushEv(['bx','grito',r10(z.pos.x),r10(z.pos.z)]); bossFx('grito',z.pos.x,z.pos.z);
+      const alive=zombies.filter(q=>!q.dead).length; for(let i=0;i<3&&alive+i<40;i++) makeZombie({x:z.pos.x+rand(-3,3),z:z.pos.z+rand(-3,3)}); }
+  } else if(B.k==='fogo'){
+    if(z.bcd<=0&&d<24&&d>2.5&&losClear(z.pos,T)){ z.bcd=rand(3,4.2); const tx=T.x+rand(-0.8,0.8), tz=T.z+rand(-0.8,0.8); pushEv(['bx','fb',r10(z.pos.x),r10(z.pos.z),r10(tx),r10(tz)]); bossFx('fb',z.pos.x,z.pos.z,tx,tz); zvoice(z,'attack',0.9); }
+  } else if(B.k==='necro'){
+    if(z.bcd<=0){ z.bcd=rand(10,12); const alive=zombies.filter(q=>!q.dead).length; let n=0; for(let i=0;i<4&&alive+i<40;i++){ makeZombie({x:z.pos.x+rand(-4,4),z:z.pos.z+rand(-4,4)}); n++; }
+      z.hp=Math.min(z.maxHp,z.hp+z.maxHp*0.05*n); pushEv(['bx','raise',r10(z.pos.x),r10(z.pos.z)]); bossFx('raise',z.pos.x,z.pos.z); zvoice(z,'groan',1); }
+  }
+}
+function bossHud(){ const el=$('#bossbar'); if(!el) return; let info=null;
+  if(NET.mode==='client') info=G.bossInfo||null; else if(G.boss&&!G.boss.dead) info=[G.boss.name,Math.ceil(G.boss.hp),Math.ceil(G.boss.maxHp),G.boss.bossKi];
+  if(!info||x1Live()||!(G.state==='playing'||G.state==='paused')){ if(!el.hidden) el.hidden=true; return; }
+  el.hidden=false; const sig=info.join('|'); if(el.dataset.sig===sig) return; el.dataset.sig=sig;
+  el.querySelector('b').textContent=info[0]; const B=BOSS_KINDS[info[3]]; el.querySelector('small').textContent=B?B.desc:'';
+  el.querySelector('i').style.transform=`scaleX(${clamp(info[1]/Math.max(1,info[2]),0,1).toFixed(4)})`; if(B) el.style.setProperty('--bc','#'+B.col.toString(16).padStart(6,'0')); }
+/* ================= EVENTOS ALEATÓRIOS NOS MAPAS ================= */
+const EVT={k:null,t:0,next:rand(55,85),base:null};
+const EVT_INFO={apagao:['A ENERGIA CAIU','Todas as luzes apagaram. Use a lanterna (L).',24],neblina:['NEBLINA DENSA','Uma névoa grossa tomou conta do mapa.',30],furia:['HORDA FURIOSA','Os mortos estão mais rápidos.',20],suprimento:['SUPRIMENTOS','Um pacote caiu perto de vocês.',0]};
+const EVT_CODES=['','apagao','neblina','furia','suprimento'];
+function evStart(k,t,announce){ EVT.k=k; EVT.t=t; const I=EVT_INFO[k]; if(announce&&I){ banner(I[0],I[1],k==='suprimento'?'gold':'red'); sysLog('Evento: '+I[0].toLowerCase()); if(k==='apagao') Snd.zap(P.pos.x,P.pos.z,3); } document.body.classList.toggle('furia',k==='furia'); }
+function evEnd(announce){ const k=EVT.k; EVT.k=null; EVT.t=0; document.body.classList.remove('furia'); if(announce&&k&&k!=='suprimento') sysLog('Evento encerrado: '+(EVT_INFO[k]||[''])[0].toLowerCase()); }
+function eventsHost(dt){
+  if(NET.mode==='client'||x1Live()||CUR==='sandbox'||CUR==='x1'||G.round<3) return;
+  if(EVT.k){ EVT.t-=dt; if(EVT.t<=0) evEnd(true); return; }
+  EVT.next-=dt; if(EVT.next>0) return; EVT.next=rand(60,110);
+  const opts=['neblina','furia','suprimento']; if(G.power) opts.push('apagao','apagao');
+  const k=pick(opts); const I=EVT_INFO[k];
+  if(k==='suprimento'){ const T=pick(TG.length?TG:[{x:P.pos.x,z:P.pos.z}]); spawnPU(pick(['max','double','insta','max']),T.x+rand(-2,2),T.z+rand(-2,2)); evStart(k,2,true); return; }
+  evStart(k,I[2],true);
+}
+function eventsVisual(dt){
+  // apagão: luzes do mapa morrem (piscando no começo e no fim); neblina: a névoa engrossa aos poucos
+  const black=EVT.k==='apagao'?(EVT.t>(EVT_INFO.apagao[2]-1.6)||EVT.t<1.4?(Math.random()<0.5?0.05:0.6):0.03):1;
+  EVT.blk=lerp(EVT.blk==null?1:EVT.blk,black,Math.min(1,dt*(black<1?10:2)));
+  if(EVT.blk<0.995){ for(const l of lamps){ if(l.map!==CUR) continue; l.L.intensity*=EVT.blk; l.bulb.material.color.multiplyScalar(Math.max(0.05,EVT.blk)); } hemi.intensity*=0.35+0.65*EVT.blk; }
+  if(scene.fog&&scene.fog.density!=null){ if(EVT.base==null||EVT.baseMap!==CUR){ EVT.base=scene.fog.density; EVT.baseMap=CUR; } const want=EVT.k==='neblina'?EVT.base*2.8:EVT.base; scene.fog.density=lerp(scene.fog.density,want,Math.min(1,dt*0.8)); }
+}
 function zombieAttack(z,dt,T,dist,reach){
   if(z.attackT===0) zvoice(z,'attack',0.7);
   z.attackT+=dt;
@@ -5856,6 +5982,7 @@ function updateZombie(z,dt){
       break; }
   }
   if(z.state==='approach'||z.state==='wait'||z.state==='toTear') collide(z.pos,0.3,solidOut,false);
+  if(z.bossKi!=null) bossTick(z,dt);
   zKnock(z,dt);
   animateZombie(z,dt);
 }
@@ -5978,6 +6105,7 @@ function damageZombie(z,amt,part,src,hitPt,shooter,luck){
 }
 function killZombie(z,part,src,shooter,luck){
   z.dead=true; if(z.win&&z.win.occupant===z) z.win.occupant=null;
+  if(z.bossKi!=null){ if(G.boss===z) G.boss=null; pushEv(['bk',z.name]); bossDown(z.name); spawnPU('max',z.pos.x,z.pos.z); }
   if(part==='head'){ z.head.visible=false; emit('blood',z.pos.x,zy(z)+1.8,z.pos.z,16,3,0.9); emit('gore',z.pos.x,zy(z)+1.75,z.pos.z,6,3,0.8); Snd.head(); }
   if(!shooter){ if(src!=='nuke'){ G.kills++; if(part==='head') G.heads++; addPoints(Math.round(killPoints(part,src,z.kind)*Mod.killPts)); if(Mod.healKill) P.hp=Math.min(P.maxHp,P.hp+Mod.healKill); addDrax(killDrax(part,z.kind)); } }
   else pushEv(['k',z.id,shooter,part,src,z.kind==='brute'?1:0]);
@@ -6030,7 +6158,7 @@ function syncGhosts(list){
     const id=e[0]; seen.add(id);
     let z=NET.ghosts.get(id);
     if(!z){ z={id,ghost:true,seed:(e[8]|0)||id,kind:e[9]===1?'brute':'normal',runner:!!(e[6]&1),animT:Math.random()*10,attackT:0,t:0,yaw:(+e[3]||0)/100,pos:new THREE.Vector3((+e[1]||0)/100,0,(+e[2]||0)/100),dead:false,flashT:0,jawT:0,groanT:rand(1,5),state:'rise',predDead:false,predT:0,crawl:false};
-      zombieBody(z); z.g.position.set(z.pos.x,(+e[5]||0)/100,z.pos.z); z.g.rotation.y=z.yaw; NET.ghosts.set(id,z); }
+      zombieBody(z); if((e[10]|0)>0){ z.bossKi=(e[10]|0)-1; bossLook(z,z.bossKi); } z.g.position.set(z.pos.x,(+e[5]||0)/100,z.pos.z); z.g.rotation.y=z.yaw; NET.ghosts.set(id,z); }
     z.tx=(+e[1]||0)/100; z.tz=(+e[2]||0)/100; z.tyaw=(+e[3]||0)/100; z.ty=(+e[5]||0)/100; z.flags=e[6]|0; z.hp=+e[7]||0;
     if((z.flags&16)&&!z.crawl) crawlerize(z);
     const st=SNAME[e[4]]||'inside';
@@ -6392,7 +6520,7 @@ function updatePlayer(dt){
   fx+=IN.mx; fz+=IN.my;
   const len=Math.hypot(fx,fz); if(len>1){ fx/=len; fz/=len; }
   P.sprinting=false;
-  const spd=BASE_SPD*abSpeed(G.adren>0?1.35:1)*(1-P.ads*0.42)*lerp(1,0.55,P.crouch)*(Wp.knifeOut?1.12:1)*Mod.speed;
+  const spd=BASE_SPD*abSpeed(G.adren>0?1.35:1)*(1-P.ads*0.42)*lerp(1,0.55,P.crouch)*(Wp.knifeOut?1.12:1)*Mod.speed*((G.slowT||0)>0?0.55:1);
   const sy=Math.sin(P.yaw), cyw=Math.cos(P.yaw);
   const wishX=(fx*cyw+fz*sy)*spd, wishZ=(-fx*sy+fz*cyw)*spd;
   // World-space inertia: quick acceleration, firmer braking, limited air steering.
@@ -7184,6 +7312,8 @@ const CMDS={
     });
     cprint('Showcase criado: '+made+' visuais de zumbi. Use bot_kick para limpar.');
   }},
+  chefe:{cheat:1,d:'chefe 1-4 chama um chefe agora (1 Brutamontes, 2 Gritadora, 3 Incendiário, 4 Necromante)',f:a=>{ if(!needGame()||!needHost()) return; const k=clamp(num(a[0],1)|0,1,4); const b=bossFor(k*10); b.n=Math.max(1,Math.floor(G.round/10)); G.bossNext=b; G.toSpawn=Math.max(1,G.toSpawn+1); G.roundGap=0; banner(b.name.toUpperCase(),b.B.desc,'red'); cprint('Chefe a caminho: '+b.name); }},
+  evento:{cheat:1,d:'evento apagao|neblina|furia|suprimento força um evento do mapa',f:a=>{ if(!needGame()||!needHost()) return; const k=String(a[0]||''); if(!EVT_INFO[k]){ cprint('Eventos: '+Object.keys(EVT_INFO).join(', '),'err'); return; } if(k==='suprimento'){ spawnPU(pick(['max','double','insta']),P.pos.x+rand(-2,2),P.pos.z+rand(-2,2)); evStart(k,2,true); } else evStart(k,EVT_INFO[k][2],true); cprint('Evento: '+k); }},
   mp_round:{cheat:1,d:'pula para a rodada N',f:a=>{ if(!needGame()||!needHost()) return; const r=clamp(num(a[0],G.round+1)|0,1,200); for(const z of zombies.slice()) removeZombie(z); for(const w of windows) w.occupant=null; startRound(r); cprint(`Rodada ${r}`); }},
   mp_restartgame:{d:'recomeça a partida',f:()=>{ if(!needGame()||!needHost()) return; closeConsole(); startGame(); }},
   map:{d:'map bunker | map hosp | map farm (troca de mapa e recomeça)',f:a=>{ const k=a[0]==='hospital'||a[0]==='hospicio'?'hosp':a[0]==='fazenda'||a[0]==='mansao'?'farm':a[0]; if(!['bunker','hosp','farm'].includes(k)){ cprint('Mapas normais: bunker, hosp, farm. Use sandbox 7824 para a área de testes.','err'); return; } if(!needHost()) return; setMap(k); if(inGame()||G.state==='over'){ closeConsole(); startGame(); } else { const m=MAPS[k].menu; P.pos.set(m.x,0,m.z); } cprint(`Mapa: ${MAPS[k].name}`); }},
@@ -9183,6 +9313,7 @@ function drawRound(r){ rg.clearRect(0,0,240,120); rg.strokeStyle='#b0140e'; rg.f
 /* ================= ROUNDS ================= */
 function startRound(r){
   G.round=r; G.toSpawn=zombieCount(r); G.zhp=zombieHp(r); G.spawnT=r===1?2.5:1.5; G.drops=0; G.batDrops=0; G.cardDrops=0; G.roundGap=0;
+  if(r>0&&r%10===0&&!x1Live()&&CUR!=='sandbox'&&CUR!=='x1'){ const b=bossFor(r); G.toSpawn=Math.ceil(G.toSpawn*0.55)+1; G.bossNext=b; G.spawnT=3; setTimeout(()=>{ if(G.round===r) banner(b.name.toUpperCase(),b.B.desc,'red'); },1600); sysLog('Chefe: '+b.name); }
   roundStartLocal(r); updateMissionHud();
 }
 function roundStartLocal(r){
@@ -9204,7 +9335,8 @@ function spawnZombie(){
   const ref=TG.length?TG:[{x:P.pos.x,z:P.pos.z}];
   let tot=0; const ws=act.map(s=>{ let dmin=1e9; for(const t of ref) dmin=Math.min(dmin,Math.hypot(s.x-t.x,s.z-t.z)); const v=dmin<5&&!s.win?0.05:1/(1+dmin/10); tot+=v; return v; });
   let r=Math.random()*tot, sp=act[0]; for(let i=0;i<act.length;i++){ r-=ws[i]; if(r<=0){ sp=act[i]; break; } }
-  if(G.surgeBossPending){ sp={...sp,boss:true,bossName:G.surgeBossName||'O Guardião'}; G.surgeBossPending=false; }
+  if(G.bossNext){ const b=G.bossNext; G.bossNext=null; sp={...sp,boss:true,bossName:b.name,bossKi:b.ki,bossN:b.n}; }
+  else if(G.surgeBossPending){ sp={...sp,boss:true,bossName:G.surgeBossName||'O Guardião'}; G.surgeBossPending=false; }
   makeZombie(sp); G.toSpawn--;
 }
 function updateRounds(dt){
@@ -9328,9 +9460,9 @@ function remoteShot(rp){
 function hostState(){
   return {phase:G.state==='lobby'?'lobby':'playing',r:G.round,gp:G.roundGap>0?1:0,d:doors.map(d=>d.open?1:0),b:windows.map(w=>w.boards),pw:G.power?1:0,
     bx:[BOX.spot,BOX_ST.indexOf(BOX.state),BOX.state==='offer'?(BOX.weapon||''):'',BOX.owner||''],
-    pu:pus.map(p=>[p.id,p.type,r10(p.x),r10(p.z),Math.round(p.t)]),in:Math.ceil(G.insta),db:Math.ceil(G.double),ov:G.over?1:0,gn:NET.gen,mp:CUR==='hosp'?1:CUR==='farm'?2:CUR==='x1'?4:0,tl:G.tl|0,x1:x1State()};
+    pu:pus.map(p=>[p.id,p.type,r10(p.x),r10(p.z),Math.round(p.t)]),in:Math.ceil(G.insta),db:Math.ceil(G.double),ov:G.over?1:0,bs:G.boss&&!G.boss.dead?[G.boss.name,Math.ceil(G.boss.hp),Math.ceil(G.boss.maxHp),G.boss.bossKi]:0,evk:EVT.k?EVT_CODES.indexOf(EVT.k):0,evt:Math.ceil(EVT.t),gn:NET.gen,mp:CUR==='hosp'?1:CUR==='farm'?2:CUR==='x1'?4:0,tl:G.tl|0,x1:x1State()};
 }
-function encZ(){ return zombies.slice(0,28).map(z=>[z.id,r100(z.pos.x),r100(z.pos.z),r100(z.yaw),SCODE[z.state]|0,r100(z.g.position.y),(z.runner?1:0)|(z.head.visible?0:2)|(z.attackT>0?4:0)|(z.moving?8:0)|(z.crawl?16:0),Math.max(0,Math.ceil(z.hp)),z.seed,z.kind==='brute'?1:0]); }
+function encZ(){ return (G.boss&&!G.boss.dead?[G.boss].concat(zombies.filter(q=>q!==G.boss)):zombies).slice(0,28).map(z=>[z.id,r100(z.pos.x),r100(z.pos.z),r100(z.yaw),SCODE[z.state]|0,r100(z.g.position.y),(z.runner?1:0)|(z.head.visible?0:2)|(z.attackT>0?4:0)|(z.moving?8:0)|(z.crawl?16:0),Math.max(0,Math.ceil(z.hp)),z.seed,z.kind==='brute'?1:0,z.bossKi!=null?z.bossKi+1:0]); }
 function netSend(dt){
   NET.sendT-=dt; if(NET.sendT>0||!NET.gr) return; NET.sendT=0.05;
   const s=curSlot();
@@ -9379,6 +9511,8 @@ function applyHost(pr){
     applyBox(g.bx);
     syncPUs(g.pu);
     G.insta=+g.in||0; G.double=+g.db||0;
+    G.bossInfo=Array.isArray(g.bs)?g.bs:null;
+    { const k=EVT_CODES[g.evk|0]||null; if(k!==EVT.k){ if(k) evStart(k,+g.evt||0,true); else evEnd(true); } else if(k) EVT.t=+g.evt||0; }
     if(g.ov&&(G.state==='playing'||G.state==='paused')) gameOver();
   }
   syncGhosts(pr.zs);
@@ -9414,6 +9548,8 @@ function handleEv(e){
   else if(t==='say'){ coopCaptionEvent(e); }
   else if(t==='x1h'){ if(e[2]===me&&me) x1Hurt(clamp(+e[3]||0,0,999),e[4],e[5]); }
   else if(t==='x1k'){ if(NET.mode==='client') x1OnKill(e[2],e[3],e[4]); }
+  else if(t==='bx'){ bossFx(e[2],(+e[3]||0)/10,(+e[4]||0)/10,(+e[5]||0)/10,(+e[6]||0)/10); }
+  else if(t==='bk'){ bossDown(String(e[2]||'O chefe')); }
 }
 function handleAct(peer,a){
   const t=a[1];
@@ -9872,14 +10008,15 @@ function x1OfferCards(){
 }
 
 /* ================= FLOW: start / pause / over ================= */
-function resetGame(){
+function resetBossEvt(){ EVT.k=null; EVT.t=0; EVT.next=rand(55,85); document.body.classList.remove('furia'); for(const f of BFX) scene.remove(f.m); BFX.length=0; for(const p of BPATCH) scene.remove(p.s); BPATCH.length=0; }
+function resetGame(){ try{ resetBossEvt(); }catch(e){}
   cineStop();
   for(const z of zombies.slice()) removeZombie(z);
   for(const z of Array.from(NET.ghosts.values())) removeGhost(z);
   while(pus.length) removePU(0);
   for(const n of nades) scene.remove(n.m); nades.length=0;
   resetWindows(); resetDoors(); resetBox(); resetWallBuys(); resetDecals(); resetBurns(); resetTraps(); resetAmmoStations(); resetTeleporters(); resetMapObjectives(); closeLetter(); clearVmBlood(); closeCards();
-  Object.assign(G,{t:0,round:0,points:500,earned:0,kills:0,heads:0,doorsOpened:0,toSpawn:0,spawnT:0,roundGap:0,power:false,perks:{armor:false,speed:false,rof:false},adren:0,lastDropT:-99,insta:0,double:0,drops:0,repairPts:0,rooms:new Set([MAPS[CUR].room]),nades:2,shakeA:0,over:false,cards:[],clv:{},cardBank:0,ckptPending:false,usedChance:false,drax:0,draxBank:0,tl:0,surgeActive:false,surgeTriggered:false,surgeCleared:false,surgeBossPending:false,surgeBossName:null});
+  Object.assign(G,{t:0,round:0,points:500,earned:0,kills:0,heads:0,doorsOpened:0,toSpawn:0,spawnT:0,roundGap:0,power:false,perks:{armor:false,speed:false,rof:false},adren:0,lastDropT:-99,insta:0,double:0,drops:0,repairPts:0,rooms:new Set([MAPS[CUR].room]),nades:2,shakeA:0,over:false,cards:[],clv:{},cardBank:0,boss:null,bossNext:null,bossInfo:null,slowT:0,ckptPending:false,usedChance:false,drax:0,draxBank:0,tl:0,surgeActive:false,surgeTriggered:false,surgeCleared:false,surgeBossPending:false,surgeBossName:null});
   resetLevers(); updateMissionHud(); setPerkSigns(false); threatSig=-1; hudThreat(); $('#hdrax').textContent='0'; for(const q of vmSmoke) q.s.visible=false;
   resetMotion();
   Object.assign(P,{vx:0,vz:0,y:0,vy:0,yaw:0,pitch:0,hp:100,maxHp:100,lastHit:-99,bobT:0,stam:1,ads:0,downT:0,down:0,bleed:0,crouch:0});
@@ -10069,6 +10206,8 @@ function frame(now){
     else { for(const z of zombies.slice()) updateZombie(z,dt); separate(); if(!x1Live()) updateRounds(dt); }
     x1Frame(dt);
     if(FLOORS) for(const z of zlist()) zFloor(z);
+    for(const z of zlist()) if(z.eyeP) z.eyeP.rotation.set(Math.sin(G.t*4.2+z.seed)*0.45+(z.moving?0.2:0),0,Math.sin(G.t*2.9+z.seed*0.7)*0.55);
+    eventsHost(dt); updateBossFx(dt); if(G.slowT>0) G.slowT-=dt; bossHud();
     updatePUs(dt); updateNades(dt); updateTraps(dt); updateAmmoStations(dt); updateTeleporters(dt); updateMapObjectives(dt);
     if(NET.mode!=='client'){ if(G.insta>0) G.insta=Math.max(0,G.insta-dt); if(G.double>0) G.double=Math.max(0,G.double-dt); }
     if(G.adren>0) G.adren=Math.max(0,G.adren-dt);

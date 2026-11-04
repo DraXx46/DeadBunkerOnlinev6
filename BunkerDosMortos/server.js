@@ -233,6 +233,20 @@ wss.on('connection', (ws) => {
       send(ws, { type: 'leftRoom' });
       return;
     }
+    if (msg.type === 'chat') {
+      // chat de texto e registro de ações da partida: repassado para os outros jogadores da mesma sala
+      const room = roomOf(client);
+      if (!room) return;
+      const text = String(msg.text || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+      if (!text) return;
+      if (!client.chatWindow || now - client.chatWindow > 4000) { client.chatWindow = now; client.chatCount = 0; }
+      client.chatCount = (client.chatCount || 0) + 1;
+      if (client.chatCount > 12) return;
+      const k = msg.k === 'act' ? 'act' : 'msg';
+      const payload = { type: 'chat', from: client.id, name: client.name, k, text, at: now };
+      for (const p of room.players.values()) if (p.id !== client.id) send(p.ws, payload);
+      return;
+    }
     if (msg.type === 'ping') { send(ws, { type: 'pong', at: now }); return; }
   });
 

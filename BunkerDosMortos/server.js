@@ -115,7 +115,7 @@ function serveStatic(req, res) {
       'content-type': MIME[ext] || 'application/octet-stream',
       'x-content-type-options': 'nosniff',
       'referrer-policy': 'strict-origin-when-cross-origin',
-      'cache-control': ext === '.html' ? 'no-cache' : 'public, max-age=3600'
+      'cache-control': ext === '.html' ? 'no-store, max-age=0' : 'public, max-age=3600'
     });
     fs.createReadStream(target).pipe(res);
   });

@@ -57,6 +57,36 @@
 .chpas.locked{opacity:.6}
 
 /* ---------- X1 ---------- */
+body.x1.x1n #nades{display:flex!important}
+.x1sh{color:#7ad0ff}.x1lock{margin-top:6px;padding:6px 12px;background:rgba(0,0,0,.6);border:1px solid var(--brass);color:#ffe089;font-size:14px}
+#x1buy{position:fixed;inset:0;left:0;top:0;transform:none;width:auto;z-index:6;background:linear-gradient(180deg,rgba(6,8,10,.94),rgba(10,12,14,.97));border:0;box-shadow:none;display:flex;flex-direction:column;padding:clamp(10px,2vh,24px) clamp(12px,3vw,40px);gap:14px;overflow-y:auto;font-family:var(--f-type)}
+#x1buy[hidden]{display:none!important}
+.vb-top{display:flex;align-items:stretch;gap:12px;flex-wrap:wrap}
+.vb-k{display:flex;flex-direction:column;justify-content:center;padding:8px 16px;background:rgba(255,255,255,.04);border:1px solid var(--line);min-width:120px}
+.vb-k small{font-size:11px;letter-spacing:.16em;color:var(--muted)}.vb-k b{font-family:var(--f-display);font-weight:400;font-size:26px;color:var(--chalk);line-height:1.1}.vb-money{color:#9be08a!important}
+#x1buy .vb-close{all:unset;box-sizing:border-box;margin-left:auto;align-self:center;font-family:var(--f-display);font-size:18px;letter-spacing:.06em;background:var(--blood);color:#fff;padding:12px 22px;cursor:pointer;box-shadow:3px 3px 0 #000}
+.vb-grid{display:grid;grid-template-columns:repeat(6,minmax(150px,1fr));gap:12px;align-items:start}
+.vb-grid section{display:flex;flex-direction:column;gap:8px;min-width:0}
+.vb-grid h4{margin:0 0 2px;font-family:var(--f-display);font-weight:400;font-size:17px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);border-bottom:2px solid rgba(199,154,58,.4);padding-bottom:4px}
+#x1buy .vb-card{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:8px 10px 10px;background:rgba(255,255,255,.035);border:1px solid rgba(235,229,212,.12);position:relative;transition:background .12s,border-color .12s,transform .12s;min-width:0}
+#x1buy .vb-card:hover{background:rgba(199,154,58,.14);border-color:var(--brass);transform:translateY(-1px)}
+#x1buy .vb-card.own{border-color:#5fc46a;background:rgba(95,196,106,.12)}
+#x1buy .vb-card.poor{opacity:.42}
+.vb-ph{display:block;width:100%;aspect-ratio:256/112;background:repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 8px,transparent 8px 16px)}
+.vb-card img{width:100%;height:auto;aspect-ratio:256/112;object-fit:contain;filter:drop-shadow(0 4px 6px rgba(0,0,0,.6))}
+.vb-n{font-size:15px;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vb-p{font-family:var(--f-display);font-size:16px;color:#9be08a;letter-spacing:.04em}
+.vb-st{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;align-items:center;font-size:10px;color:var(--muted)}
+.vb-st i{display:block;height:4px;background:rgba(255,255,255,.08);position:relative}.vb-st i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--v);background:linear-gradient(90deg,var(--brass),#ffe089)}
+.vb-ico{font-size:44px;line-height:1.1;color:#7ad0ff;text-align:center}.vb-d{font-size:11px;color:var(--muted)}
+.vb-note{font-size:12px;color:var(--ink);padding:6px 8px;border:1px dashed var(--line)}
+.vb-foot{margin:0;font-size:12px;color:var(--muted);text-align:center}
+@media(max-width:1100px){.vb-grid{grid-template-columns:repeat(3,minmax(140px,1fr))}}
+@media(max-width:620px){.vb-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}}
+.x1grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px;width:100%}
+.x1grid label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}.x1grid label.chk{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:13px}
+.x1grid select,.x1grid input[type=number]{font:inherit;font-size:13px;background:#14130f;color:var(--chalk);border:1px solid var(--line);padding:3px 4px;width:100%}
+
 body.x1 #pts,body.x1 #dx,body.x1 #roundc,body.x1 #cardhud,body.x1 #perks,body.x1 #team,body.x1 #threat,body.x1 #nades,body.x1 #mission{display:none!important}
 #x1hud{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;font-family:var(--f-type)}
 .x1score{display:flex;align-items:stretch;gap:2px;background:rgba(0,0,0,.55);border:1px solid var(--line)}
@@ -65,16 +95,6 @@ body.x1 #pts,body.x1 #dx,body.x1 #roundc,body.x1 #cardhud,body.x1 #perks,body.x1
 .x1score b{font-family:var(--f-display);font-size:30px;font-weight:400;color:#fff;line-height:1}.x1score small{font-size:11px;letter-spacing:.14em;color:var(--ink);white-space:nowrap}
 .x1score .mid b{font-size:24px;color:var(--chalk)}
 .x1hp{display:flex;gap:14px;font-size:15px;color:var(--chalk);text-shadow:0 1px 2px #000}.x1money{color:#9be08a}.x1tip{color:#ffd24a}
-#x1buy{position:fixed;left:clamp(12px,4vw,60px);top:50%;transform:translateY(-50%);z-index:6;width:min(430px,92vw);background:rgba(8,9,7,.92);border:1px solid var(--brass);box-shadow:0 10px 40px rgba(0,0,0,.6);font-family:var(--f-type);color:var(--ink)}
-#x1buy header{display:flex;align-items:baseline;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line)}
-#x1buy header b{font-family:var(--f-display);font-size:22px;font-weight:400;color:var(--chalk)}#x1buy header span{color:#9be08a;font-size:18px}#x1buy header small{margin-left:auto;color:var(--muted);font-size:12px}
-.x1cats,.x1items{display:flex;flex-direction:column;padding:8px}
-#x1buy button{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:2px 10px;padding:8px 10px;border:1px solid transparent}
-#x1buy button:hover:not([disabled]),#x1buy button.on{border-color:var(--brass);background:rgba(199,154,58,.12)}
-#x1buy button[disabled]{opacity:.4;cursor:default}
-#x1buy kbd{font-family:var(--f-display);color:#1a1408;background:var(--brass);text-align:center;padding:1px 0;font-size:15px}
-#x1buy em{font-style:normal;color:#9be08a}#x1buy small{grid-column:2/4;color:var(--muted);font-size:12px}
-.x1hint{margin:0;padding:6px 16px 14px;color:var(--muted);font-size:13px}
 #x1end{position:fixed;inset:0;z-index:7;display:grid;place-items:center;background:radial-gradient(ellipse at center,rgba(10,8,6,.75),rgba(0,0,0,.92))}
 .x1endc{display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;min-width:min(420px,92vw)}
 .x1endc h2{font-family:var(--f-display);font-size:clamp(48px,8vw,86px);margin:0;color:var(--chalk);line-height:1}
@@ -4412,7 +4432,7 @@ function cardPros(c,l){ return typeof c.pros==='function'?c.pros(c.lv[Math.max(1
 function addCard(id){ const c=CARD_BY[id]; if(!c) return 0; if(!G.clv) G.clv={}; if(G.cards.includes(id)){ if(c.lv&&cardLv(id)<3) G.clv[id]=cardLv(id)+1; } else { G.cards.push(id); G.clv[id]=1; } return cardLv(id); }
 const baseMods=()=>({dmg:1,rof:1,spread:1,recoil:1,reserve:1,mag:1,speed:1,hp:0,hpMul:1,knife:1,killPts:1,pts:1,nadeCap:4,nadeRound:2,reload:1,healKill:0,healHit:0,drop:1,head:1,body:1,regen:1,noRegen:false,taken:1,explosive:false,knifeInsta:false,cost:1,secondChance:false,critC:0.05,critD:1.5,nonCrit:1,drax:1,crouchDmg:1,knifeSpd:1,batLife:1,batDrop:1});
 let Mod=baseMods();
-function maxHp(){ return Math.max(25,Math.round(((G.perks.armor?250:100)+Mod.hp)*Mod.hpMul)); }
+function maxHp(){ return Math.max(25,Math.round(((G.perks.armor?250:100)+Mod.hp)*Mod.hpMul*(typeof X1!=='undefined'&&x1Live()?X1.cfg.hp/100:1))); }
 function price(c){ return Math.max(10,Math.round(c*Mod.cost/10)*10); }
 function recomputeMods(){
   Mod=baseMods(); for(const id of G.cards){ const c=CARD_BY[id]; if(c) c.apply(Mod,c.lv?c.lv[Math.max(1,cardLv(id))-1]:undefined); }
@@ -4490,7 +4510,7 @@ canvas.addEventListener('mousedown',e=>{
 addEventListener('mouseup',e=>{ if(e.button===0) IN.fire=false; if(e.button===2) IN.ads=false; });
 addEventListener('mousemove',e=>{ if((G.state==='playing'||G.state==='lobby')&&(locked||noLock)){ IN.lookX+=clamp(e.movementX||0,-250,250); IN.lookY+=clamp(e.movementY||0,-250,250); } });
 addEventListener('wheel',e=>{ if(G.state==='playing'&&Math.abs(e.deltaY)>2) press(e.deltaY>0?'next':'prev'); },{passive:true});
-document.addEventListener('pointerlockchange',()=>{ locked=document.pointerLockElement===canvas; if(locked) lockEverWorked=true; if(!locked&&G.state==='playing'&&!noLock&&!CON.open&&!(typeof letterOpen!=='undefined'&&letterOpen)) pauseGame(); });
+document.addEventListener('pointerlockchange',()=>{ locked=document.pointerLockElement===canvas; if(locked) lockEverWorked=true; if(!locked&&G.state==='playing'&&!noLock&&!CON.open&&!(typeof letterOpen!=='undefined'&&letterOpen)&&!(typeof X1!=='undefined'&&x1Live())) pauseGame(); });
 function requestLock(){
   if(isTouch||noLock) return Promise.resolve(false);
   return new Promise(res=>{ let done=false;
@@ -5527,6 +5547,7 @@ function puEffect(type,isHost){
 /* ================= GRENADES & EXPLOSIONS ================= */
 const nades=[]; const nadeGeo=new THREE.CylinderGeometry(0.035,0.035,0.11,10); const nadeMat=new THREE.MeshPhongMaterial({color:0x4b5233,shininess:20});
 function throwNade(){
+  if(x1Live()&&X1.ph!=='fight') return;
   if(G.nades<=0||Wp.nadeCd>0||busy()) return;
   G.nades--; Wp.nadeCd=0.9; hudNades(); Snd.nadeThrow();
   const d=new THREE.Vector3(); camera.getWorldDirection(d);
@@ -5542,7 +5563,7 @@ function updateNades(dt){
     const cX=Math.floor(n.p.x/S), cZ=Math.floor(n.p.z/S);
     if(inB(cX,cZ)&&indoor[cZ*MW+cX]&&ny>CH[cZ*MW+cX]-0.1){ ny=CH[cZ*MW+cX]-0.1; n.v.y*=-0.4; }
     n.p.y=ny; n.m.position.copy(n.p); n.m.rotation.x+=dt*8; n.m.rotation.z+=dt*5;
-    if(n.t>2.3){ scene.remove(n.m); nades.splice(i,1); explode(n.p,4.5,320+G.round*70,'grenade',true); }
+    if(n.t>2.3){ scene.remove(n.m); nades.splice(i,1); if(x1Live()) x1Blast(n.p); explode(n.p,4.5,320+G.round*70,'grenade',true); }
   }
 }
 function explodeFx(p,radius,color){
@@ -5680,7 +5701,7 @@ function fire(){
 }
 function knifeDamage(heavy){ if(Mod.knifeInsta) return 9e6; return (150+Math.max(0,G.round-1)*42)*(heavy?2.4:1)*Mod.knife; }
 function knifeStrike(heavy,range,cone){
-  if(x1Live()){ if(X1.ph!=='fight') return false; const rp=x1EnemyIn(range+0.3,cone); if(rp){ Snd.stab(heavy); x1SendHit(rp.peer,heavy?95:55,'body'); hitmarker(false); shake(0.15); return true; } }
+  if(x1Live()){ if(X1.ph!=='fight') return false; const rp=x1EnemyIn(range+0.3,cone); if(rp){ Snd.stab(heavy); x1SendHit(rp.peer,(heavy?95:55)*(Mod.knife>1?Math.min(2,Mod.knife):1),'body'); hitmarker(false); shake(0.15); return true; } }
   const fx=-Math.sin(P.yaw), fz=-Math.cos(P.yaw); let best=null, bd=range;
   for(const z of zlist()){ if(z.dead||z.predDead||z.state==='rise') continue; const dx=z.pos.x-P.pos.x, dz=z.pos.z-P.pos.z, d=Math.hypot(dx,dz); if(d<bd&&(dx*fx+dz*fz)/(d||1)>cone){ best=z; bd=d; } }
   if(best){ Snd.stab(heavy); const pt=new THREE.Vector3(best.pos.x,zy(best)+(best.crawl?0.3:1.3),best.pos.z); let dmg=knifeDamage(heavy); const crit=critRoll(); dmg*=crit?Mod.critD:1; zHitReact(best,best.pos.x-P.pos.x,best.pos.z-P.pos.z,dmg*0.5,'body','knife'); hitmarker(applyHit(best,dmg,'body','knife',pt),crit); vmBlood(heavy?0.9:0.55,true); shake(heavy?0.2:0.12); shotShake(heavy?0.45:0.25); emit('blood',pt.x,pt.y,pt.z,heavy?12:6,2.5,0.6); return true; }
@@ -6567,6 +6588,7 @@ const CMDS={
   x1_dinheiro:{cheat:1,d:'x1_dinheiro N define o seu dinheiro agora',f:a=>{ X1.money=clamp(num(a[0],16000)|0,0,99999); x1Hud(true); if(X1.buyOpen) x1RenderBuy(); cprint(`Dinheiro: $${X1.money}`); }},
   x1_preco:{d:'x1_preco arma N muda o preço de uma arma no menu de compra (ex.: x1_preco ptrs 3000)',f:a=>{ const id=a[0]; if(!(id in X1_PRICE)){ cprint('Armas: '+Object.keys(X1_PRICE).join(', '),'dim'); return; } if(a[1]!=null) X1_PRICE[id]=Math.max(0,num(a[1],0)|0); cprint(`${id}: $${X1_PRICE[id]}`); }},
   x1_dano:{d:'x1_dano cabeça corpo multiplicadores de dano contra jogador (padrão 2.6 e 0.72)',f:a=>{ if(a[0]!=null) X1_DMG.head=clamp(num(a[0],2.6),0.5,10); if(a[1]!=null) X1_DMG.body=clamp(num(a[1],0.72),0.1,5); cprint(`Cabeça ×${X1_DMG.head} · corpo ×${X1_DMG.body}`); }},
+  x1_regra:{d:'x1_regra nome valor muda qualquer regra do X1 (anfitrião). Sem valor lista as regras',f:a=>{ if(!a[0]){ cprint(X1_OPTS.map(o=>o[0]+'='+X1.cfg[o[0]]).join(' · '),'dim'); return; } const def=X1_OPTS.find(o=>o[0]===a[0]); if(!def){ cprint('Regras: '+X1_OPTS.map(o=>o[0]).join(', '),'err'); return; } if(NET.mode==='client'){ cprint('Só o anfitrião muda as regras','err'); return; } X1.cfg[def[0]]=def[2]==='chk'?!!bool(a[1]):def[2]==='num'?clamp(Math.round(num(a[1],9)),def[3],def[4]):num(a[1],X1.cfg[def[0]]); x1LobbyUI(); cprint(`${def[0]} = ${X1.cfg[def[0]]}`); }},
   x1_proxima:{d:'pula para a próxima fase do X1 (anfitrião)',f:()=>{ if(NET.mode!=='host'||!x1Live()){ cprint('Só o anfitrião, durante um X1','err'); return; } X1.t=0; cprint('Pulando fase'); }},
   x1_fim:{d:'encerra o X1 e volta ao lobby (anfitrião)',f:()=>{ if(NET.mode!=='host'||!x1Live()){ cprint('Só o anfitrião, durante um X1','err'); return; } x1SetPhase('end',4); }},
   // ---- progressão (help pg) ----
@@ -8519,6 +8541,7 @@ function updateAvatars(dt){
     const a=move>0.06?Math.sin(rp.walkT)*(sprint?0.78:0.58)*move:0;
     animAvatar(rp,dt,move,sprint,crouch);
     if(rp.labelDirty||nameOf(rp.by)!==rp.lastName) drawLabel(rp);
+    if(x1Live()){ rp.losT=(rp.losT||0)-dt; if(rp.losT<=0){ rp.losT=0.12; rp.los=x1HasLos(rp); } rp.label.visible=!!rp.los&&rp.down!==2; rp.label.material.depthTest=true; } else { rp.label.visible=true; rp.label.material.depthTest=false; }
   }
 }
 /* Animação em terceira pessoa, igual para todos os personagens: andar, correr, pular, agachar, olhar e mirar.
@@ -8762,7 +8785,7 @@ function updateRoomLobbyUI(){
   const startBtn=$('#lobby-start'); startBtn.hidden=NET.mode!=='host';
   const everyoneReady=ps.length>=1&&ps.every(p=>p.id===NET.me||p.ready);
   startBtn.disabled=!everyoneReady||ps.length<1;
-  x1LobbyUI(); if(NET.roomMeta.map==='x1') $('#lobbySettings').textContent='1 contra 1 · '+X1.cfg.rounds+' rodadas · habilidades '+(X1.cfg.abil?'ligadas':'desligadas')+' · ultimate '+(X1.cfg.ult?'ligada':'desligada');
+  x1LobbyUI(); if(NET.roomMeta.map==='x1') $('#lobbySettings').textContent='1 contra 1 · '+X1.cfg.rounds+' rodadas · vida '+X1.cfg.hp+(X1.cfg.free?' · armas grátis':'')+(X1.cfg.nades?' · '+X1.cfg.nades+' granada(s)':'')+(X1.cfg.cards?' · cartas':'')+' · habilidades '+(X1.cfg.abil?'ligadas':'desligadas')+' · ultimate '+(X1.cfg.ult?'ligada':'desligada');
   $('#lobbyStatus').textContent=NET.mode==='host'?(everyoneReady?'Equipe pronta. Você pode iniciar a operação.':'Aguardando os outros jogadores ficarem prontos.'):(NET.ready?'Você está pronto. Aguarde o anfitrião iniciar.':'Explore o lobby e marque “Estou pronto” quando quiser começar.');
 }
 let lobbyEnv=null, lobbyInteractables=[], lobbyPropT=0;
@@ -8858,7 +8881,7 @@ function clientRestart(){ clearLobbyEnvironment();$('#roomLobby').hidden=true;st
 /* ================= MODO X1: mata-mata 1 contra 1 por rodadas =================
    O anfitrião manda nas fases (compra 7 s → combate → fim de rodada → próxima) e no placar; cada jogador cuida da própria vida,
    do dinheiro e das compras. Tiros de jogador em jogador viajam como 'x1h' (dano) e a morte como 'x1d'. */
-const X1={on:false,cfg:{rounds:9,abil:true,ult:true,buy:7,fight:90,money:800},ph:'idle',t:0,r:0,sMe:0,sOp:0,sHost:0,sGuest:0,money:800,alive:true,keep:null,win:'',lastR:0,buyOpen:false,cat:-1,kills:0,heads:0,deaths:0,hpShow:100};
+const X1={on:false,cfg:{rounds:9,abil:true,ult:true,buy:7,fight:90,money:800,hp:100,free:false,head:2.6,abilCd:1,abilReset:true,ultStart:0,ultKeep:true,nades:0,cards:false,shields:true},shield:0,shieldMax:0,bought:[],wantBuy:false,keepP:null,lastSec:-1,ph:'idle',t:0,r:0,sMe:0,sOp:0,sHost:0,sGuest:0,money:800,alive:true,keep:null,win:'',lastR:0,buyOpen:false,cat:-1,kills:0,heads:0,deaths:0,hpShow:100};
 const X1_PRICE={m1911:0,python:600,mp40:1400,thompson:1700,ppsh:2100,db:1300,trench:1900,kar98k:2400,garand:2800,stg44:3000,bar:3400,mg42:4300,ptrs:4800};
 const X1_CATS=[['Pistolas',['m1911','python']],['Submetralhadoras',['mp40','thompson','ppsh']],['Escopetas',['db','trench']],['Rifles',['kar98k','garand','stg44']],['Pesadas',['bar','mg42','ptrs']]];
 const X1_MONEY={win:3250,lose:1900,draw:1500,kill:300,max:16000};
@@ -8871,14 +8894,16 @@ function x1OppName(){ const rp=x1Opp(); return rp?nameOf(rp.by||rp.peer):'Advers
 
 /* ---- dano de arma contra jogador: tiro na cabeça dá bem mais dano ---- */
 const X1_DMG={head:2.6,body:0.72,legs:0.75};
-function x1Dmg(d,part,dist){ let dmg=d.dmg*X1_DMG.body; if(d.range) dmg*=clamp(1.25-dist/d.range,0.25,1);
-  if(part==='head') dmg*=X1_DMG.head; else if(part==='legs') dmg*=X1_DMG.legs; return dmg*(Mod.body||1); }
+function x1Dmg(d,part,dist){ let dmg=d.dmg*X1_DMG.body*(Mod.dmg||1); if(d.range) dmg*=clamp(1.25-dist/d.range,0.25,1);
+  if(part==='head') dmg*=X1_DMG.head*(Mod.head||1); else { dmg*=(Mod.body||1); if(part==='legs') dmg*=X1_DMG.legs; }
+  if(critRoll()) dmg*=Mod.critD; else dmg*=Mod.nonCrit; return dmg; }
 function x1SendHit(peer,dmg,part){ if(!peer) return; dmg=Math.round(clamp(dmg,0,999)); if(NET.mode==='host') pushEv(['x1h',peer,dmg,part,NET.me]); else netAct(['x1h',peer,dmg,part]); }
 function x1Hurt(dmg,part,from){
   if(!x1Live()||!X1.alive||X1.ph!=='fight') return;
   dmg*=(Mod.taken||1)*abTaken(); if(CHEAT.god) return;
+  if(X1.shield>0){ const s=Math.min(X1.shield,dmg); X1.shield-=s; dmg-=s; }
   P.hp-=dmg; P.lastHit=G.t; Snd.hurt(); shake(part==='head'?0.6:0.35); shotShake(0.5);
-  if(P.hp<=0){ P.hp=0; X1.alive=false; X1.deaths++; P.down=2; Wp.reloading=false; IN.ads=false;
+  if(P.hp<=0){ P.hp=0; X1.alive=false; X1.deaths++; X1.shield=0; P.down=2; Wp.reloading=false; IN.ads=false;
     banner(part==='head'?'Tiro na cabeça':'Você foi eliminado',`${nameOf(from)} venceu esta rodada`,'red');
     if(NET.mode==='host') x1Killed(NET.me,from,part); else netAct(['x1d',from,part]); }
 }
@@ -8898,48 +8923,57 @@ function x1HostFrame(dt){
   else if(X1.ph==='post'){ const need=x1Need(); if(X1.sHost>=need||X1.sGuest>=need||X1.r>=X1.cfg.rounds) x1SetPhase('end',10); else x1NextRound(); }
   else if(X1.ph==='end'){ x1Finish(); }
 }
-function x1NextRound(){ X1.r++; x1SetPhase('buy',X1.cfg.buy); }
+function x1NextRound(){ X1.r++; x1SetPhase('buy',X1.cfg.buy+(X1.cfg.cards?5:0)); }
 function x1Finish(){ X1.on=false; x1CloseBuy(); $('#x1end').hidden=true; document.body.classList.remove('x1');
   if(NET.mode==='host'){ NET.gen++; netRequest('backToLobby').catch(()=>{}); enterRoomLobby('x1'); } }
 
 /* ---- os dois lados: reagem às fases ---- */
 function x1Begin(){
-  Object.assign(X1,{on:true,ph:'idle',t:0,r:0,sHost:0,sGuest:0,money:X1.cfg.money,alive:true,keep:null,win:'',lastR:0,kills:0,heads:0,deaths:0});
+  Object.assign(X1,{on:true,ph:'idle',t:0,r:0,sHost:0,sGuest:0,money:X1.cfg.money,alive:true,keep:null,keepP:null,win:'',lastR:0,kills:0,heads:0,deaths:0,shield:0,shieldMax:0,bought:[],wantBuy:false}); X1_DMG.head=X1.cfg.head; P.maxHp=maxHp(); P.hp=P.maxHp;
   document.body.classList.add('x1'); G.nades=0; hudNades&&hudNades(); x1Hud(true);
   if(NET.mode==='host') x1NextRound();
 }
 function x1Spawn(){
-  const host=NET.mode!=='client', sp=host?MAPS.x1.start:MAPS.x1.start2;
+  const host=NET.mode!=='client', sp=host?MAPS.x1.start:MAPS.x1.start2, survived=X1.alive&&X1.r>1;
   P.pos.set(sp[0],0,sp[1]); P.yaw=host?-Math.PI/2:Math.PI/2; P.pitch=0; P.y=0; P.vy=0; resetMotion();
-  P.down=0; P.maxHp=maxHp(); P.hp=P.maxHp; X1.alive=true; IN.ads=false;
-  const keep=X1.keep; Wp.inv=[]; Wp.cur=0; giveWeapon('m1911',0); if(keep&&keep!=='m1911'){ if(keep==='python'){ Wp.inv=[]; giveWeapon('python',0); } else { giveWeapon(keep,0); } }
-  abReset();
+  P.down=0; X1.alive=true; IN.ads=false; if(!survived){ X1.shield=0; X1.keepP=null; } X1.bought=[];
+  x1Equip(X1.keepP||'m1911',X1.keep,true);
+  const ult=AB.ult, cd=AB.cd; abReset(); const C=AB_CFG[abc()]; if(C&&C.cd) C.cd*=X1.cfg.abilCd;
+  AB.ult=X1.cfg.ultKeep?Math.max(X1.r>1?ult:0,X1.cfg.ultStart):X1.cfg.ultStart; if(!X1.cfg.abilReset&&X1.r>1) AB.cd=cd; AB.lastKills=G.kills|0;
+  P.maxHp=maxHp(); P.hp=P.maxHp;
+  G.nades=Math.min(Mod.nadeCap,X1.cfg.nades+(X1.cfg.nades>0&&G.cards.includes('nader')?cardLv('nader'):0)); hudNades(); document.body.classList.toggle('x1n',X1.cfg.nades>0);
 }
 function x1OnPhase(ph){
-  if(ph==='buy'){ if(X1.r!==X1.lastR){ X1.lastR=X1.r; x1Spawn(); } x1OpenBuy(); banner(`Rodada ${X1.r}`,`Compre suas armas · começa em ${Math.ceil(X1.t||X1.cfg.buy)} s`,'gold'); Snd.roundStart&&Snd.roundStart(); }
-  else if(ph==='fight'){ x1CloseBuy(); banner('VALENDO!',`Primeiro a ${x1Need()} vence`,'red'); Snd.ui('play'); }
+  if(ph==='buy'){ if(X1.r!==X1.lastR){ X1.lastR=X1.r; x1Spawn(); } if(X1.cfg.cards){ X1.wantBuy=true; x1OfferCards(); } else x1OpenBuy(); banner(`Rodada ${X1.r}`,`Compre suas armas · começa em ${Math.ceil(X1.t||X1.cfg.buy)} s`,'gold'); Snd.roundStart&&Snd.roundStart(); }
+  else if(ph==='fight'){ x1CloseBuy(false); X1.wantBuy=false; if(G.cardsOpen) pickCard(0); banner('VALENDO!',`Primeiro a ${x1Need()} vence`,'red'); Snd.ui('play'); }
   else if(ph==='end'){ x1CloseBuy(); x1ShowEnd(); }
   x1Hud(true);
 }
 function x1OnKill(victim,killer,part){
   const me=NET.me;
-  if(!victim&&!killer){ X1.money=Math.min(X1_MONEY.max,X1.money+X1_MONEY.draw); X1.keep=X1.alive?x1Primary():null; banner('Tempo esgotado','Rodada empatada','gold'); return; }
-  if(killer===me){ X1.kills++; G.kills++; if(part==='head'){ X1.heads++; G.heads++; } X1.money=Math.min(X1_MONEY.max,X1.money+X1_MONEY.win+X1_MONEY.kill); X1.keep=x1Primary(); addDrax(5);
+  if(!victim&&!killer){ X1.money=Math.min(X1_MONEY.max,X1.money+X1_MONEY.draw); X1.keep=X1.alive?x1Primary():null; X1.keepP=X1.alive?x1PistolId():null; banner('Tempo esgotado','Rodada empatada','gold'); return; }
+  if(killer===me){ X1.kills++; G.kills++; if(part==='head'){ X1.heads++; G.heads++; } X1.money=Math.min(X1_MONEY.max,X1.money+X1_MONEY.win+X1_MONEY.kill); X1.keep=x1Primary(); X1.keepP=x1PistolId(); addDrax(5);
     banner(part==='head'?'Na cabeça!':'Adversário eliminado',`Você venceu a rodada ${X1.r}`,'gold'); hitmarker(true); Snd.ui('levelup'); }
   else if(victim===me){ X1.money=Math.min(X1_MONEY.max,X1.money+X1_MONEY.lose); X1.keep=null; }
 }
-function x1Primary(){ const p=Wp.inv.find(s=>s.id!=='m1911'); return p?p.id:null; }
+function x1Primary(){ const p=Wp.inv.find(s=>s.id!=='m1911'&&s.id!=='python'); return p?p.id:null; }
 /* cliente: aplica o estado enviado pelo anfitrião */
 function x1Apply(a){
-  if(!Array.isArray(a)) return; const [ph,t,r,sh,sg,rounds,abil,ult,win]=a;
-  X1.cfg.rounds=clamp(rounds|0,1,99); X1.cfg.abil=!!abil; X1.cfg.ult=!!ult; X1.sHost=sh|0; X1.sGuest=sg|0; X1.win=win||'';
+  if(!Array.isArray(a)) return;
+  const [ph,t,r,sh,sg,rounds,abil,ult,win,cfg]=a;
+  X1.cfg.rounds=clamp(rounds|0,1,99); X1.cfg.abil=!!abil; X1.cfg.ult=!!ult;
+  if(cfg&&typeof cfg==='object') for(const [k,,type,lo,hi] of X1_OPTS){ if(!(k in cfg)) continue; const v=cfg[k]; X1.cfg[k]=type==='chk'?!!v:type==='num'?clamp(v|0,lo,hi):(Number.isFinite(+v)?+v:X1.cfg[k]); }
+  if(!$('#roomLobby').hidden) x1LobbyUI(); X1.sHost=sh|0; X1.sGuest=sg|0; X1.win=win||'';
   if(!X1.on) return;
   if(r!==X1.r||ph!==X1.ph){ X1.r=r|0; X1.t=+t||0; X1.ph=ph; x1OnPhase(ph); } else if(Math.abs((+t||0)-X1.t)>0.6) X1.t=+t||0;
 }
-function x1State(){ return CUR==='x1'?[X1.ph,Math.round(X1.t*10)/10,X1.r,X1.sHost,X1.sGuest,X1.cfg.rounds,X1.cfg.abil?1:0,X1.cfg.ult?1:0,X1.win||'']:null; }
+function x1State(){ return CUR==='x1'?[X1.ph,Math.round(X1.t*10)/10,X1.r,X1.sHost,X1.sGuest,X1.cfg.rounds,X1.cfg.abil?1:0,X1.cfg.ult?1:0,X1.win||'',X1.cfg]:null; }
 function x1Frame(dt){
   if(!x1Live()) return;
   if(NET.mode==='host') x1HostFrame(dt); else X1.t=Math.max(0,X1.t-dt);
+  x1Thumbs(); x1ThumbStep();
+  if(X1.ph==='buy'&&X1.wantBuy&&!G.cardsOpen){ X1.wantBuy=false; x1OpenBuy(); }
+  const sec=Math.ceil(X1.t); if(X1.buyOpen&&sec!==X1.lastSec){ X1.lastSec=sec; x1RenderBuy(); }
   x1Hud(false);
 }
 
@@ -8949,6 +8983,9 @@ function x1EnemyIn(range,cone,x,z){ const rp=x1Opp(); if(!rp||rp.x==null||rp.dow
   if(cone!=null&&d>0.4){ const fx=-Math.sin(P.yaw), fz=-Math.cos(P.yaw); if((dx*fx+dz*fz)/d<cone) return null; }
   const o=new THREE.Vector3(x,floorAt(x,z)+1.2,z), dir=new THREE.Vector3(dx,0,dz).normalize(); if(rayWall(o,dir,d)<d-0.3) return null; return rp; }
 function x1AbHit(range,dmg,cone,x,z){ if(!x1Live()||X1.ph!=='fight') return false; const rp=x1EnemyIn(range,cone,x,z); if(!rp) return false; x1SendHit(rp.peer,dmg,'body'); hitmarker(false); return true; }
+function x1Blast(p){ const rp=x1Opp(); if(!rp||rp.x==null||rp.down===2||X1.ph!=='fight') return; const dx=rp.x-p.x, dz=rp.z-p.z, d=Math.hypot(dx,dz); if(d>4.5) return;
+  const o=new THREE.Vector3(p.x,p.y+0.3,p.z), dir=new THREE.Vector3(dx,floorAt(rp.x,rp.z)+1.1-o.y,dz), L=dir.length(); dir.multiplyScalar(1/L); if(rayWall(o,dir,L)<L-0.3) return;
+  x1SendHit(rp.peer,20+110*(1-d/4.5),'body'); hitmarker(false); }
 function x1AbRatio(c,k){ const b=AB_BASE[c]&&AB_BASE[c][k]; return b?(AB_CFG[c][k]/b):1; }
 
 /* ---- caixas de acerto dos avatares remotos ---- */
@@ -8962,46 +8999,80 @@ function x1AddHitboxes(rp){
 }
 function x1Targets(){ const out=[]; for(const rp of NET.players.values()) if(rp.hb&&rp.g.visible&&rp.down!==2) out.push(...rp.hb); return out; }
 
-/* ---- X1: HUD, menu de compra (estilo CS: B abre, números escolhem) e tela final ---- */
+/* ---- X1: HUD, menu de compra em tela cheia (estilo Valorant, com mouse) e tela final ---- */
 let x1HudSig='';
 function x1Hud(force){
   const el=$('#x1hud'); if(!el) return; el.hidden=!x1Live(); if(el.hidden) return;
   const meH=NET.mode!=='client', me=meH?X1.sHost:X1.sGuest, op=meH?X1.sGuest:X1.sHost;
   const lbl={buy:'COMPRA',fight:'COMBATE',post:'FIM DA RODADA',end:'FIM DE JOGO',idle:'AGUARDANDO'}[X1.ph]||'';
   const tt=Math.max(0,Math.ceil(X1.t)), mm=Math.floor(tt/60), ss=String(tt%60).padStart(2,'0');
-  const sig=[me,op,X1.r,X1.ph,tt,X1.money,Math.ceil(P.hp),X1.cfg.rounds].join('|'); if(!force&&sig===x1HudSig) return; x1HudSig=sig;
-  el.innerHTML=`<div class="x1score"><span class="me"><small>VOCÊ</small><b>${me}</b></span><span class="mid"><small>${lbl}</small><b>${X1.ph==='buy'?tt:mm+':'+ss}</b><small>Rodada ${X1.r}/${X1.cfg.rounds} · primeiro a ${x1Need()}</small></span><span class="op"><b>${op}</b><small></small></span></div><div class="x1hp"><span>♥ ${Math.max(0,Math.ceil(P.hp))}</span><span class="x1money">$ ${X1.money.toLocaleString('pt-BR')}</span>${X1.ph==='buy'?'<span class="x1tip">B · menu de compra</span>':''}</div>`;
+  const lockMsg=!locked&&!noLock&&!X1.buyOpen&&!G.cardsOpen&&(X1.ph==='fight'||X1.ph==='buy');
+  const sig=[me,op,X1.r,X1.ph,tt,X1.money,Math.ceil(P.hp),Math.ceil(X1.shield),X1.cfg.rounds,lockMsg?1:0].join('|'); if(!force&&sig===x1HudSig) return; x1HudSig=sig;
+  el.innerHTML=`<div class="x1score"><span class="me"><small>VOCÊ</small><b>${me}</b></span><span class="mid"><small>${lbl}</small><b>${X1.ph==='buy'?tt:mm+':'+ss}</b><small>Rodada ${X1.r}/${X1.cfg.rounds} · primeiro a ${x1Need()}</small></span><span class="op"><b>${op}</b><small></small></span></div><div class="x1hp"><span>♥ ${Math.max(0,Math.ceil(P.hp))}</span>${X1.shield>0?`<span class="x1sh">⛨ ${Math.ceil(X1.shield)}</span>`:''}<span class="x1money">$ ${X1.money.toLocaleString('pt-BR')}</span>${X1.ph==='buy'&&!X1.buyOpen?'<span class="x1tip">B · comprar</span>':''}</div>${lockMsg?'<div class="x1lock">Clique na tela para voltar a mirar</div>':''}`;
   el.querySelector('.op small').textContent=x1OppName().toUpperCase();
 }
-function x1OpenBuy(){ if(!x1Live()||X1.ph!=='buy') return; X1.buyOpen=true; X1.cat=-1; x1RenderBuy(); }
-function x1CloseBuy(){ X1.buyOpen=false; const el=$('#x1buy'); if(el) el.hidden=true; }
+/* miniaturas 3D das armas: geradas aos poucos (uma por quadro) com a luz do viewmodel, para reaproveitar shaders */
+let X1_THUMB={}, X1_THQ=null, X1_THR=null;
+function x1Thumbs(){ if(!X1_THQ) X1_THQ=X1_CATS.flatMap(c=>c[1]).filter(w=>!X1_THUMB[w]); return X1_THUMB; }
+function x1ThumbStep(){
+  if(!X1_THQ||!X1_THQ.length||location.search.includes('nothumb')) return; const w=X1_THQ.shift();
+  try{
+    const W=256,H=112; if(!X1_THR) X1_THR={rt:new THREE.WebGLRenderTarget(W,H),cam:new THREE.PerspectiveCamera(24,W/H,0.01,30),px:new Uint8Array(W*H*4),cv:Object.assign(document.createElement('canvas'),{width:W,height:H})};
+    const R=X1_THR, m=buildGun(w,0), gr=new THREE.Group(); gr.add(m); gr.rotation.set(0,-Math.PI/2,0); gr.position.set(0,0,-3); gr.updateMatrixWorld(true);
+    const box=new THREE.Box3().setFromObject(gr), c=box.getCenter(new THREE.Vector3()), s=box.getSize(new THREE.Vector3());
+    const fit=Math.max(s.x/(W/H),s.y)*1.15; R.cam.position.set(c.x,c.y,c.z+fit/(2*Math.tan(THREE.MathUtils.degToRad(12)))); R.cam.lookAt(c);
+    const vis=vmRoot.visible; vmRoot.visible=false; vmScene.add(gr);
+    renderer.setRenderTarget(R.rt); renderer.setClearColor(0x000000,0); renderer.clear(); renderer.render(vmScene,R.cam); renderer.readRenderTargetPixels(R.rt,0,0,W,H,R.px); renderer.setRenderTarget(null); renderer.setClearColor(0x000000,1);
+    vmScene.remove(gr); vmRoot.visible=vis;
+    const g=R.cv.getContext('2d'), img=g.createImageData(W,H); for(let y=0;y<H;y++) img.data.set(R.px.subarray((H-1-y)*W*4,(H-y)*W*4),y*W*4); g.putImageData(img,0,0); X1_THUMB[w]=R.cv.toDataURL('image/png');
+    if(!X1_THQ.length){ R.rt.dispose(); X1_THR=null; if(X1.buyOpen) x1RenderBuy(); }
+  }catch(e){ console.warn('[X1] miniatura',w,e); }
+}
+const X1_SHIELDS=[{id:'s25',name:'Colete leve',hp:25,price:400},{id:'s50',name:'Colete pesado',hp:50,price:1000}];
+function x1Price(id){ return X1.cfg.free?0:(X1_PRICE[id]||0); }
+function x1OpenBuy(){ if(!x1Live()||X1.ph!=='buy'||!X1.alive) return; if(G.cardsOpen){ X1.wantBuy=true; return; } X1.buyOpen=true; x1RenderBuy(); if(document.pointerLockElement) document.exitPointerLock(); x1Hud(true); }
+function x1CloseBuy(user){ const was=X1.buyOpen; X1.buyOpen=false; const el=$('#x1buy'); if(el) el.hidden=true; if(was&&user&&x1Live()) requestLock(); x1Hud(true); }
+function x1Bar(v){ return `<i style="--v:${Math.round(clamp(v,0.04,1)*100)}%"></i>`; }
 function x1RenderBuy(){
   const el=$('#x1buy'); if(!el) return; el.hidden=!X1.buyOpen; if(el.hidden) return;
-  const own=new Set(Wp.inv.map(s=>s.id)); let h=`<header><b>COMPRAR</b><span>$ ${X1.money.toLocaleString('pt-BR')}</span><small>começa em ${Math.ceil(X1.t)} s · B/Esc fecha</small></header><div class="x1cats">`;
-  X1_CATS.forEach(([n],i)=>{ h+=`<button type="button" data-cat="${i}" class="${X1.cat===i?'on':''}"><kbd>${i+1}</kbd>${n}</button>`; }); h+='</div>';
-  if(X1.cat>=0){ h+='<div class="x1items">'; X1_CATS[X1.cat][1].forEach((id,k)=>{ const pr=X1_PRICE[id]||0, w=WEAPONS[id]; const can=X1.money>=pr&&!own.has(id);
-      h+=`<button type="button" data-buy="${id}" ${can?'':'disabled'}><kbd>${k+1}</kbd><span>${w.name}</span><em>${own.has(id)?'equipada':'$ '+pr.toLocaleString('pt-BR')}</em><small>dano ${w.dmg}${w.pellets?'×'+w.pellets:''} · ${w.auto?'automática':'semi'} · pente ${w.mag}</small></button>`; }); h+='</div>'; }
-  else h+='<p class="x1hint">Escolha a categoria (1–5). A pistola volta sempre; a arma principal fica com você se sobreviver à rodada.</p>';
+  const TH=x1Thumbs(), own=new Set(Wp.inv.map(s=>s.id)), fm=n=>'$ '+n.toLocaleString('pt-BR');
+  let h=`<div class="vb-top"><div class="vb-k"><small>DINHEIRO</small><b class="vb-money">${fm(X1.money)}</b></div><div class="vb-k"><small>COMBATE EM</small><b>${Math.ceil(X1.t)} s</b></div><div class="vb-k"><small>RODADA</small><b>${X1.r} / ${X1.cfg.rounds}</b></div><div class="vb-k"><small>PROTEÇÃO</small><b>⛨ ${Math.ceil(X1.shield)}</b></div><button type="button" class="vb-close" data-close="1">Fechar · B</button></div><div class="vb-grid">`;
+  for(const [cat,ids] of X1_CATS){
+    h+=`<section><h4>${cat}</h4>`;
+    for(const id of ids){ const w=WEAPONS[id], pr=x1Price(id), has=own.has(id), can=X1.money>=pr, sell=has&&X1.bought.includes(id);
+      const dps=w.dmg*(w.pellets||1);
+      h+=`<button type="button" class="vb-card${has?' own':''}${!has&&!can?' poor':''}" data-buy="${id}" title="${has?(sell?'Clique para vender':'Equipada'):'Comprar'}">${TH[id]?`<img alt="" src="${TH[id]}">`:'<span class="vb-ph"></span>'}<span class="vb-n">${w.name}</span><span class="vb-p">${has?(sell?'VENDER · '+fm(pr):'EQUIPADA'):pr?fm(pr):'GRÁTIS'}</span><span class="vb-st"><span>Dano</span>${x1Bar(Math.log(1+dps)/Math.log(1+650))}<span>Cadência</span>${x1Bar(w.rpm/1000)}<span>Precisão</span>${x1Bar(1-(w.spread||0)*12)}<span>Pente</span>${x1Bar((w.mag||1)/75)}</span></button>`; }
+    h+='</section>'; }
+  h+='<section><h4>Proteção</h4>';
+  if(X1.cfg.shields) for(const s of X1_SHIELDS){ const pr=X1.cfg.free?0:s.price, has=X1.shield>=s.hp, can=X1.money>=pr;
+    h+=`<button type="button" class="vb-card vb-shield${has?' own':''}${!has&&!can?' poor':''}" data-shield="${s.id}"><span class="vb-ico">⛨</span><span class="vb-n">${s.name}</span><span class="vb-p">${has?'EQUIPADO':pr?fm(pr):'GRÁTIS'}</span><span class="vb-d">+${s.hp} de proteção · absorve o dano antes da vida · some ao morrer</span></button>`; }
+  if(X1.cfg.nades>0) h+=`<div class="vb-note">Granadas nesta rodada: ${G.nades} (tecla G)</div>`;
+  if(X1.cfg.cards&&G.cards.length) h+=`<div class="vb-note">Cartas: ${G.cards.map(id=>CARD_BY[id]?CARD_BY[id].name:id).join(', ')}</div>`;
+  h+='</section></div><p class="vb-foot">Clique para comprar · clique de novo para vender o que comprou nesta rodada · a pistola volta sempre · a arma principal fica com você se sobreviver</p>';
   el.innerHTML=h;
 }
 function x1Buy(id){
-  const pr=X1_PRICE[id]; if(pr==null||X1.ph!=='buy'||!X1.alive) return; if(Wp.inv.some(s=>s.id===id)) return; if(X1.money<pr){ Snd.ui('deny'); return; }
-  X1.money-=pr;
-  if(id==='m1911'||id==='python'){ const prim=x1Primary(); Wp.inv=[]; Wp.cur=0; giveWeapon(id,0); if(prim){ giveWeapon(prim,0); } Wp.cur=0; setGunModel(); hudAmmo(); }
-  else { const pist=Wp.inv.find(s=>s.id==='m1911'||s.id==='python'); Wp.inv=pist?[pist]:[]; Wp.cur=Wp.inv.length; if(!pist){ giveWeapon('m1911',0); } giveWeapon(id,0); }
-  X1.keep=x1Primary(); Snd.ui('buy'); X1.cat=-1; x1RenderBuy(); x1Hud(true);
+  const pr=x1Price(id); if(X1_PRICE[id]==null||X1.ph!=='buy'||!X1.alive) return;
+  if(Wp.inv.some(s=>s.id===id)){ if(X1.bought.includes(id)) x1Sell(id); return; }
+  if(X1.money<pr){ Snd.ui('deny'); return; }
+  const isP=id==='m1911'||id==='python';
+  // devolve o dinheiro da arma do mesmo espaço comprada nesta rodada
+  const prev=isP?Wp.inv.find(s=>s.id==='m1911'||s.id==='python'):x1PrimarySlot(); if(prev&&X1.bought.includes(prev.id)){ X1.money+=x1Price(prev.id); X1.bought=X1.bought.filter(q=>q!==prev.id); }
+  X1.money-=pr; X1.bought.push(id); x1Equip(isP?id:x1PistolId(),isP?(x1Primary()):id,!isP);
+  X1.keep=x1Primary(); Snd.ui('buy'); x1RenderBuy(); x1Hud(true);
 }
-document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('#x1buy button'); if(!b) return; if(b.dataset.cat!=null){ X1.cat=+b.dataset.cat; Snd.ui('tab'); x1RenderBuy(); } else if(b.dataset.buy){ x1Buy(b.dataset.buy); } });
+function x1Sell(id){ X1.money+=x1Price(id); X1.bought=X1.bought.filter(q=>q!==id); const isP=id==='m1911'||id==='python'; x1Equip(isP?'m1911':x1PistolId(),isP?x1Primary():null,false); X1.keep=x1Primary(); Snd.ui('back'); x1RenderBuy(); x1Hud(true); }
+function x1PistolId(){ const p=Wp.inv.find(s=>s.id==='m1911'||s.id==='python'); return p?p.id:'m1911'; }
+function x1PrimarySlot(){ return Wp.inv.find(s=>s.id!=='m1911'&&s.id!=='python')||null; }
+function x1Equip(pistol,primary,selectPrimary){ Wp.inv=[]; Wp.cur=0; giveWeapon(pistol||'m1911',0); if(primary){ giveWeapon(primary,0); } Wp.cur=primary&&selectPrimary!==false?1:0; setGunModel(); hudAmmo(); }
+function x1BuyShield(sid){ const s=X1_SHIELDS.find(q=>q.id===sid); if(!s||!X1.cfg.shields||X1.ph!=='buy'||!X1.alive) return; const pr=X1.cfg.free?0:s.price; if(X1.shield>=s.hp) return; if(X1.money<pr){ Snd.ui('deny'); return; }
+  X1.money-=pr; X1.shield=s.hp; X1.shieldMax=s.hp; Snd.ui('buy'); x1RenderBuy(); x1Hud(true); }
+document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('#x1buy button'); if(!b) return; e.stopPropagation();
+  if(b.dataset.close){ x1CloseBuy(true); } else if(b.dataset.buy){ x1Buy(b.dataset.buy); } else if(b.dataset.shield){ x1BuyShield(b.dataset.shield); } });
 addEventListener('keydown',e=>{
   if(!x1Live()||G.state!=='playing'||(typeof CON!=='undefined'&&CON.open)) return;
-  if(e.code==='KeyB'&&X1.ph==='buy'){ if(X1.buyOpen) x1CloseBuy(); else x1OpenBuy(); e.preventDefault(); e.stopImmediatePropagation(); return; }
-  if(!X1.buyOpen) return;
-  if(e.code==='Escape'){ x1CloseBuy(); e.preventDefault(); e.stopImmediatePropagation(); return; }
-  const m=/^Digit([0-9])$/.exec(e.code)||/^Numpad([0-9])$/.exec(e.code); if(!m) return;
-  const n=+m[1]; e.preventDefault(); e.stopImmediatePropagation();
-  if(X1.cat<0){ if(n>=1&&n<=X1_CATS.length){ X1.cat=n-1; Snd.ui('tab'); x1RenderBuy(); } }
-  else if(n===0){ X1.cat=-1; x1RenderBuy(); }
-  else { const id=X1_CATS[X1.cat][1][n-1]; if(id) x1Buy(id); }
+  if(e.code==='KeyB'&&X1.ph==='buy'){ if(X1.buyOpen) x1CloseBuy(true); else x1OpenBuy(); e.preventDefault(); e.stopImmediatePropagation(); return; }
+  if(X1.buyOpen&&e.code==='Escape'){ x1CloseBuy(true); e.preventDefault(); e.stopImmediatePropagation(); }
 },true);
 function x1ShowEnd(){
   const el=$('#x1end'); if(!el) return; const meH=NET.mode!=='client', me=meH?X1.sHost:X1.sGuest, op=meH?X1.sGuest:X1.sHost;
@@ -9011,20 +9082,57 @@ function x1ShowEnd(){
   el.querySelector('.opn').textContent=x1OppName().toUpperCase(); el.hidden=false; Snd.ui(won?'levelup':'back');
 }
 
-/* ---- lobby do X1: rodadas, habilidades e personagem ---- */
+/* ---- lobby do X1: todas as regras (o anfitrião edita; o convidado vê) e o personagem de cada um ---- */
+const X1_OPTS=[
+  ['rounds','Rodadas','num',1,30],
+  ['hp','Vida','sel',[[75,'75'],[100,'100'],[150,'150'],[200,'200']]],
+  ['money','Dinheiro inicial','sel',[[0,'$ 0'],[800,'$ 800'],[2500,'$ 2.500'],[5000,'$ 5.000'],[16000,'$ 16.000']]],
+  ['free','Armas grátis','chk'],
+  ['buy','Tempo de compra','sel',[[5,'5 s'],[7,'7 s'],[10,'10 s'],[15,'15 s'],[20,'20 s']]],
+  ['fight','Tempo de rodada','sel',[[45,'45 s'],[60,'1 min'],[90,'1:30'],[120,'2 min'],[180,'3 min']]],
+  ['head','Dano na cabeça','sel',[[1.5,'1,5×'],[2,'2×'],[2.6,'2,6×'],[4,'4× (um tiro)']]],
+  ['abil','Habilidade Z','chk'],
+  ['abilCd','Recarga da habilidade','sel',[[0.5,'Rápida (½)'],[1,'Normal'],[2,'Lenta (2×)']]],
+  ['abilReset','Habilidade pronta a cada rodada','chk'],
+  ['ult','Ultimate X','chk'],
+  ['ultStart','Carga da ultimate no início','sel',[[0,'0%'],[50,'50%'],[100,'Cheia']]],
+  ['ultKeep','Guardar carga entre rodadas','chk'],
+  ['nades','Granadas por rodada','sel',[[0,'Nenhuma'],[1,'1'],[2,'2'],[3,'3']]],
+  ['cards','Carta a cada rodada','chk'],
+  ['shields','Coletes à venda','chk']
+];
 function x1LobbyUI(){
+  if(NET.roomMeta&&NET.roomMeta.map==='x1') x1Thumbs();
   const box=$('#x1opts'); if(!box) return; const on=!!NET.roomMeta&&(NET.roomMeta.map==='x1'); box.hidden=!on; if(!on) return;
   const host=NET.mode==='host';
   if(!box.dataset.built){ box.dataset.built='1';
-    box.innerHTML=`<p class="file">Regras do X1</p><label>Rodadas<input id="x1-rounds" type="number" min="1" max="30" step="2"></label><label><input id="x1-abil" type="checkbox"> Habilidades (Z)</label><label><input id="x1-ult" type="checkbox"> Ultimate (X)</label><label>Personagem<select id="x1-char"></select></label>`;
-    box.querySelector('#x1-rounds').addEventListener('change',e=>{ X1.cfg.rounds=clamp(parseInt(e.target.value,10)||9,1,30); e.target.value=X1.cfg.rounds; });
-    box.querySelector('#x1-abil').addEventListener('change',e=>{ X1.cfg.abil=e.target.checked; });
-    box.querySelector('#x1-ult').addEventListener('change',e=>{ X1.cfg.ult=e.target.checked; });
+    let h='<p class="file">Regras do X1</p><div class="x1grid">';
+    for(const [k,lab,type,a,b] of X1_OPTS){
+      if(type==='num') h+=`<label>${lab}<input data-k="${k}" type="number" min="${a}" max="${b}"></label>`;
+      else if(type==='chk') h+=`<label class="chk"><input data-k="${k}" type="checkbox"> ${lab}</label>`;
+      else h+=`<label>${lab}<select data-k="${k}">${a.map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></label>`; }
+    h+=`<label>Personagem<select id="x1-char"></select></label></div>`; box.innerHTML=h;
+    box.addEventListener('change',e=>{ const el=e.target, k=el.dataset.k; if(!k||NET.mode!=='host') return; const def=X1_OPTS.find(o=>o[0]===k);
+      X1.cfg[k]=def[2]==='chk'?el.checked:def[2]==='num'?clamp(parseInt(el.value,10)||9,def[3],def[4]):+el.value; x1LobbyUI(); updateRoomLobbyUI(); });
     box.querySelector('#x1-char').addEventListener('change',e=>{ const id=e.target.value; if(!pgOwn(id)) return; PROG.char=id; PROG.cv=varKeys(id)[0]; saveProg(); recomputeMods(); applyHands(); });
     for(const el of box.querySelectorAll('input,select')) el.addEventListener('keydown',ev=>ev.stopPropagation()); }
-  const r=box.querySelector('#x1-rounds'), a=box.querySelector('#x1-abil'), u=box.querySelector('#x1-ult'), c=box.querySelector('#x1-char');
-  if(document.activeElement!==r) r.value=X1.cfg.rounds; a.checked=X1.cfg.abil; u.checked=X1.cfg.ult; r.disabled=a.disabled=u.disabled=!host;
-  const opts=CHAR_KEYS.filter(pgOwn).map(id=>`<option value="${id}" ${id===PROG.char?'selected':''}>${CHARS[id].vars[varKeys(id)[0]].name}</option>`).join(''); if(c.dataset.sig!==opts){ c.innerHTML=opts; c.dataset.sig=opts; }
+  for(const el of box.querySelectorAll('[data-k]')){ const k=el.dataset.k, v=X1.cfg[k]; if(document.activeElement===el) continue;
+    if(el.type==='checkbox') el.checked=!!v; else el.value=String(v); el.disabled=!host; }
+  const c=box.querySelector('#x1-char'), opts=CHAR_KEYS.filter(pgOwn).map(id=>`<option value="${id}" ${id===PROG.char?'selected':''}>${CHARS[id].vars[varKeys(id)[0]].name}</option>`).join(''); if(c.dataset.sig!==opts){ c.innerHTML=opts; c.dataset.sig=opts; }
+}
+/* ---- nome do adversário só com linha de visão (nada de ver através de paredes ou caixas) ---- */
+function x1HasLos(rp){ const tx=rp.x, tz=rp.z, ty=floorAt(tx,tz)+Math.max(0,rp.ty||0)+(rp.crouch?1.25:1.72); const o=camera.position, d=new THREE.Vector3(tx-o.x,ty-o.y,tz-o.z), L=d.length(); if(L<0.5) return true; d.multiplyScalar(1/L); return rayWall(o,d,L)>=L-0.25; }
+/* ---- cartas no X1: só as que fazem sentido contra jogador ---- */
+const X1_CARD_BAN=new Set(['greed','luck','lamp','miser','blood','berserk','zap','incend','vamp','leech','second']);
+function x1OfferCards(){
+  if(G.cardsOpen) return; const ok=c=>!X1_CARD_BAN.has(c.id)&&(c.id!=='nader'||X1.cfg.nades>0);
+  const fresh=CARDS.filter(c=>ok(c)&&!G.cards.includes(c.id)), ups=CARDS.filter(c=>ok(c)&&c.lv&&G.cards.includes(c.id)&&cardLv(c.id)<3);
+  const offer=[]; const pool=fresh.concat(ups).sort(()=>Math.random()-0.5);
+  for(const c of pool){ if(offer.length>=3) break; offer.push({c,l:G.cards.includes(c.id)?cardLv(c.id)+1:1}); }
+  if(!offer.length) return;
+  G.cardOffer=offer; G.cardsOpen=true; $('#cardrow').innerHTML=offer.map(cardHTML).join('');
+  $('#cardhint').textContent='Escolha uma carta para o X1 · 1, 2, 3 ou clique'; $('#cards').hidden=false; Snd.cardFlip();
+  if(document.pointerLockElement) document.exitPointerLock();
 }
 
 /* ================= FLOW: start / pause / over ================= */
@@ -9185,7 +9293,7 @@ function frame(now){
   if(NET.mode) netFrame(dt);
   const sim=G.state==='playing'||(G.state==='paused'&&!!NET.mode), lobbySim=G.state==='lobby';
   if((KV.on||CP.full)&&!sim&&!lobbySim) return;
-  if(lobbySim){ G.t+=dt; updatePlayer(dt); updateLobbyInteract(); IN.edges.clear(); if(flowDirty) computeFlow(); }
+  if(lobbySim){ G.t+=dt; if(CUR==='x1') x1ThumbStep(); updatePlayer(dt); updateLobbyInteract(); IN.edges.clear(); if(flowDirty) computeFlow(); }
   else if(sim){
     G.t+=dt;
     buildTargets();

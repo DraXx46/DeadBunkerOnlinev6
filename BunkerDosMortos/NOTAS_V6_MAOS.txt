@@ -51,3 +51,13 @@ MODO X1 (1 contra 1)
 ANIMAÇÕES EM 3ª PESSOA
 - Andar, correr, pular, agachar, olhar e mirar, iguais para todos os personagens.
 - Saias e a batina do Padre se deformam em volta das pernas: as pernas nunca atravessam o tecido.
+
+==== X1 — MENU DE COMPRA E REGRAS (v2) ====
+- Nome do inimigo só aparece com linha de visão (paredes/pilares escondem).
+- Menu de compra em tela cheia estilo Valorant: B abre/fecha, Esc fecha, clique na arma para comprar/vender
+  (vende o que comprou na mesma rodada). Coluna "Proteção": colete 25 ($400) e 50 ($1000).
+  Miniaturas 3D das armas geradas aos poucos no lobby (uma por quadro). ?nothumb desliga.
+- Regras no lobby (só o anfitrião edita): rodadas, vida (75-200), dinheiro inicial, armas grátis, tempo de compra,
+  tempo de rodada, dano na cabeça, habilidade Z liga/desliga + recarga + reset por rodada,
+  ultimate liga/desliga + carga inicial + manter carga, granadas por rodada (0-3), carta a cada rodada, coletes.
+- Console: x1_regra <nome> <valor>   (nomes: rounds hp money free buy fight head abil abilCd abilReset ult ultStart ultKeep nades cards shields)

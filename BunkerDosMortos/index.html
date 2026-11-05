@@ -5552,7 +5552,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v7.9.4';
+const GAME_VERSION='v7.9.5';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -5861,7 +5861,7 @@ function setupTouch(){
 
 /* ================= VIEWMODEL ================= */
 const vmRoot=new THREE.Group(); vmScene.add(vmRoot);
-vmScene.add(new THREE.AmbientLight(0xb8b0a0,0.5));
+const vmAmb=new THREE.AmbientLight(0xb8b0a0,0.5); vmScene.add(vmAmb);
 const vmDir=new THREE.DirectionalLight(0xfff0d8,0.8); vmDir.position.set(-1,2,1); vmScene.add(vmDir);
 const vmRim=new THREE.DirectionalLight(0x9ab0ff,0.35); vmRim.position.set(1.5,0.5,-1); vmScene.add(vmRim);
 const vmFlash=new THREE.PointLight(0xffb050,0,3,2); vmScene.add(vmFlash);
@@ -12201,6 +12201,29 @@ async function playChoice(k){
 const CINEMA={on:false,noVm:false};
 function setCinema(v){ CINEMA.on=v>0; CINEMA.noVm=v===2; document.body.classList.toggle('cinema',CINEMA.on); }
 addEventListener('keydown',e=>{ if(e.code==='F8'&&!e.repeat){ e.preventDefault(); setCinema(CINEMA.on?0:(CINEMA.noVm?2:1)); } },true);
+/* braços e arma iluminados pelo ambiente: as luzes acesas mais fortes perto do jogador (lâmpadas, fogueiras, a caixa, geradores),
+   com visada pela grade, viram a luz principal e a de contorno do viewmodel; o ambiente acompanha o escuro do mapa. Tudo suavizado. */
+const VML={key:new THREE.Color(0xfff0d8),rim:new THREE.Color(0x9ab0ff),kd:new THREE.Vector3(-1,2,1),rd:new THREE.Vector3(1.5,0.5,-1),ki:0.8,ri:0.35,ai:0.5,t:0,list:[]};
+const _vlA=new THREE.Vector3(), _vlB=new THREE.Vector3(), _vlQ=new THREE.Quaternion();
+function vmLightFrame(dt){ dt=Math.min(dt||0.016,0.05); VML.t-=dt;
+  const eye=camera.position;
+  if(VML.t<=0){ VML.t=0.12; const cand=[];
+    const consider=(L,base)=>{ if(!L||!(L.intensity>0.02)) return; L.getWorldPosition(_vlA); const d=_vlA.distanceTo(eye), R=L.distance||14; if(d>R) return; const f=Math.pow(1-d/R,2)*L.intensity*(base||1); if(f>0.03) cand.push({L,f,p:_vlA.clone(),c:L.color}); };
+    for(const l of lamps) if(l.map===CUR) consider(l.L,1); for(const f of fires) if(f.map===CUR) consider(f.L,1.2); if(BOX.light&&BOX.group.visible) consider(BOX.light,1.5);
+    for(const it of (MAP_OBJECTIVE_RUNTIME[CUR]||[])) if(it.gen) consider(it.gen.L,1);
+    cand.sort((a,b)=>b.f-a.f); VML.list=[];
+    for(const c of cand){ if(VML.list.length>=2) break; const dir=_vlB.copy(c.p).sub(eye); const dl=dir.length(); dir.multiplyScalar(1/dl); let ok=true; try{ ok=rayWall(eye,dir,dl)>=dl-0.4; }catch(e){} if(ok) VML.list.push(c); } }
+  // alvo: luz principal da lâmpada mais forte, contorno da segunda; sem nada por perto, só a lua/ambiente fraco
+  _vlQ.copy(camera.quaternion).invert(); const dark=CUR==='hosp'?(G.power?0.75:0.55):CUR==='farm'?0.8:0.85;
+  let ki=0.12, ri=0.06, kc=0x6a7890, rc=0x8090b0, kd=null, rd=null;
+  if(VML.list[0]){ const c=VML.list[0]; ki=Math.min(1.25,0.25+c.f*0.55); kc=c.c.getHex(); kd=_vlB.copy(c.p).sub(eye).normalize().applyQuaternion(_vlQ).clone(); }
+  if(VML.list[1]){ const c=VML.list[1]; ri=Math.min(0.7,0.12+c.f*0.35); rc=c.c.getHex(); rd=_vlB.copy(c.p).sub(eye).normalize().applyQuaternion(_vlQ).clone(); }
+  const k=1-Math.exp(-dt*5);
+  VML.ki+= (ki-VML.ki)*k; VML.ri+=(ri-VML.ri)*k; VML.key.lerp(_vlCol.setHex(kc),k); VML.rim.lerp(_vlCol.setHex(rc),k);
+  if(kd) VML.kd.lerp(kd.multiplyScalar(3),k); if(rd) VML.rd.lerp(rd.multiplyScalar(3),k);
+  const ai=0.16+(hemi?hemi.intensity:0.25)*0.9*dark+VML.ki*0.12; VML.ai+=(ai-VML.ai)*k;
+  vmDir.color.copy(VML.key); vmDir.intensity=VML.ki; vmDir.position.copy(VML.kd); vmRim.color.copy(VML.rim); vmRim.intensity=VML.ri; vmRim.position.copy(VML.rd); vmAmb.intensity=VML.ai; }
+const _vlCol=new THREE.Color();
 /* seleção de mapas: passar o mouse mostra uma foto pronta do mapa (antes trocava o mapa 3D inteiro e travava) */
 function mapThumb(k){ const el=$('#mappick'); if(!el) return; for(const b of document.querySelectorAll('.mapc')) b.classList.toggle('on',b.dataset.map===k);
   const img={bunker:'img/map_bunker.jpg',hosp:'img/map_hosp.jpg',farm:'img/map_farm.jpg'}[k]; el.style.backgroundImage=img?`linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.72)),url(${img})`:''; el.style.backgroundSize='cover'; el.style.backgroundPosition='center'; }
@@ -12342,7 +12365,7 @@ function frame(now){
   try{ zcFrame(); }catch(e){ ZC.on=false; console.warn('[Bunker] corte de salas desligado',e); }
   const tR0=performance.now();
   renderer.clear(); if(!menuScene) renderer.render(scene,camera);
-  if(showVm&&!CINEMA.noVm){ renderer.clearDepth(); renderer.render(vmScene,vmCam); }
+  if(showVm&&!CINEMA.noVm){ try{ vmLightFrame(dt); }catch(e){} renderer.clearDepth(); renderer.render(vmScene,vmCam); }
   drawDoom(rawDt);
   const tR1=performance.now(); perfFrame(rawDt,tR0-tF0,tR1-tR0);
 }

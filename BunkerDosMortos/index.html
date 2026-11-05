@@ -5120,7 +5120,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v7.3';
+const GAME_VERSION='v7.4';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -5674,7 +5674,7 @@ function hcLerp(a,b,u,out){ out=out||{}; for(const f of HCF){ const A=a[f], B=b[
 function hcScale(a,k){ const o={}; for(const f of HCF) o[f]=a[f].map(v=>v*k); return o; }
 
 /* ---------- peças móveis ---------- */
-const VMP_RX=[['mag',/(^| )mag$/i],['slide',/slide/i],['ch',/charging/i],['chm',/chamber/i],['bolt',/bolt/i],['fore',/forend/i],['trig',/trigger/i],['crane',/reloader/i],['cyl',/cylinder$/i]];
+const VMP_RX=[['mag',/(^| )mag$/i],['slide',/slide/i],['ch',/charging/i],['chm',/chamber/i],['bolt',/bolt/i],['fore',/forend/i],['trig',/trigger/i],['crane',/reloader/i],['cyl',/cylinder$/i],['latch',/latch$/i]];
 function vmpScan(g){
   const P={}, rounds=[]; g.updateMatrixWorld(true); gunHolder.updateMatrixWorld(true);
   const ghInv=new THREE.Matrix4().copy(gunHolder.matrixWorld).invert();
@@ -5842,7 +5842,7 @@ function gunTrack(tr,ta){ const k=trackAt(tr,ta); if(!k) return null; const o={}
 function offTrack(tr,ta){ const k=trackAt(tr,ta); if(!k) return undefined; if(k.a==='h'&&(k.u<1||k.b==='h')) return 'h'; if(k.b==='h') return 'h'; return offLerp(k.a,k.b,k.u); }
 /* objetos extras (carregador novo, cartuchos, clipe, speedloader): filhos do gunHolder com matriz própria */
 function vmaProp(name,obj,refGh){ const P={obj,ref:refGh.clone(),refInv:refGh.clone().invert(),cur:null}; obj.matrixAutoUpdate=false; obj.visible=false; gunHolder.add(obj); VMA.props[name]=P; return P; }
-function vmaClear(){ for(const k in VMA.props){ const P=VMA.props[k]; gunHolder.remove(P.obj); } VMA.props={}; const gm=VMA.gm||gunModel; const G=gm&&gm.userData.vmp; if(G){ for(const k in G){ const P=G[k]; if(P&&P.o){ vmpRest(P); P.curGh=null; } } if(G.rounds) for(const r of G.rounds){ vmpRest(r); r.curGh=null; } } }
+function vmaClear(){ for(const k in VMA.props){ const P=VMA.props[k]; gunHolder.remove(P.obj); } VMA.props={}; const gm=VMA.gm||gunModel; const G=gm&&gm.userData.vmp; if(G){ for(const k in G){ const P=G[k]; if(P&&P.o){ vmpRest(P); P.curGh=null; } } if(G.rounds) for(const r of G.rounds){ vmpRest(r); r.curGh=null; } if(G.glow) for(const m of G.glow) m.emissiveIntensity=1; } }
 /* peças que caem (carregador vazio, estojos): física simples no espaço da câmera e somem */
 const DROPS=[];
 function vmaDrop(src,ghM,vel,spin,life){ const o=src.clone(true); o.matrixAutoUpdate=false; const m=new THREE.Matrix4().multiplyMatrices(gunHolder.matrix,ghM); o.matrix.copy(m); vmRoot.add(o);
@@ -5862,9 +5862,10 @@ function vmaFrame(dt){
     return; }
   VMA.t+=dt; const ta=VMA.ta=VMA.t/VMA.sc, A=VMA.A;
   while(A.ev&&VMA.ev<A.ev.length&&A.ev[VMA.ev][0]<=ta){ const e=A.ev[VMA.ev++]; try{ typeof e[1]==='function'?e[1](VMA,s):Snd.rl(e[1],e[2]); }catch(err){ console.warn(err); } }
-  VMA.gun=gunTrack(A.gun,ta);
+  VMA.gun=gunTrack(A.gun,ta); if(A.fx) try{ A.fx(ta,VMA,G); }catch(e){}
   // peças da arma
-  for(const k in (A.parts||{})){ const P=G[k]; if(!P) continue; const off=offTrack(A.parts[k],ta);
+  for(const k in (A.parts||{})){ if(k==='rounds'){ const hid=offTrack(A.parts[k],ta)==='h'; for(const r of (G.rounds||[])){ r.o.visible=!hid; r.vis=!hid; if(hid) r.dirty=true; } continue; }
+    const P=G[k]; if(!P) continue; const off=offTrack(A.parts[k],ta);
     if(off==='h'){ P.o.visible=false; P.vis=false; P.curGh=P.restGh; continue; } P.o.visible=true; P.vis=true;
     if(!off){ vmpRest(P); P.curGh=P.restGh; continue; } const M=offMatrix(G,off,P.c,new THREE.Matrix4()).multiply(P.restGh); vmpSetGh(P,M); P.curGh=M; }
   for(const k in VMA.props){ const P=VMA.props[k], tr=A.props&&A.props[k]&&A.props[k].keys; const off=offTrack(tr,ta);
@@ -5941,8 +5942,8 @@ const RL_PIECE={
   // puxa e solta a alavanca de manejo
   charge(G,o,t0,trk){
     const L=o.len, P=G[o.part], B=pbox(P), pull=o.pull||[0,0,0.045], h=o.hand(B,o.part), dt=o.dur||0.42*L/2.3;
-    const ch=trk.parts[o.part]||(trk.parts[o.part]=[[0,null]]); const HT=o.side==='R'?trk.R:trk.L;
-    ch.push([t0+dt*0.42,null],[t0+dt*0.66,{t:pull},'i'],[t0+dt*0.72,{t:pull}],[t0+dt*0.78,null,'i3']);
+    const fr=o.from||null; const ch=trk.parts[o.part]||(trk.parts[o.part]=[[0,fr]]); const HT=o.side==='R'?trk.R:trk.L;
+    ch.push([t0+dt*0.42,fr],[t0+dt*0.66,{t:pull},'i'],[t0+dt*0.72,{t:pull}],[t0+dt*0.78,null,'i3']);
     if(o.side==='R'){ trk.L.push([t0+dt*0.3,'g','io']); HT.push([t0+dt*0.1,'g']); }
     HT.push([t0+dt*0.42,h,'io'],[t0+dt*0.72,h,'i']);
     const off=JSON.parse(JSON.stringify(h)); delete off.rel; const D=offMatrix(G,{t:pull},new THREE.Vector3(),new THREE.Matrix4()); const pp=V3(off.p).applyMatrix4(D); off.p=pp.toArray(); off.c='relax';
@@ -5954,8 +5955,8 @@ const RL_PIECE={
 };
 /* fuzis e submetralhadoras com carregador: o mesmo roteiro com pose, inclinação e alavanca de cada um */
 function rlMag(G,ctx,o){
-  const L=o.len, chg=ctx.empty&&!!o.ch; const trk=RL_PIECE.magSwap(G,Object.assign({tilt:T_MAG},o,{drop:ctx.empty&&o.dropEmpty!==false,span:(chg?0.62:o.slap?0.72:0.8)*L,slap:o.slap&&!chg}));
-  trk.R=[[0,'g']]; let t=trk.t;
+  const L=o.len, chg=ctx.empty&&!!o.ch; const trk=RL_PIECE.magSwap(G,Object.assign({tilt:T_MAG},o,{drop:ctx.empty&&o.dropEmpty!==false,span:o.span||(chg?0.62:o.slap?0.72:0.8)*L,slap:o.slap&&!chg}));
+  trk.R=[[0,'g']]; let t=trk.t; if(o.after) t=o.after(trk,t);
   if(ctx.empty&&o.ch) t=RL_PIECE.charge(G,Object.assign({len:L},o.ch,{tilt:o.ch.tilt||o.tilt}),t+0.02*L,trk);
   return RL_PIECE.finish(trk,L,t); }
 /* ---- armas de carregador ---- */
@@ -5966,6 +5967,148 @@ RL_BUILD.thompson=ctx=>rlMag(ctx.G,ctx,{len:2.2,slap:true,ch:{part:'ch',pull:[0,
 RL_BUILD.mp40=ctx=>rlMag(ctx.G,ctx,{len:2.0,slap:true,ch:{part:'ch',pull:[0,0,0.035],hand:(b,rel)=>HP([b.cx,b.y1+0.014,b.z1-0.006],[0.1,-0.35,-0.95],[-0.1,1,0.3],'hook',rel),tilt:{x:-0.05,y:0.05,z:0.03,rx:0.2,ry:0.25,rz:-0.1}}});
 RL_BUILD.ppsh=ctx=>rlMag(ctx.G,ctx,{len:3.1,slap:true,ch:{part:'ch',pull:[0,0,0.04],hand:H.hookLeft,tilt:{x:-0.06,y:0.05,z:0.03,rx:0.12,ry:0.4,rz:-0.45}}});
 RL_BUILD.ptrs=ctx=>rlMag(ctx.G,ctx,{len:3.0,tilt:Object.assign({},T_MAG,{x:-0.08,y:0.04,rx:0.1}),slap:true,ch:{part:'ch',side:'R',pull:[0,0,0.07],dur:0.62,hand:(b,rel)=>HP([b.x1+0.006,b.cy+0.004,b.z1-0.025],[-0.2,-0.3,-0.95],[1,0.25,0.1],'hook',rel),tilt:T_CHR}});
+/* ---- pistola: solta o carregador, novo da cintura, tapa na base; vazia: ferrolho travado atrás, puxada por cima e solta ---- */
+RL_BUILD.m1911=ctx=>{ const G=ctx.G; if(!G.mag) return null; const lock={t:[0,0,0.0175]};
+  const A=rlMag(G,ctx,{len:1.9,tilt:{x:-0.05,y:0.05,z:-0.02,rx:0.22,ry:0.4,rz:-0.4},slap:true,dropEmpty:true,
+    ch:G.slide?{part:'slide',pull:[0,0,0.024],from:lock,dur:0.5,hand:(b,rel)=>HP([b.x0-0.012,b.cy+0.006,b.z1-0.014],[0.25,0.92,-0.3],[-1,0.2,0.1],'hook',rel),tilt:{x:-0.06,y:0.04,z:-0.03,rx:0.15,ry:0.45,rz:-0.6}}:null});
+  if(ctx.empty&&G.slide&&!A.parts.slide) A.parts.slide=[[0,lock]];
+  return A; };
+/* ---- fuzil de ferrolho: ferrolho para cima e para trás, pente com os cartuchos, polegar empurra, pente sai voando, ferrolho fecha ---- */
+const BOLT_UP={r:[0,0,62]};
+function rlBoltKnob(b,rel){ return HP([b.x1+0.012,b.y0+0.016,b.z1+0.004],[-0.4,-0.3,-0.85],[1,0.2,0.05],'hook',rel); }
+function rlBoltOff(G,back){ const b=pbox(G.bolt); const pv=[b.x0+0.009,b.y1-0.012,b.cz]; return back?{r:[0,0,62],t:[0,0,back],pv}:{r:[0,0,62],pv}; }
+function rlClip(G,n){ // pente de lâminas com n cartuchos empilhados, alinhados ao cano
+  const A=AMMO.r762; if(!A) return null; const b=pbox(G.bolt); const one=ammoMesh('r762',G); const len=one.userData.len;
+  const bb=new THREE.Box3().setFromObject(one); const d=Math.max(0.006,Math.min(bb.max.x-bb.min.x,bb.max.z-bb.min.z));
+  const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),G.fwd);
+  const x=b.x0+0.009, z=b.z0+0.03-len*0.05, y0=b.y1+0.004+d/2;
+  const ref=new THREE.Matrix4().makeTranslation(x,y0,z);
+  const rds=new THREE.Group(); for(let i=0;i<n;i++){ const r=i?ammoMesh('r762',G):one; r.quaternion.copy(q); r.position.copy(G.fwd).multiplyScalar(-len/2).addScaledVector(G.up,i*d); rds.add(r); }
+  const clip=new THREE.Group(), m=new THREE.MeshStandardMaterial({color:0x34363a,metalness:0.75,roughness:0.4});
+  const back=G.fwd.clone().negate(), H=Math.max(n,5)*d;
+  for(const sx of [-1,1]){ const pl=new THREE.Mesh(new THREE.BoxGeometry(0.0012,H+0.004,0.009),m); pl.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),back); pl.position.copy(back).multiplyScalar(len/2-0.006).addScaledVector(G.rt,sx*(d/2+0.0008)).addScaledVector(G.up,H/2-d/2); clip.add(pl); }
+  const sp=new THREE.Mesh(new THREE.BoxGeometry(d+0.003,H+0.004,0.0012),m); sp.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),back); sp.position.copy(back).multiplyScalar(len/2-0.0015).addScaledVector(G.up,H/2-d/2); clip.add(sp);
+  return {ref,rds,clip,d,H,top:[x,y0+H,z],len}; }
+RL_BUILD.kar98k=ctx=>{ const G=ctx.G; if(!G.bolt) return null; const b=pbox(G.bolt), L=2.4, n=Math.max(1,ctx.need|0);
+  const C=rlClip(G,n); if(!C) return null;
+  const T={x:-0.1,y:0.04,z:0.0,rx:-0.06,ry:0.35,rz:-0.5}, up=rlBoltOff(G,0), bk=rlBoltOff(G,0.072);
+  const knob=rlBoltKnob(b,'bolt');
+  const gun=[[0,{}],[0.24,T,'o'],[0.42,Object.assign({},T,{z:T.z+0.008}),'o'],[0.52,T],[1.02,T],[1.08,Object.assign({},T,{y:T.y-0.006}),'o'],[1.16,T],[1.56,T],[1.62,Object.assign({},T,{z:T.z-0.01,rx:T.rx+0.03}),'o'],[1.74,T],[2.0,{},'io'],[L,{}]];
+  const bolt=[[0,null],[0.28,null],[0.36,up,'o'],[0.5,bk,'io'],[1.5,bk],[1.6,up,'i'],[1.7,null,'o']];
+  const R=[[0,'g'],[0.1,'g'],[0.27,knob,'io'],[1.7,knob],[1.98,'g','io'],[L,'g']];
+  const top=C.top, cpinch=HP([top[0]-0.019,top[1]-C.H*0.85,top[2]+C.len*0.3],[0.2,0.75,-0.6],[-1,0.1,0.1],'pinch','clip');
+  const thumb=HP([top[0]-0.022,top[1]-0.006,top[2]+C.len*0.28],[0.25,0.6,-0.75],[-1,0.2,0.1],'thumbPush','rds');
+  const Lt=[[0,'g'],[0.3,'g'],[0.58,H.pouch(b),'io'],[0.66,cpinch,'io'],[1.08,cpinch],[1.16,thumb,'io'],[1.46,thumb],[1.58,HP([top[0]-0.04,top[1]+0.04,top[2]+0.08],[0.4,-0.3,-0.85],[-0.9,0.2,0.3],'relax'),'o'],[1.95,'g','io'],[L,'g']];
+  const pouch={t:[-0.08,-0.22,0.1],r:[-40,20,50]}, above={t:[0,0.03,0.004]};
+  const clip=[[0,'h'],[0.6,'h'],[0.61,pouch],[0.98,above,'io'],[1.07,null,'o'],[1.52,null],[1.58,{t:[0.05,0.06,0.02],r:[0,0,-50]},'o'],[1.72,{t:[0.13,0.03,0.08],r:[30,0,-140]},'l'],[1.73,'h']];
+  const rds=clip.slice(0,5).concat([[1.12,null],[1.42,{t:[0,-C.H-0.002,0]},'io'],[1.43,'h']]);
+  const ev=[[0.27,'grab'],[0.3,'boltUp'],[0.4,'boltBack'],[0.6,'pouch'],[1.05,'clipIn'],[1.16,'roundsIn'],[1.5,'boltFwd'],[1.56,'clipOut'],[1.68,'boltDown']];
+  return {len:L,gun,R,L:Lt,parts:{bolt},props:{clip:{keys:clip},rds:{keys:rds}},ev,
+    init(V){ vmaProp('clip',C.clip,C.ref); vmaProp('rds',C.rds,C.ref); }}; };
+RL_CYCLE.kar98k=()=>{ const G=gunModel.userData.vmp; if(!G||!G.bolt) return null; const b=pbox(G.bolt), L=0.95, up=rlBoltOff(G,0), bk=rlBoltOff(G,0.072), knob=rlBoltKnob(b,'bolt');
+  const T={x:-0.01,y:0.01,z:0.01,rx:0.02,ry:0.06,rz:-0.12};
+  return {len:L,gun:[[0,{}],[0.16,{x:0,y:0,z:0.012,rx:0.03},'o'],[0.3,T,'io'],[0.48,Object.assign({},T,{z:T.z+0.008}),'o'],[0.62,T],[0.95,{},'io']],
+    R:[[0,'g'],[0.12,'g'],[0.26,knob,'io'],[0.68,knob],[0.9,'g','io'],[L,'g']],
+    parts:{bolt:[[0,null],[0.27,null],[0.33,up,'o'],[0.44,bk,'io'],[0.56,up,'io'],[0.66,null,'o']]},
+    ev:[[0.3,'boltUp'],[0.4,'boltBack'],[0.45,(V)=>{ const E=ammoMesh('r762',G); if(!E) return; const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),G.fwd); const M=new THREE.Matrix4().compose(V3([b.x0+0.01,b.y1+0.01,b.z0+0.02]),q,new THREE.Vector3(1,1,1)); vmaDrop(E,M,[0.9,0.7,0.2],[rand(-9,9),rand(-9,9),rand(-9,9)],0.7); }],[0.52,'boltFwd'],[0.62,'boltDown']]}; };
+/* ---- escopetas: cartucho por cartucho (cada um conta na hora; atirar no meio interrompe e guarda o que já entrou) ---- */
+function rlShellAdd(V,s){ const st=wstat(s); if(s.mag<st.mag&&(s.reserve>0||CHEAT.ammo===2)){ s.mag++; if(CHEAT.ammo!==2) s.reserve--; hudAmmo(); } }
+function rlShells(G,ctx,o){
+  const n=Math.max(1,ctx.need|0), dt=o.dt, pre=o.pre||0.32, F=G.fore, port=o.port;
+  const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),o.axis||G.fwd);
+  const ref=new THREE.Matrix4().makeTranslation(port[0],port[1],port[2]);
+  const pump=F&&ctx.empty&&!o.pumpFirst, pumpT=0.42, fb={t:[0,0,o.pull||0.065]};
+  const end=pre+n*dt, L=end+(pump?pumpT:0)+0.42, full=pre+ctx.st.mag*dt+pumpT+0.42;
+  const gun=[[0,{}],[pre*0.8,o.tilt,'o']], Lt=[[0,'g']], ev=[], props={}, fore=[[0,null]];
+  if(o.pumpFirst&&F){ // abre a ação antes (mão de apoio puxa o guarda-mão e solta)
+    Lt.push([0.08,{g:1,rel:'fore'}],[0.2,{g:1,rel:'fore'}]); fore.push([0.08,null],[0.2,fb,'o']); ev.push([0.1,'pumpBack']); }
+  Lt.push([pre*0.85,H.pouch(pbox(G.fore||G.trig)),'io']); ev.push([pre*0.7,'pouch']);
+  for(let i=0;i<n;i++){ const t=pre+i*dt, k='sh'+i;
+    props[k]={keys:[[0,'h'],[t-0.01,'h'],[t,{t:[-0.07,-0.2,0.09],r:[-35,10,40]}],[t+0.5*dt,o.app,'io'],[t+0.66*dt,o.at,'o'],[t+0.76*dt,o.push,'i'],[t+0.77*dt,'h']]};
+    Lt.push([t+0.08*dt,o.hand(k),'io'],[t+0.76*dt,o.hand(k)]);
+    if(i<n-1) Lt.push([t+0.98*dt,H.pouch(pbox(G.fore||G.trig)),'io']);
+    gun.push([t+0.6*dt,o.tilt],[t+0.78*dt,Object.assign({},o.tilt,{y:o.tilt.y+0.005,rx:o.tilt.rx+0.02}),'o'],[t+0.92*dt,o.tilt]);
+    ev.push([t+0.06*dt,'shellPick'],[t+0.7*dt,'shellIn'],[t+0.74*dt,rlShellAdd]); }
+  let t=end;
+  if(o.pumpFirst&&F){ Lt.push([t+0.14,{g:1,rel:'fore'},'io'],[t+0.2,{g:1,rel:'fore'}]); fore.push([t+0.2,fb],[t+0.3,null,'i']); ev.push([t+0.26,'pumpFwd']); t+=0.3; }
+  else if(pump){ Lt.push([t+0.12,{g:1,rel:'fore'},'io']); fore.push([t+0.14,null],[t+0.24,fb,'io'],[t+0.36,null,'i']); ev.push([t+0.16,'pumpBack'],[t+0.31,'pumpFwd']); gun.push([t+0.12,Object.assign({},o.tilt)],[t+0.2,{x:-0.03,y:0.02,z:0.03,rx:0.1,ry:0.1,rz:-0.2},'io'],[t+0.3,{x:-0.03,y:0.02,z:0.045,rx:0.12,ry:0.1,rz:-0.2}],[t+0.38,{x:-0.03,y:0.02,z:0.03,rx:0.08,ry:0.1,rz:-0.2}]); t+=0.4; }
+  else Lt.push([t+0.2,'g','io']);
+  Lt.push([L,'g']); gun.push([Math.max(t+0.05,L-0.3),{},'io'],[L,{}]);
+  const shells=[]; for(let i=0;i<n;i++) shells.push('sh'+i);
+  return {len:Math.max(L,t+0.1),full,gun,L:Lt,R:[[0,'g']],parts:F?{fore}:{},props,ev,
+    init(V){ for(const k of shells){ const m=ammoMesh(o.key,G)||new THREE.Mesh(new THREE.CylinderGeometry(0.009,0.009,0.06,10),new THREE.MeshStandardMaterial({color:0xaa2222})); const g=new THREE.Group(); m.quaternion.copy(q); m.position.copy(o.axis||G.fwd).multiplyScalar(-(m.userData.len||0.06)/2); g.add(m); vmaProp(k,g,ref); } }}; }
+RL_BUILD.trench=ctx=>{ const G=ctx.G; if(!G.trig) return null; const T=pbox(G.trig); const port=[T.cx,T.y1-0.002,T.z0-0.05];
+  return rlShells(G,ctx,{key:'g12',dt:0.44,port,tilt:{x:-0.08,y:0.08,z:0.02,rx:0.12,ry:0.3,rz:-1.0},
+    app:{t:[0,-0.035,0.03]},at:{t:[0,-0.008,0.004]},push:{t:[0,0.004,-0.045]},
+    hand:k=>HP([port[0]-0.006,port[1]-0.04,port[2]+0.055],[0.1,0.55,-0.83],[-0.75,-0.55,-0.3],'pinch',k)}); };
+RL_BUILD.db=ctx=>{ const G=ctx.G; const C=G.chm?pbox(G.chm):null; if(!C) return null; const port=[C.cx-0.004,C.cy,C.cz];
+  return rlShells(G,ctx,{key:'g10',dt:0.5,pre:0.4,pumpFirst:true,pull:0.07,port,tilt:{x:-0.1,y:0.03,z:0.0,rx:0.2,ry:0.3,rz:-1.15},
+    app:{t:[0.04,0.03,0.0]},at:{t:[0.008,0.004,0]},push:{t:[-0.006,0,-0.01]},
+    hand:k=>HP([port[0]+0.045,port[1]+0.035,port[2]+0.045],[-0.75,-0.2,-0.6],[0.55,0.3,-0.75],'pinch',k)}); };
+RL_CYCLE.trench=()=>{ const G=gunModel.userData.vmp; if(!G||!G.fore) return null; const L=0.62, fb={t:[0,0,0.065]}, C=G.chm?pbox(G.chm):null;
+  return {len:L,gun:[[0,{}],[0.1,{z:0.014,rx:0.05},'o'],[0.2,{x:-0.01,y:0.004,z:0.02,rx:0.04,rz:-0.08},'io'],[0.3,{x:-0.01,y:0.004,z:0.028,rx:0.03,rz:-0.08}],[0.4,{x:-0.01,z:0.016,rz:-0.06},'o'],[L,{},'io']],
+    L:[[0,'g'],[0.12,{g:1,rel:'fore'}],[0.4,{g:1,rel:'fore'}],[L,'g']],R:[[0,'g']],
+    parts:{fore:[[0,null],[0.12,null],[0.24,fb,'o'],[0.29,fb],[0.38,null,'i']]},
+    ev:[[0.13,'pumpBack'],[0.22,(V)=>{ if(!C) return; const E=ammoMesh('g12',G); if(!E) return; const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),G.fwd); vmaDrop(E,new THREE.Matrix4().compose(V3([C.cx,C.cy,C.cz]),q,new THREE.Vector3(1,1,1)),[1.1,0.6,0.25],null,0.7); }],[0.32,'pumpFwd']]}; };
+/* ---- metralhadora (RPD): troca do tambor, abre a tampa, ajeita a fita, fecha com um tapa; vazia: alavanca à direita ---- */
+RL_BUILD.mg42=ctx=>{ const G=ctx.G; if(!G.mag) return null; const B=pbox(G.mag), L=4.2;
+  const top=G.gmax.y-0.012, cz=B.cz+0.03;
+  const lift=HP([B.cx-0.02,top+0.01,cz+0.03],[0.35,-0.45,-0.8],[-0.25,0.95,0.1],'hook'), slapP=HP([B.cx-0.01,top+0.012,cz],[0.4,-0.2,-0.9],[0,1,0],'push');
+  return rlMag(G,ctx,{len:L,span:2.2,tilt:{x:-0.07,y:0.06,z:0.03,rx:0.12,ry:0.38,rz:-0.45},rock:{r:[12,0,0],pv:[B.cx,B.y1-0.01,B.z0]},
+    after:(trk,t)=>{ trk.L.push([t+0.22,lift,'io'],[t+0.3,lift],[t+0.42,HP(lift.p.map((v,i)=>v+[0,0.025,0.01][i]),lift.f,lift.b,'hook'),'o'],[t+0.62,HP([B.cx-0.03,top-0.02,cz-0.04],[0.6,-0.1,-0.8],[-0.4,0.9,0],'pinch'),'io'],[t+0.8,HP([B.cx-0.025,top-0.016,cz-0.02],[0.6,-0.1,-0.8],[-0.4,0.9,0],'pinch')],[t+0.98,HP(slapP.p.map((v,i)=>v+[0,0.03,0][i]),slapP.f,slapP.b,'push'),'io'],[t+1.04,slapP,'i3']);
+      trk.ev.push([t+0.3,'cover'],[t+0.66,'belt'],[t+1.04,'cover'],[t+1.05,'tap']); trk.gun.push([t+1.04,{x:-0.07,y:0.05,z:0.03,rx:0.1,ry:0.38,rz:-0.45}],[t+1.1,{x:-0.07,y:0.06,z:0.03,rx:0.12,ry:0.38,rz:-0.45},'o']); return t+1.12; },
+    ch:{part:'ch',side:'R',pull:[0,0,0.06],dur:0.6,hand:H.rightHand,tilt:T_CHR}}); };
+/* ---- arma de raios: abre a trava, a célula sai (vazia cai apagada), célula nova, trava fecha, a bobina recarrega piscando ---- */
+RL_BUILD.ray=ctx=>{ const G=ctx.G; if(!G.mag||!G.latch) return null; const C=pbox(G.mag), Lb=pbox(G.latch), L=2.4, E=ctx.empty;
+  const T={x:-0.06,y:0.05,z:0.02,rx:0.1,ry:0.45,rz:-0.4}, pv=[Lb.x1,Lb.y0,Lb.cz], open={r:[0,0,95],pv};
+  const flick=HP([Lb.x0-0.004,Lb.y1+0.004,Lb.z0+0.012],[0.3,-0.3,-0.9],[-0.9,0.35,0.2],'thumbPush','latch');
+  const hold=HP([C.x0-0.014,C.cy+0.006,C.cz+0.012],[0.2,0.35,-0.92],[-1,0.15,0.15],'grab','mag');
+  const out={t:[-0.032,0.006,0]}, pouch={t:[-0.08,-0.2,0.1],r:[-30,20,40]}, pre={t:[-0.045,0.01,0.01],r:[0,0,0]};
+  const gun=[[0,{}],[0.24,T,'o'],[0.44,T],[0.5,Object.assign({},T,{x:T.x-0.006}),'o'],[0.6,T],[1.3,T],[1.38,Object.assign({},T,{x:T.x+0.006}),'o'],[1.46,T],[1.58,Object.assign({},T,{y:T.y-0.006}),'o'],[1.66,T],[2.0,{},'io'],[L,{}]];
+  const latch=[[0,null],[0.3,null],[0.4,open,'o'],[1.5,open],[1.6,null,'i3']];
+  const mag=E?[[0,null],[0.44,null],[0.5,out,'o'],[0.54,out],[0.55,'h'],[0.92,'h'],[0.93,pouch],[1.25,pre,'io'],[1.38,null,'o']]
+             :[[0,null],[0.46,null],[0.56,out,'o'],[0.76,pouch,'io'],[0.84,pouch],[1.25,pre,'io'],[1.38,null,'o']];
+  const Lt=[[0,'g'],[0.18,flick,'io'],[0.36,flick],[0.44,HP(flick.p,flick.f,flick.b,'open','latch'),'o']];
+  if(E) Lt.push([0.86,H.pouch(C),'io'],[0.96,hold,'io']); else Lt.push([0.48,hold,'io'],[0.84,hold],[0.96,hold]);
+  Lt.push([1.38,hold,'o'],[1.48,HP([Lb.x0-0.012,Lb.cy+0.01,Lb.cz+0.01],[0.25,0.2,-0.95],[-1,0.1,0.2],'push','latch'),'io'],[1.6,HP([Lb.x0-0.012,Lb.cy+0.01,Lb.cz+0.01],[0.25,0.2,-0.95],[-1,0.1,0.2],'push','latch'),'i3'],[1.95,'g','io'],[L,'g']);
+  const ev=[[0.2,'grab'],[0.32,'lever'],[0.48,'cellOut'],[0.9,'pouch'],[1.36,'cellIn'],[1.6,'lever'],[1.62,'tap'],[1.7,'cellIn',0.6]];
+  if(E) ev.push([0.54,(V)=>{ const P=G.mag; vmaDrop(P.o,P.curGh||P.restGh,[-0.35,-0.5,0.05],[rand(-5,5),rand(-3,3),rand(-6,6)],0.8); }]);
+  let cellM=[], coilM=[]; G.mag.o.traverse(m=>{ if(m.isMesh&&m.material&&G.glow.includes(m.material)) cellM.push(m.material); }); coilM=G.glow.filter(m=>!cellM.includes(m));
+  const fx=(ta)=>{ const sm=(a,b)=>{ const u=Math.min(1,Math.max(0,(ta-a)/(b-a))); return u*u*(3-2*u); };
+    const cell=E?(ta<0.92?1-0.85*sm(0.42,0.54):1):1, coil=ta<1.38?1-0.8*sm(0.42,0.6):0.2+0.8*sm(1.4,1.95)*(ta<1.95?0.7+0.3*Math.abs(Math.sin(ta*47)):1);
+    for(const m of cellM) m.emissiveIntensity=cell; for(const m of coilM) m.emissiveIntensity=coil; };
+  return {len:L,gun,L:Lt,R:[[0,'g']],parts:{latch,mag},ev,fx}; };
+/* ---- revólver: abre o tambor, ejeta os estojos com a boca para cima, carregador rápido com a boca para baixo, fecha ---- */
+const RV_ANG=78;   // giro do tambor para fora (graus em torno do eixo do cano)
+function rlSpeedloader(G){ // carregador rápido: cópias dos 6 cartuchos + corpo e botão atrás
+  const C=G.cyl, ref=new THREE.Matrix4().makeTranslation(C.c.x,C.c.y,C.max.z), refInv=ref.clone().invert();
+  const mk=(withRounds)=>{ const g=new THREE.Group();
+    if(withRounds) for(const r of G.rounds){ const o=r.o.clone(true); o.matrixAutoUpdate=false; o.matrix.multiplyMatrices(refInv,r.restGh); g.add(o); }
+    const back=G.fwd.clone().negate(), q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),back);
+    const rad=Math.min(C.max.x-C.min.x,C.max.y-C.min.y)*0.42, mat=new THREE.MeshStandardMaterial({color:0x2a2b2e,metalness:0.7,roughness:0.45});
+    const plate=new THREE.Mesh(new THREE.CylinderGeometry(rad,rad,0.004,18),mat); plate.quaternion.copy(q); plate.position.copy(back).multiplyScalar(0.007); g.add(plate);
+    const knob=new THREE.Mesh(new THREE.CylinderGeometry(rad*0.42,rad*0.5,0.012,14),new THREE.MeshStandardMaterial({color:0x111214,metalness:0.4,roughness:0.6})); knob.quaternion.copy(q); knob.position.copy(back).multiplyScalar(0.015); g.add(knob);
+    return g; };
+  return {ref,full:mk(true),empty:mk(false)}; }
+RL_BUILD.python=ctx=>{ const G=ctx.G; if(!G.crane||!G.cyl) return null;
+  const Bc=pbox(G.crane), Cy=pbox(G.cyl), L=2.6, pv=[Bc.x0+0.003,Bc.y0+0.003,Bc.cz];
+  const open={r:[0,0,RV_ANG],pv}, near={r:[0,0,RV_ANG+12],pv};
+  const T0={x:-0.07,y:0.07,z:-0.05,rx:0.15,ry:0.5,rz:-0.45}, UP={x:-0.07,y:0.09,z:-0.04,rx:0.75,ry:0.35,rz:-0.3}, DN={x:-0.08,y:0.07,z:-0.06,rx:-0.35,ry:0.75,rz:-0.3};
+  const thumbC=HP([Cy.x0-0.006,Cy.cy+0.004,Cy.cz+0.03],[0.1,-0.2,-1],[-1,0.15,0.05],'thumbPush','crane');   // polegar empurra o tambor para fora
+  const rod=HP([Cy.cx,Cy.y0-0.006,Cy.z0-0.045],[0.15,0.3,0.95],[-0.2,-0.95,0.2],'push','crane');            // palma no extrator (na frente do tambor)
+  const pinch=(rel)=>HP([Cy.cx-0.006,Cy.cy+0.004,Cy.z1+0.068],[0.05,-0.08,-1],[0.54,0.83,0.1],'pinch',rel);   // dedos em pinça no botão, por trás
+  const gun=[[0,{}],[0.22,T0,'o'],[0.4,T0],[0.55,UP,'io'],[0.82,UP],[0.88,Object.assign({},UP,{y:UP.y-0.012,rx:UP.rx+0.08}),'o'],[0.95,UP,'io'],[1.18,DN,'io'],[1.62,DN],[1.68,Object.assign({},DN,{y:DN.y-0.006})],[1.74,DN],[2.02,T0,'io'],[2.1,Object.assign({},T0,{rz:T0.rz+0.12}),'o'],[2.2,T0],[2.6,{},'io']];
+  const crane=[[0,null],[0.3,null],[0.42,open,'o'],[2.0,open],[2.1,null,'i3']];
+  const Lt=[[0,'g'],[0.2,thumbC,'io'],[0.3,thumbC],[0.46,HP(thumbC.p,thumbC.f,thumbC.b,'open','crane'),'o'],[0.62,rod,'io'],[0.76,rod],[0.82,Object.assign({},rod,{p:[rod.p[0],rod.p[1],rod.p[2]+0.03]}),'i'],[0.9,rod,'o'],
+    [1.1,H.pouch(Cy),'io'],[1.2,pinch('sl'),'io'],[1.72,pinch('sl')],[1.76,pinch('slk'),'l'],[1.9,HP([Cy.x0-0.06,Cy.cy-0.04,Cy.z1+0.14],[0.3,-0.4,-0.85],[-0.9,0.1,0.4],'pinch'),'o'],
+    [2.0,HP([Cy.x0-0.012,Cy.cy,Cy.cz],[0.15,-0.15,-1],[-1,0.1,0.1],'push','crane'),'io'],[2.1,HP([Cy.x0-0.012,Cy.cy,Cy.cz],[0.15,-0.15,-1],[-1,0.1,0.1],'push','crane'),'i3'],[2.42,'g','io'],[L,'g']];
+  const sl=[[0,'h'],[1.15,'h'],[1.16,{t:[-0.07,-0.2,0.1],r:[-30,25,45]}],[1.48,Object.assign({},open,{t:[0,0,0.045]}),'io'],[1.6,Object.assign({},open,{t:[0,0,0.004]}),'o'],[1.66,open,'i'],[1.735,open],[1.74,'h']];
+  const slk=[[0,'h'],[1.735,'h'],[1.74,open],[1.9,{t:[-0.05,-0.05,0.11],r:[0,0,RV_ANG],pv},'o'],[1.95,'h']];
+  const ev=[[0.24,'grab'],[0.32,'cylOut'],[0.8,'eject'],[0.81,(V)=>{ const D=vmaDelta('crane'); for(const r of G.rounds){ const M=D?new THREE.Matrix4().multiplyMatrices(D,r.restGh):r.restGh; vmaDrop(r.o,M,[rand(-0.15,0.15),-0.35,rand(0,0.15)],null,0.85); } }],
+    [1.1,'pouch'],[1.63,'speedIn'],[1.7,'speedTwist'],[2.05,'cylIn']];
+  const rounds=[[0,null],[0.8,null],[0.805,'h'],[1.735,'h'],[1.74,null]];
+  return {len:L,gun,L:Lt,R:[[0,'g']],parts:{crane,rounds},props:{sl:{keys:sl},slk:{keys:slk}},ev,
+    init(V){ const S=rlSpeedloader(G); vmaProp('sl',S.full,S.ref); vmaProp('slk',S.empty,S.ref); }}; };
 /* depuração: põe a arma atual no meio da recarga (k de 0 a 1) — usado pelo console (recarga_ver) */
 function rlDebug(id,k,empty){ const s=curSlot(); if(!s||s.id!==id) return false; const st=wstat(s);
   if(!VMA.on||VMA.kind!=='reload'||VMA.__dbg!==String(empty)){ s.mag=empty?0:Math.max(1,Math.floor(st.mag/2)); s.reserve=Math.max(s.reserve,st.mag*3); Wp.reloading=false; startReload(); VMA.__dbg=String(empty); VMA.__dur=Wp.reloadT; }

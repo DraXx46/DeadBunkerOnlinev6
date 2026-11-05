@@ -5521,7 +5521,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v7.9.2';
+const GAME_VERSION='v7.9.3';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -6721,11 +6721,15 @@ function initFx(){
 }
 function fireball(x,y,z,size,color){ const f=fireballs.find(f=>!f.s.visible)||fireballs[0]; f.s.visible=true; f.s.position.set(x,y,z); f.t=0; f.d=0.45; f.size=size; f.s.material.color.setHex(color||0xff8a30); }
 function updateFireballs(dt){ for(const f of fireballs){ if(!f.s.visible) continue; f.t+=dt; const k=f.t/f.d; if(k>=1){ f.s.visible=false; continue; } f.s.scale.setScalar(f.size*(0.4+k*1.4)); f.s.material.opacity=1-k; } }
-const tracers=[]; const trGeo=new THREE.BoxGeometry(0.012,0.012,1); trGeo.translate(0,0,-0.5);
-for(let i=0;i<14;i++){ const m=new THREE.Mesh(trGeo,new THREE.MeshBasicMaterial({color:0xffe6a8,transparent:true,opacity:0.6,blending:THREE.AdditiveBlending,depthWrite:false,fog:false})); m.visible=false; scene.add(m); tracers.push({m,t:0}); }
+/* rastro da bala: um risco fino que nasce no cano e corre até o ponto atingido (o Object3D.lookAt aponta o +Z para o alvo,
+   então a geometria vai de 0 a +1 em Z — antes ia para -Z e o rastro saía para trás) */
+const tracers=[]; const trGeo=new THREE.BoxGeometry(0.0045,0.0045,1); trGeo.translate(0,0,0.5);
+for(let i=0;i<18;i++){ const m=new THREE.Mesh(trGeo,new THREE.MeshBasicMaterial({color:0xffe6a8,transparent:true,opacity:0.6,blending:THREE.AdditiveBlending,depthWrite:false,fog:false})); m.visible=false; m.frustumCulled=false; scene.add(m); tracers.push({m,t:0,a:new THREE.Vector3(),dir:new THREE.Vector3(),d:0,len:0,dur:0.06}); }
 let trI=0;
-function tracer(a,b,color,thick){ const t=tracers[trI]; trI=(trI+1)%tracers.length; t.m.visible=true; t.m.position.copy(a); t.m.lookAt(b); const d=a.distanceTo(b); t.m.scale.set(thick||1,thick||1,d); t.m.material.color.setHex(color||0xffe6a8); t.m.material.opacity=0.65; t.t=0; }
-function updateTracers(dt){ for(const t of tracers){ if(!t.m.visible) continue; t.t+=dt; t.m.material.opacity=0.65*(1-t.t/0.07); if(t.t>0.07) t.m.visible=false; } }
+function tracer(a,b,color,thick){ const t=tracers[trI]; trI=(trI+1)%tracers.length; t.m.visible=true; t.a.copy(a); t.d=a.distanceTo(b); if(t.d<0.05){ t.m.visible=false; return; } t.dir.copy(b).sub(a).multiplyScalar(1/t.d);
+  t.len=Math.min(t.d,Math.max(1.2,t.d*0.35)); t.dur=Math.min(0.09,0.025+t.d/900); t.m.position.copy(a); t.m.lookAt(b); t.m.scale.set(thick||1,thick||1,t.len); t.m.material.color.setHex(color||0xffe6a8); t.m.material.opacity=0.8; t.t=0; }
+function updateTracers(dt){ for(const t of tracers){ if(!t.m.visible) continue; t.t+=dt; const k=Math.min(1,t.t/t.dur); const head=k*t.d, tail=Math.max(0,head-t.len);
+  t.m.position.copy(t.a).addScaledVector(t.dir,tail); t.m.scale.z=Math.max(0.01,head-tail); t.m.material.opacity=0.8*(1-k*0.6); if(t.t>t.dur+0.02) t.m.visible=false; } }
 function shake(a){ G.shakeA=Math.max(G.shakeA,a*1.25); }
 /* indicador de vida (todos os modos): barra segmentada, rastro vermelho do dano, escudo do X1, alerta de vida baixa */
 /* espectador: morto no cooperativo online, você assiste da visão dos colegas vivos (clique ou Espaço troca) */

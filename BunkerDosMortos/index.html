@@ -265,6 +265,14 @@ body.nodmgn #dmgn{display:none}
 @keyframes blk{50%{opacity:.2}}
 
 /* ---------- Round cards ---------- */
+#adpick{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(4,5,3,.72);padding:16px;box-sizing:border-box}
+#adpick .adbox{width:min(1040px,100%);max-height:100%;overflow:auto;background:linear-gradient(180deg,#1b1e13,#0d0e09);border:1px solid #6a7440;box-shadow:0 0 60px rgba(120,160,60,.25);padding:18px 20px;box-sizing:border-box}
+#adpick header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}#adpick h2{margin:0;color:#e8dc9a}
+#ad-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:12px}
+.adw{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:10px;border:1px solid rgba(232,220,154,.18);background:rgba(0,0,0,.35);transition:border-color .15s,background .15s,transform .15s}
+.adw:hover,.adw:focus-visible{border-color:#e8dc9a;background:rgba(106,116,64,.25);transform:translateY(-2px)}
+.adw img{width:100%;height:78px;object-fit:contain}.adw b{font:15px var(--f-display);color:var(--chalk)}.adw small{font-size:11px;color:var(--muted);line-height:1.4}
+.adw.held{opacity:.75}
 #cards{position:fixed;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;pointer-events:none;overflow:auto;box-sizing:border-box;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-bottom,0px));
   background:radial-gradient(ellipse at center,rgba(0,0,0,.6),rgba(0,0,0,0) 72%)}
@@ -983,6 +991,7 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
 <div id="x1buy" hidden></div>
 <div id="x1end" hidden></div>
 
+<div id="adpick" hidden><div class="adbox"><header><div><p class="file">Caixa de armamento · uma arma por jogador</p><h2>Escolha sua arma</h2></div><button id="ad-x" class="ghost small" type="button">Fechar (Esc)</button></header><p class="rec">A arma nova substitui a que está na sua mão. Se escolher uma que já tem, ela volta com munição cheia.</p><div id="ad-grid"></div></div></div>
 <div id="cards" hidden>
   <p class="cardtitle">Escolha uma carta<span id="cardhint">Aperte 1, 2 ou 3</span></p>
   <div id="cardrow"></div>
@@ -4993,7 +5002,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v7.0';
+const GAME_VERSION='v7.1';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -5244,7 +5253,7 @@ addEventListener('wheel',e=>{ if(G.state==='playing'&&Math.abs(e.deltaY)>2) pres
 document.addEventListener('pointerlockchange',()=>{ locked=document.pointerLockElement===canvas; if(locked) lockEverWorked=true;
   // um pedido de mira que chegou depois das cartas abrirem (ex.: ao fechar o console) não pode prender o mouse; só um clique fora das cartas faz isso
   if(locked&&G.cardsOpen&&G.state==='playing'&&!G.cardsRelock&&!isTouch&&!(typeof x1Live==='function'&&x1Live())){ G.cardsFreed=true; document.exitPointerLock(); return; }
-  if(G.state==='lobby'&&typeof LP!=='undefined'){ if(locked) closeLobbyPause(false); else if(!noLock&&!CON.open&&!CHAT.open&&!PICK.on&&$('#settings').hidden&&!lobbyBusy) openLobbyPause(); } if(!locked&&G.state==='playing'&&!noLock&&!CON.open&&!G.cardsOpen&&!CHAT.open&&!(typeof letterOpen!=='undefined'&&letterOpen)&&!(typeof X1!=='undefined'&&x1Live())) pauseGame(); });
+  if(G.state==='lobby'&&typeof LP!=='undefined'){ if(locked) closeLobbyPause(false); else if(!noLock&&!CON.open&&!CHAT.open&&!PICK.on&&$('#settings').hidden&&!lobbyBusy) openLobbyPause(); } if(!locked&&G.state==='playing'&&!noLock&&!CON.open&&!G.cardsOpen&&!(typeof AD!=='undefined'&&AD.open)&&!CHAT.open&&!(typeof letterOpen!=='undefined'&&letterOpen)&&!(typeof X1!=='undefined'&&x1Live())) pauseGame(); });
 function requestLock(){
   if(isTouch||noLock) return Promise.resolve(false);
   return new Promise(res=>{ let done=false;
@@ -6156,8 +6165,8 @@ function bossHud(){ const el=$('#bossbar'); if(!el) return; let info=null;
   el.querySelector('i').style.transform=`scaleX(${clamp(info[1]/Math.max(1,info[2]),0,1).toFixed(4)})`; if(B) el.style.setProperty('--bc','#'+B.col.toString(16).padStart(6,'0')); }
 /* ================= EVENTOS ALEATÓRIOS NOS MAPAS ================= */
 const EVT={k:null,t:0,next:rand(55,85),base:null};
-const EVT_INFO={portal:['UM PORTAL SE ABRIU','Entre nele para atravessar para o mundo invertido. Pontos em dobro lá dentro.',30],invertido:['MUNDO INVERTIDO','O mesmo lugar, do outro lado. Pontos em dobro até o portal fechar.',45],apagao:['A ENERGIA CAIU','Todas as luzes apagaram. Use a lanterna (L).',24],neblina:['NEBLINA DENSA','Uma névoa grossa tomou conta do mapa.',30],furia:['HORDA FURIOSA','Os mortos estão mais rápidos.',20],suprimento:['SUPRIMENTOS','Um pacote caiu perto de vocês.',0]};
-const EVT_CODES=['','apagao','neblina','furia','suprimento','portal','invertido'];
+const EVT_INFO={portal:['UM PORTAL SE ABRIU','Entre nele para atravessar para o mundo invertido. Pontos em dobro lá dentro.',30],invertido:['MUNDO INVERTIDO','O mesmo lugar, do outro lado. Pontos em dobro até o portal fechar.',45],apagao:['A ENERGIA CAIU','Todas as luzes apagaram. Use a lanterna (L).',24],neblina:['NEBLINA DENSA','Uma névoa grossa tomou conta do mapa.',30],furia:['HORDA FURIOSA','Os mortos estão mais rápidos.',20],suprimento:['SUPRIMENTOS','Um pacote caiu perto de vocês.',0],armamento:['ARMAMENTO DO CÉU','Uma caixa de armas está caindo de paraquedas. Abra e escolha qualquer arma.',50]};
+const EVT_CODES=['','apagao','neblina','furia','suprimento','portal','invertido','armamento'];
 /* portal: anel girando no chão; quando alguém entra, o grupo inteiro vai para o mundo invertido */
 let PORTAL=null;
 function portalShow(x,zz){ if(PORTAL&&PORTAL.x===x&&PORTAL.z===zz) return; portalHide();
@@ -6169,13 +6178,59 @@ function portalShow(x,zz){ if(PORTAL&&PORTAL.x===x&&PORTAL.z===zz) return; porta
   scene.add(g); PORTAL={g,ring,ring2,disc,x,z:zz}; }
 function portalHide(){ if(PORTAL){ scene.remove(PORTAL.g); PORTAL=null; } }
 function portalSpot(){ const T=pick(TG.length?TG:[{x:P.pos.x,z:P.pos.z}]); for(let k=0;k<14;k++){ const a=rand(0,6.28), d=rand(3.5,6.5); const v=new THREE.Vector3(T.x+Math.cos(a)*d,0,T.z+Math.sin(a)*d); const ox=v.x, oz=v.z; collide(v,0.6,solidIn,true); if(Math.hypot(v.x-ox,v.z-oz)<0.05) return [v.x,v.z]; } return [T.x+1.5,T.z+1.5]; }
+/* ---- evento: caixa de armamento cai do céu de paraquedas; cada jogador abre uma vez e escolhe qualquer arma ---- */
+const AD={g:null,x:0,z:0,key:'',took:'',landed:false,vy:0,open:false,smokeT:0,lid:null,chute:null,beacon:null,chuteK:1,landT:0};
+function adCrateTex(){ return tex(256,256,(g,w,h)=>{ g.fillStyle='#4a5232'; g.fillRect(0,0,w,h); for(let i=0;i<2600;i++){ g.fillStyle=`rgba(${Math.random()<.5?'0,0,0':'255,255,240'},${Math.random()*.07})`; g.fillRect(Math.random()*w,Math.random()*h,2,2); }
+  g.strokeStyle='#1e2214'; g.lineWidth=14; g.strokeRect(7,7,w-14,h-14); g.fillStyle='#e8dc9a'; g.font='bold 30px monospace'; g.textAlign='center'; g.fillText('ARMAMENTO',w/2,h/2-6); g.font='bold 18px monospace'; g.fillText('▲ ESTE LADO ▲',w/2,h/2+26);
+  g.fillStyle='rgba(232,220,154,.85)'; for(let i=0;i<6;i++){ g.save(); g.translate(20+i*44,h-30); g.rotate(-0.6); g.fillRect(0,0,28,8); g.restore(); } }); }
+function adChuteTex(){ return tex(256,128,(g,w,h)=>{ for(let i=0;i<8;i++){ g.fillStyle=i%2?'#e8e0cc':'#d0602a'; g.fillRect(i*w/8,0,w/8+1,h); } const gr=g.createLinearGradient(0,0,0,h); gr.addColorStop(0,'rgba(255,255,255,.15)'); gr.addColorStop(1,'rgba(0,0,0,.35)'); g.fillStyle=gr; g.fillRect(0,0,w,h); }); }
+function adShow(x,z){ const key=x.toFixed(1)+','+z.toFixed(1); if(AD.g&&AD.key===key) return; adHide(); AD.key=key; AD.x=x; AD.z=z;
+  const g=new THREE.Group(); const fb=floorAt(x,z); const crateM=new THREE.MeshLambertMaterial({map:adCrateTex()}), dark=new THREE.MeshLambertMaterial({color:0x1e2214}), metal=new THREE.MeshLambertMaterial({color:0x6a6a62});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(1.15,0.62,0.78),crateM); body.position.y=0.31; g.add(body);
+  for(const sx of [-0.4,0.4]){ const b=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.64,0.8),dark); b.position.set(sx,0.31,0); g.add(b); }
+  const lid=new THREE.Group(); lid.position.set(0,0.62,-0.39); g.add(lid); const lm=new THREE.Mesh(new THREE.BoxGeometry(1.19,0.12,0.82),crateM); lm.position.set(0,0.06,0.39); lid.add(lm); for(const sx of [-0.4,0.4]){ const b=new THREE.Mesh(new THREE.BoxGeometry(0.075,0.13,0.84),dark); b.position.set(sx,0.06,0.39); lid.add(b); }
+  for(const sx of [-0.25,0.25]){ const l=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.08,0.04),metal); l.position.set(sx,0.55,0.41); g.add(l); }
+  const inner=new THREE.Mesh(new THREE.PlaneGeometry(1.05,0.7),new THREE.MeshBasicMaterial({color:0xffd27a,transparent:true,opacity:0})); inner.rotation.x=-Math.PI/2; inner.position.y=0.6; g.add(inner);
+  // paraquedas: cúpula listrada + cordas
+  const chute=new THREE.Group(); chute.position.y=0.62; g.add(chute);
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(1.9,16,8,0,Math.PI*2,0,Math.PI*0.42),new THREE.MeshLambertMaterial({map:adChuteTex(),side:THREE.DoubleSide})); dome.position.y=3.4; dome.scale.y=0.7; chute.add(dome);
+  const cordM=new THREE.LineBasicMaterial({color:0x2a2620}); for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(Math.cos(a)*0.35,0,Math.sin(a)*0.25),new THREE.Vector3(Math.cos(a)*1.45,3.4+0.85*0.7*0.15,Math.sin(a)*1.45)]); chute.add(new THREE.Line(geo,cordM)); }
+  const beacon=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0x6aff8a,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,opacity:0})); beacon.position.y=0.95; beacon.scale.set(1.0,1.0,1); g.add(beacon);
+  const lamp=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.12,8),new THREE.MeshBasicMaterial({color:0x6aff8a})); lamp.position.set(0.46,0.7,0.3); g.add(lamp);
+  // ao ar livre desce de paraquedas lá do alto; dentro do bunker despenca por um alçapão do teto
+  const out=isOutside(x,z); g.position.set(x,fb+(out?26:2.7),z); g.rotation.y=rand(0,6.28); scene.add(g); if(!out){ chute.visible=false; emit('dust',x,fb+2.9,z,14,1.6,0.8,0.6); wPuff(x,fb+2.8,z,4,0x8a8270,0.5,1.4,-0.2,0.45); }
+  Object.assign(AD,{g,lid,inner,chute,beacon,lamp,fb,landed:false,vy:out?-4.2:-0.5,grav:!out,chuteK:out?1:0,landT:0,smokeT:0,sway:rand(0,6)});
+}
+function adHide(){ if(AD.g){ scene.remove(AD.g); AD.g=null; } AD.landed=false; }
+function adFrame(dt){ if(!AD.g) return; const g=AD.g;
+  if(!AD.landed){ if(AD.grav) AD.vy-=14*dt; g.position.y+=AD.vy*dt; if(!AD.grav){ g.rotation.z=Math.sin(G.t*1.3+AD.sway)*0.12; g.rotation.x=Math.cos(G.t*1.1+AD.sway)*0.08; g.rotation.y+=dt*0.25; }
+    if(g.position.y<=AD.fb){ g.position.y=AD.fb; g.rotation.x=g.rotation.z=0; AD.landed=true; AD.landT=0;
+      try{ Snd.boom(AD.x,AD.z); }catch(e){} shake(Math.max(0,0.35-Math.hypot(P.pos.x-AD.x,P.pos.z-AD.z)*0.02)); for(let i=0;i<14;i++){ const a=i/14*6.28; emit('dust',AD.x+Math.cos(a)*0.7,AD.fb+0.1,AD.z+Math.sin(a)*0.7,2,2.4,0.7,-0.4); } wPuff(AD.x,AD.fb+0.3,AD.z,6,0xa89c86,0.6,1.6,0.4,0.5); } }
+  else { AD.landT+=dt; AD.chuteK=Math.max(0,AD.chuteK-dt*0.7); const c=AD.chute; c.scale.set(1+(1-AD.chuteK)*0.4,Math.max(0.02,AD.chuteK),1+(1-AD.chuteK)*0.4); c.position.x=(1-AD.chuteK)*1.6; c.visible=AD.chuteK>0.02;
+    const mine=AD.took===AD.key; AD.beacon.material.opacity=mine?0:0.28+Math.sin(G.t*5)*0.14; AD.lamp.visible=!mine||Math.sin(G.t*8)>0;
+    AD.smokeT-=dt; if(AD.smokeT<=0&&!mine){ AD.smokeT=0.16; wPuff(AD.x+0.46,AD.fb+0.8,AD.z+0.3,1,0x3aff6a,0.35,2.4,1.6,0.42); }
+    AD.lid.rotation.x+=((mine?-1.9:0)-AD.lid.rotation.x)*Math.min(1,dt*6); AD.inner.material.opacity=mine?0.0:Math.max(0,-AD.lid.rotation.x/1.9)*0.7; }
+}
+function adNear(){ return AD.g&&AD.landed&&AD.took!==AD.key&&EVT.k==='armamento'&&Math.hypot(AD.x-P.pos.x,AD.z-P.pos.z)<1.9; }
+const AD_THUMB={};
+function adThumb(id){ if(AD_THUMB[id]) return AD_THUMB[id]; const W=WEAPONS[id]; let url=''; try{ const t=chalkTex(SIL[W.model]?W.model:W.sil,'',''); url=t.image.toDataURL(); t.dispose(); }catch(e){} return AD_THUMB[id]=url; }
+function adOpenUI(){ if(AD.open) return; AD.open=true; const el=$('#adpick'); el.hidden=false; if(document.pointerLockElement) document.exitPointerLock();
+  const held=new Set(Wp.inv.map(q=>q.id)); const ids=Object.keys(WEAPONS);
+  $('#ad-grid').innerHTML=ids.map((id,i)=>{ const W=WEAPONS[id]; const tags=[W.pellets?'Espingarda':W.splash?'Explosiva':W.auto?'Automática':'Semiautomática']; return `<button type="button" class="adw${held.has(id)?' held':''}" data-w="${id}"><img alt="" src="${adThumb(id)}"><b>${W.name}</b><small>${tags[0]} · dano ${W.pellets?W.dmg+'×'+W.pellets:W.dmg} · pente ${W.mag}${held.has(id)?' · você já tem':''}</small></button>`; }).join('');
+  Snd.ui('unlock'); }
+function adClose(){ if(!AD.open) return; AD.open=false; $('#adpick').hidden=true; if(G.state==='playing'&&!isTouch) requestLock(); }
+function adTake(id){ if(!WEAPONS[id]||!adNear()) { adClose(); return; } AD.took=AD.key; const had=Wp.inv.find(q=>q.id===id);
+  if(had){ const st=wstat(had); had.mag=st.mag; had.reserve=st.reserve; const i=Wp.inv.indexOf(had); if(i!==Wp.cur||Wp.knifeOut) switchTo(i); hudAmmo(); } else giveWeapon(id,0);
+  try{ Snd.ammoBox(); Snd.puGet(); }catch(e){} banner(WEAPONS[id].name,had?'Munição cheia':'Arma nova da caixa de armamento','gold'); sysLog('Pegou '+WEAPONS[id].name+' na caixa de armamento'); emit('spark',AD.x,AD.fb+0.8,AD.z,16,3,0.6,-1); adClose(); }
+$('#adpick').addEventListener('click',e=>{ const b=e.target.closest('[data-w]'); if(b){ adTake(b.dataset.w); return; } if(e.target.closest('#ad-x')) adClose(); });
+addEventListener('keydown',e=>{ if(!AD.open) return; if(e.key==='Escape'||e.code==='KeyE'){ e.preventDefault(); e.stopImmediatePropagation(); adClose(); } },true);
 let SPORES=null;
 function sporesTick(dt,on){ if(!SPORES){ if(!on) return; const N=380, pos=new Float32Array(N*3); for(let i=0;i<N;i++){ pos[i*3]=rand(-12,12); pos[i*3+1]=rand(0,4); pos[i*3+2]=rand(-12,12); }
     const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); SPORES=new THREE.Points(g,new THREE.PointsMaterial({color:0xd8c8ff,size:0.06,transparent:true,opacity:0.75,depthWrite:false})); scene.add(SPORES); }
   SPORES.visible=on; if(!on) return; SPORES.position.set(P.pos.x,floorAt(P.pos.x,P.pos.z),P.pos.z);
   const a=SPORES.geometry.attributes.position; for(let i=0;i<a.count;i++){ let y=a.getY(i)+dt*0.12; if(y>4) y=0; a.setXY(i,a.getX(i)+Math.sin(G.t*0.5+i)*dt*0.08,y); } a.needsUpdate=true; }
-function evStart(k,t,announce){ EVT.k=k; EVT.t=t; const I=EVT_INFO[k]; if(k==='invertido'){ flashScreen(); shake(0.8); try{ Snd.distant(P.pos.x,P.pos.z); }catch(e){} document.body.classList.add('inverso'); } if(announce&&I){ banner(I[0],I[1],k==='suprimento'?'gold':'red'); sysLog('Evento: '+I[0].toLowerCase()); if(k==='apagao') Snd.zap(P.pos.x,P.pos.z,3); } document.body.classList.toggle('furia',k==='furia'); }
-function evEnd(announce){ const k=EVT.k; EVT.k=null; EVT.t=0; document.body.classList.remove('furia'); if(k==='portal') portalHide(); if(k==='invertido'){ document.body.classList.remove('inverso'); flashScreen(); if(announce) banner('DE VOLTA','O portal fechou e vocês voltaram para o mundo normal','gold'); } if(announce&&k&&k!=='suprimento') sysLog('Evento encerrado: '+(EVT_INFO[k]||[''])[0].toLowerCase()); }
+function evStart(k,t,announce){ EVT.k=k; EVT.t=t; const I=EVT_INFO[k]; if(k==='invertido'){ flashScreen(); shake(0.8); try{ Snd.distant(P.pos.x,P.pos.z); }catch(e){} document.body.classList.add('inverso'); } if(announce&&I){ banner(I[0],I[1],k==='suprimento'||k==='armamento'?'gold':'red'); if(k==='armamento') try{ Snd.abil('whistle'); }catch(e){} sysLog('Evento: '+I[0].toLowerCase()); if(k==='apagao') Snd.zap(P.pos.x,P.pos.z,3); } document.body.classList.toggle('furia',k==='furia'); }
+function evEnd(announce){ const k=EVT.k; EVT.k=null; EVT.t=0; document.body.classList.remove('furia'); if(k==='portal') portalHide(); if(k==='armamento'){ adHide(); adClose(); } if(k==='invertido'){ document.body.classList.remove('inverso'); flashScreen(); if(announce) banner('DE VOLTA','O portal fechou e vocês voltaram para o mundo normal','gold'); } if(announce&&k&&k!=='suprimento') sysLog('Evento encerrado: '+(EVT_INFO[k]||[''])[0].toLowerCase()); }
 function eventsHost(dt){
   if(NET.mode==='client'||x1Live()||CUR==='sandbox'||CUR==='x1'||G.round<3) return;
   if(EVT.k){ EVT.t-=dt;
@@ -6183,8 +6238,9 @@ function eventsHost(dt){
     if(EVT.t<=0) evEnd(true); return; }
   EVT.next-=dt; if(EVT.next>0) return; EVT.next=rand(60,110);
   if(G.round>=6&&Math.random()<0.1){ const sp=portalSpot(); EVT.px=sp[0]; EVT.pz=sp[1]; evStart('portal',EVT_INFO.portal[2],true); return; }
-  const opts=['neblina','furia','suprimento']; if(G.power) opts.push('apagao','apagao');
-  const k=pick(opts); const I=EVT_INFO[k];
+  const opts=['neblina','furia','suprimento','armamento']; if(G.power) opts.push('apagao','apagao');
+  if(pick(opts)==='armamento'&&Math.random()<0.6){ const sp=portalSpot(); EVT.px=sp[0]; EVT.pz=sp[1]; evStart('armamento',EVT_INFO.armamento[2],true); return; }
+  const k=pick(opts.filter(q=>q!=='armamento')); const I=EVT_INFO[k];
   if(k==='suprimento'){ const T=pick(TG.length?TG:[{x:P.pos.x,z:P.pos.z}]); spawnPU(pick(['max','double','insta','max']),T.x+rand(-2,2),T.z+rand(-2,2)); evStart(k,2,true); return; }
   evStart(k,I[2],true);
 }
@@ -6192,6 +6248,8 @@ function eventsVisual(dt){
   // apagão: luzes do mapa morrem (piscando no começo e no fim); neblina: a névoa engrossa aos poucos
   const inv=EVT.k==='invertido';
   if(EVT.k==='portal'&&EVT.px!=null) portalShow(EVT.px,EVT.pz); else if(EVT.k!=='portal') portalHide();
+  if(EVT.k==='armamento'&&EVT.px!=null) adShow(EVT.px,EVT.pz); else if(AD.g) adHide();
+  try{ adFrame(dt); }catch(e){}
   if(PORTAL){ PORTAL.ring.rotation.z+=dt*1.6; PORTAL.ring2.rotation.z-=dt*2.4; PORTAL.disc.rotation.z+=dt*0.8; PORTAL.g.lookAt(camera.position.x,PORTAL.g.position.y,camera.position.z); if(Math.random()<dt*30) emit('green',PORTAL.x+rand(-0.8,0.8),rand(0.4,2),PORTAL.z+rand(-0.8,0.8),1,0.6,0.8,-1); }
   try{ sporesTick(dt,inv); }catch(e){}
   if(scene.fog&&scene.fog.color){ if(EVT.fogCol==null||EVT.fogMap!==CUR){ EVT.fogCol=scene.fog.color.getHex(); EVT.fogMap=CUR; } const tc=new THREE.Color(inv?0x1a0410:EVT.fogCol); scene.fog.color.lerp(tc,Math.min(1,dt*1.5)); }
@@ -6978,6 +7036,7 @@ function updateInteract(dt){
     }
     NET.revT=0;
   }
+  if(adNear()){ if(curInteract&&curInteract.win) curInteract.win.repT=0; curInteract=null; setPrompt(`${PRESS} para abrir a caixa de armamento`); if(IN.edges.has('use')&&!busy()) adOpenUI(); return; }
   let best=null, bd=1e9; const fx=-Math.sin(P.yaw), fz=-Math.cos(P.yaw);
   for(const o of interacts){ if(o.enabled&&!o.enabled()) continue; const dx=o.x-P.pos.x, dz=o.z-P.pos.z, d=Math.hypot(dx,dz); if(d>o.r) continue; const dot=(dx*fx+dz*fz)/(d||1); if(d>0.8&&dot<0.3) continue; if(d<bd){ const t=o.text(); if(!t) continue; bd=d; best=o; } }
   if(curInteract!==best&&curInteract&&curInteract.win) curInteract.win.repT=0;
@@ -7882,7 +7941,7 @@ const CMDS={
     cprint('Showcase criado: '+made+' visuais de zumbi. Use bot_kick para limpar.');
   }},
   chefe:{cheat:1,d:'chefe 1-4 chama um chefe agora (1 Brutamontes, 2 Gritadora, 3 Incendiário, 4 Necromante)',f:a=>{ if(!needGame()||!needHost()) return; const k=clamp(num(a[0],1)|0,1,4); const b=bossFor(k*10); b.n=Math.max(1,Math.floor(G.round/10)); G.bossNext=b; G.toSpawn=Math.max(1,G.toSpawn+1); G.roundGap=0; banner(b.name.toUpperCase(),b.B.desc,'red'); cprint('Chefe a caminho: '+b.name); }},
-  evento:{cheat:1,d:'evento apagao|neblina|furia|suprimento|portal|invertido força um evento do mapa',f:a=>{ if(!needGame()||!needHost()) return; const k=String(a[0]||''); if(!EVT_INFO[k]){ cprint('Eventos: '+Object.keys(EVT_INFO).join(', '),'err'); return; } if(EVT.k) evEnd(false); if(k==='suprimento'){ spawnPU(pick(['max','double','insta']),P.pos.x+rand(-2,2),P.pos.z+rand(-2,2)); evStart(k,2,true); } else { if(k==='portal'){ buildTargets(); const sp=portalSpot(); EVT.px=sp[0]; EVT.pz=sp[1]; } evStart(k,EVT_INFO[k][2],true); } cprint('Evento: '+k); }},
+  evento:{cheat:1,d:'evento apagao|neblina|furia|suprimento|armamento|portal|invertido força um evento do mapa',f:a=>{ if(!needGame()||!needHost()) return; const k=String(a[0]||''); if(!EVT_INFO[k]){ cprint('Eventos: '+Object.keys(EVT_INFO).join(', '),'err'); return; } if(EVT.k) evEnd(false); if(k==='suprimento'){ spawnPU(pick(['max','double','insta']),P.pos.x+rand(-2,2),P.pos.z+rand(-2,2)); evStart(k,2,true); } else { if(k==='portal'||k==='armamento'){ buildTargets(); const sp=portalSpot(); EVT.px=sp[0]; EVT.pz=sp[1]; } evStart(k,EVT_INFO[k][2],true); } cprint('Evento: '+k); }},
   rubis:{d:'rubis N adiciona rubis (teste da moeda paga)',f:a=>{ const n=clamp(num(a[0],1000)|0,-999999,999999); PROG.rubies=Math.max(0,(PROG.rubies|0)+n); saveProg(); renderDrax(); cprint(`Rubis: ${PROG.rubies}`); }},
   caixa:{d:'caixa sup|mil|bunker|sombra|oculta|aleatoria [N] adiciona caixas ao inventário',f:a=>{ const t=String(a[0]||'aleatoria'); const n=clamp(num(a[1],1)|0,1,50); if(t!=='aleatoria'&&!BOX_BY[t]){ cprint('Tipos: '+BOXES.map(b=>b.t).join(', ')+', aleatoria','err'); return; } for(let i=0;i<n;i++) giveBox(t==='aleatoria'?randomBoxType(G.round||10):t); renderDrax(); cprint(`${n} caixa(s) adicionada(s). Total: ${PROG.boxes.length}`); }},
   caixa_reset:{d:'caixa_reset [tipo] apaga todas as caixas do inventário (ou só as de um tipo: sup, mil, bunker, sombra, oculta, vermelha)',f:a=>{ const t=a[0]?String(a[0]):null; if(t&&!BOX_BY[t]){ cprint('Tipos: '+BOXES.map(b=>b.t).join(', '),'err'); return; } const before=PROG.boxes.length; PROG.boxes=t?PROG.boxes.filter(x=>x.t!==t):[]; saveProg(); renderDrax(); try{ if(!$('#arsenal').hidden) renderArsenal(); }catch(e){} cprint(`${before-PROG.boxes.length} caixa(s) removida(s)${t?' do tipo '+BOX_BY[t].name:''}. Restam ${PROG.boxes.length}.`); }},
@@ -10220,7 +10279,7 @@ function remoteShot(rp){
 function hostState(){
   return {phase:G.state==='lobby'?'lobby':'playing',r:G.round,gp:G.roundGap>0?1:0,d:doors.map(d=>d.open?1:0),b:windows.map(w=>w.boards),pw:G.power?1:0,
     bx:[BOX.spot,BOX_ST.indexOf(BOX.state),BOX.state==='offer'?(BOX.weapon||''):'',BOX.owner||''],
-    pu:pus.map(p=>[p.id,p.type,r10(p.x),r10(p.z),Math.round(p.t)]),in:Math.ceil(G.insta),db:Math.ceil(G.double),ov:G.over?1:0,bs:G.boss&&!G.boss.dead?[G.boss.name,Math.ceil(G.boss.hp),Math.ceil(G.boss.maxHp),G.boss.bossKi]:0,evk:EVT.k?EVT_CODES.indexOf(EVT.k):0,evt:Math.ceil(EVT.t),evp:EVT.k==='portal'?[r10(EVT.px||0),r10(EVT.pz||0)]:0,gn:NET.gen,mp:CUR==='hosp'?1:CUR==='farm'?2:CUR==='x1'?4:0,tl:G.tl|0,x1:x1State()};
+    pu:pus.map(p=>[p.id,p.type,r10(p.x),r10(p.z),Math.round(p.t)]),in:Math.ceil(G.insta),db:Math.ceil(G.double),ov:G.over?1:0,bs:G.boss&&!G.boss.dead?[G.boss.name,Math.ceil(G.boss.hp),Math.ceil(G.boss.maxHp),G.boss.bossKi]:0,evk:EVT.k?EVT_CODES.indexOf(EVT.k):0,evt:Math.ceil(EVT.t),evp:(EVT.k==='portal'||EVT.k==='armamento')?[r10(EVT.px||0),r10(EVT.pz||0)]:0,gn:NET.gen,mp:CUR==='hosp'?1:CUR==='farm'?2:CUR==='x1'?4:0,tl:G.tl|0,x1:x1State()};
 }
 function encZ(){ return (G.boss&&!G.boss.dead?[G.boss].concat(zombies.filter(q=>q!==G.boss)):zombies).slice(0,48).map(z=>[z.id,r100(z.pos.x),r100(z.pos.z),r100(z.yaw),SCODE[z.state]|0,r100(z.g.position.y),(z.runner?1:0)|(z.head.visible?0:2)|(z.attackT>0?4:0)|(z.moving?8:0)|(z.crawl?16:0),Math.max(0,Math.ceil(z.hp)),z.seed,ZKIND.indexOf(z.kind)<0?0:ZKIND.indexOf(z.kind),z.bossKi!=null?z.bossKi+1:0]); }
 const ZKIND=['normal','brute','dog','bomber','fat'];

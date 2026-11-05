@@ -5517,7 +5517,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v7.9';
+const GAME_VERSION='v7.9.1';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -5769,15 +5769,12 @@ addEventListener('mouseup',e=>{ if(e.button===0) IN.fire=false; if(e.button===2)
 const MLOOK={ema:6,last:0,lockT:0,drop:0,pend:null};
 addEventListener('mousemove',e=>{ if(!((G.state==='playing'||G.state==='lobby')&&(locked||noLock))) return;
   const now=performance.now(); let dx=e.movementX||0, dy=e.movementY||0; if(now-MLOOK.lockT<110) return;
-  const m=Math.hypot(dx,dy), lim=Math.max(160,MLOOK.ema*9);
-  if(m>lim){ // pico: só aceita se o próximo evento continuar na mesma direção (movimento rápido de verdade)
-    if(MLOOK.pend&&now-MLOOK.pend.t<40&&Math.sign(MLOOK.pend.dx)===Math.sign(dx)&&Math.sign(MLOOK.pend.dy||1)===Math.sign(dy||1)){ IN.lookX+=clamp(MLOOK.pend.dx,-300,300); IN.lookY+=clamp(MLOOK.pend.dy,-300,300); MLOOK.pend=null; }
-    else { MLOOK.pend={dx,dy,t:now}; MLOOK.drop++; return; } }
-  else MLOOK.pend=null;
+  const m=Math.hypot(dx,dy), lim=Math.max(420,MLOOK.ema*14);
+  if(m>lim){ MLOOK.drop++; return; }   // só descarta o salto absurdo e isolado; movimento rápido de verdade passa direto (segurar o evento causava trancos)
   MLOOK.ema=MLOOK.ema*0.85+Math.min(m,400)*0.15; MLOOK.last=now;
   IN.lookX+=clamp(dx,-300,300); IN.lookY+=clamp(dy,-300,300); });
 addEventListener('wheel',e=>{ if(G.state==='playing'&&Math.abs(e.deltaY)>2) press(e.deltaY>0?'next':'prev'); },{passive:true});
-document.addEventListener('pointerlockchange',()=>{ locked=document.pointerLockElement===canvas; if(locked) lockEverWorked=true; MLOOK.lockT=performance.now(); MLOOK.pend=null; IN.lookX=0; IN.lookY=0;
+document.addEventListener('pointerlockchange',()=>{ locked=document.pointerLockElement===canvas; if(locked) lockEverWorked=true; MLOOK.lockT=performance.now(); MLOOK.ax=0; MLOOK.ay=0; IN.lookX=0; IN.lookY=0;
   // um pedido de mira que chegou depois das cartas abrirem (ex.: ao fechar o console) não pode prender o mouse; só um clique fora das cartas faz isso
   if(locked&&G.cardsOpen&&G.state==='playing'&&!G.cardsRelock&&!isTouch&&!(typeof x1Live==='function'&&x1Live())){ G.cardsFreed=true; document.exitPointerLock(); return; }
   if(G.state==='lobby'&&typeof LP!=='undefined'){ if(locked) closeLobbyPause(false); else if(!noLock&&!CON.open&&!CHAT.open&&!PICK.on&&$('#settings').hidden&&!lobbyBusy) openLobbyPause(); } if(!locked&&G.state==='playing'&&!noLock&&!CON.open&&!G.cardsOpen&&!(typeof AD!=='undefined'&&AD.open)&&!CHAT.open&&!(typeof letterOpen!=='undefined'&&letterOpen)&&!(typeof X1!=='undefined'&&x1Live())) pauseGame(); });
@@ -7904,7 +7901,11 @@ function crawl(dt){
 }
 function updatePlayer(dt){
   const sensK=0.0022*sens*(camera.fov/72)*lerp(1,CFG.adsSens,P.ads);
-  P.yaw-=IN.lookX*sensK; P.pitch=clamp(P.pitch-IN.lookY*sensK*(CFG.invY?-1:1),-1.45,1.45); IN.lookX=0; IN.lookY=0;
+  // o navegador entrega o mouse em rajadas (vários quadros sem movimento e depois um pedaço grande, ainda mais com o jogo acima de 100 fps);
+  // uma suavização curtíssima (~10 ms) espalha cada rajada por 2-3 quadros e acaba com o "tranco" sem atrasar a mira de forma perceptível
+  const tau=CFG.mouseSmooth===0?0:(CFG.mouseSmooth||0.010); MLOOK.ax=(MLOOK.ax||0)+IN.lookX; MLOOK.ay=(MLOOK.ay||0)+IN.lookY; IN.lookX=0; IN.lookY=0;
+  const kk=tau>0?1-Math.exp(-dt/tau):1, lx=MLOOK.ax*kk, ly=MLOOK.ay*kk; MLOOK.ax-=lx; MLOOK.ay-=ly; if(Math.abs(MLOOK.ax)<0.01) MLOOK.ax=0; if(Math.abs(MLOOK.ay)<0.01) MLOOK.ay=0;
+  P.yaw-=lx*sensK; P.pitch=clamp(P.pitch-ly*sensK*(CFG.invY?-1:1),-1.45,1.45);
   if(x1Frozen()&&!P.down){ P.vx=P.vz=0; P.moveAmt=0; P.sprinting=false; return; }   // X1: congelado na compra
   if(P.down){
     P.vx=P.vz=0; P.y=lerp(P.y,-1.05,dt*4); P.moveAmt=0; P.sprinting=false; P.crouch=0;
@@ -9093,6 +9094,7 @@ const CMDS={
   vm_mao_print:{d:'mostra o JSON da pegada da arma atual (copie para RIG_HANDS no index.html)',f:()=>{ const id=curSlot()&&curSlot().id; cprint(`${id}:${JSON.stringify(RIG_HANDS[id])},`); }},
   drax:{cheat:1,d:'drax N soma drax para testar o Arsenal',f:a=>{ const n=num(a[0],1000)|0; PROG.drax=Math.max(0,PROG.drax+n); saveProg(); cprint(`Drax: ${PROG.drax}`); }},
   knife:{cheat:1,d:'knife <tipo> [acabamento] [raro] cria e equipa uma faca',f:a=>{ const t=(a[0]||'').toLowerCase(); if(!KTYPES[t]){ cprint(`Tipos: ${KT_KEYS.join(', ')}`,'err'); return; } let s=(a[1]||'').toLowerCase(); if(s&&!SKINS[s]){ cprint(`Acabamentos: ${Object.keys(SKINS).join(', ')}`,'err'); return; } const r=s?Math.max(0,SKINS[s].r):4; const it=rollItem(r,null,t); if(s) it.s=s; if(a[2]==='raro'||a[2]==='1') it.rp=true; PROG.items.push(it); PROG.eq=it.uid; saveProg(); recomputeMods(); setKnifeModel(); hudAmmo(); cprint(`Equipada: ${itemName(it)} (${itemRar(it).name})${it.pas.length?' · '+it.pas.map(fmtPas).join(' · '):''}`); }},
+  mouse_suave:{d:'mouse_suave N suavização da mira em milissegundos (0 desliga; padrão 10)',f:a=>{ if(a[0]!=null){ CFG.mouseSmooth=clamp(num(a[0],10),0,40)/1000; try{ saveCfg(); }catch(e){} } cprint('Suavização da mira: '+Math.round((CFG.mouseSmooth===0?0:(CFG.mouseSmooth||0.010))*1000)+' ms · picos descartados: '+MLOOK.drop); }},
   cartas_todas:{cheat:1,d:'cartas_todas [N] dá todas as cartas no nível máximo e +N de cada carta infinita (padrão 10) — para testar o fim de jogo',f:a=>{ if(!needGame()) return; const n=clamp(num(a[0],10)|0,1,999); let k=0, inf=0;
     for(const c of CARDS.concat(STACK_CARDS)){ if(c.stack){ for(let i=0;i<n;i++) addCard(c.id); inf++; } else { for(let i=0;i<(c.lv?3:1);i++) addCard(c.id); k++; } }
     recomputeMods(); hudCards(); P.maxHp=maxHp(); P.hp=P.maxHp; try{ hudAmmo(); }catch(e){} cprint(`${k} cartas no nível máximo e +${n} de cada uma das ${inf} cartas infinitas`); }},

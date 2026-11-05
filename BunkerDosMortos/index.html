@@ -4941,7 +4941,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v6.8';
+const GAME_VERSION='v6.8.1';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -7045,6 +7045,7 @@ const BOXES=[
   {t:'bunker',name:'Caixa do Bunker',col:'#b45cff',red:0.01,art:0.4,knife:[0,0.36,0.4,0.19,0.05],arto:[0,0.36,0.4,0.19,0.05],desc:'Guardada no fundo do bunker. Nada comum aqui dentro.'},
   {t:'sombra',name:'Caixa Sombria',col:'#f4c03a',red:0.018,art:0.45,knife:[0,0,0.45,0.4,0.15],arto:[0,0,0.45,0.4,0.15],desc:'Selada com cera preta. Só itens raros para cima.'},
   {t:'oculta',name:'Caixa Oculta',col:'#ff1a2a',red:0.03,art:0.5,knife:[0,0,0,0.6,0.4],arto:[0,0,0,0.6,0.4],desc:'A mais rara. 3% de chance de um item Oculto vermelho.'},
+  {t:'vermelha',name:'Caixa Vermelha',col:'#ff1a2a',red:1,art:0,knife:[0,0,0,0,1],arto:[0,0,0,0,1],dev:1,desc:'Só do console de dev. Sempre sai um item Oculto vermelho.'},
 ];
 const BOX_BY={}; for(const b of BOXES) BOX_BY[b.t]=b;
 const pickW=w=>{ let r=Math.random()*w.reduce((a,b)=>a+b,0); for(let i=0;i<w.length;i++){ r-=w[i]; if(r<=0) return i; } return w.length-1; };
@@ -7683,6 +7684,7 @@ const CMDS={
   evento:{cheat:1,d:'evento apagao|neblina|furia|suprimento|portal|invertido força um evento do mapa',f:a=>{ if(!needGame()||!needHost()) return; const k=String(a[0]||''); if(!EVT_INFO[k]){ cprint('Eventos: '+Object.keys(EVT_INFO).join(', '),'err'); return; } if(EVT.k) evEnd(false); if(k==='suprimento'){ spawnPU(pick(['max','double','insta']),P.pos.x+rand(-2,2),P.pos.z+rand(-2,2)); evStart(k,2,true); } else { if(k==='portal'){ buildTargets(); const sp=portalSpot(); EVT.px=sp[0]; EVT.pz=sp[1]; } evStart(k,EVT_INFO[k][2],true); } cprint('Evento: '+k); }},
   rubis:{d:'rubis N adiciona rubis (teste da moeda paga)',f:a=>{ const n=clamp(num(a[0],1000)|0,-999999,999999); PROG.rubies=Math.max(0,(PROG.rubies|0)+n); saveProg(); renderDrax(); cprint(`Rubis: ${PROG.rubies}`); }},
   caixa:{d:'caixa sup|mil|bunker|sombra|oculta|aleatoria [N] adiciona caixas ao inventário',f:a=>{ const t=String(a[0]||'aleatoria'); const n=clamp(num(a[1],1)|0,1,50); if(t!=='aleatoria'&&!BOX_BY[t]){ cprint('Tipos: '+BOXES.map(b=>b.t).join(', ')+', aleatoria','err'); return; } for(let i=0;i<n;i++) giveBox(t==='aleatoria'?randomBoxType(G.round||10):t); renderDrax(); cprint(`${n} caixa(s) adicionada(s). Total: ${PROG.boxes.length}`); }},
+  caixa_vermelha:{d:'caixa_vermelha [N] adiciona caixas que sempre dão item vermelho (Oculto) · "caixa_vermelha abrir" já abre uma',f:a=>{ if(a[0]==='abrir'){ giveBox('vermelha'); renderDrax(); closeConsole(); if(document.pointerLockElement) document.exitPointerLock(); openBoxUI('vermelha'); return; } const n=clamp(num(a[0],1)|0,1,50); for(let i=0;i<n;i++) giveBox('vermelha'); renderDrax(); cprint(`${n} Caixa(s) Vermelha(s) no inventário. Abra no Arsenal › Caixas ou use "caixa_vermelha abrir".`); }},
   caixa_abrir:{d:'caixa_abrir <tipo> [vermelho] abre uma caixa agora; "vermelho" força um item Oculto para ver a animação',f:a=>{ const t=String(a[0]||'oculta'); if(!BOX_BY[t]){ cprint('Tipos: '+BOXES.map(b=>b.t).join(', '),'err'); return; } closeConsole(); if(document.pointerLockElement) document.exitPointerLock(); openBoxUI(t,a[1]==='vermelho'||a[1]==='1'||!PROG.boxes.some(x=>x.t===t)); }},
   artefato:{d:'artefato <coracao|brasa|mao|olho|relogio|pa|osso|botas|aleatorio> [raridade 0-5] cria um artefato',f:a=>{ const t=String(a[0]||'aleatorio'); if(t!=='aleatorio'&&!ART_T[t]){ cprint('Tipos: '+ART_KEYS.join(', '),'err'); return; } const r=clamp(num(a[1],4)|0,0,5); const x=rollArtifact(r,t==='aleatorio'?null:t); PROG.arts.push(x); saveProg(); cprint(`${artName(x)} (${RAR[r].name}): ${artLines(x).join(' · ')}`); }},
   faca_oculta:{d:'faca_oculta cria uma faca da raridade Oculto',f:()=>{ const it=rollItem(5); PROG.items.push(it); saveProg(); cprint(`${itemName(it)}: ${(it.pas||[]).map(fmtPas).join(' · ')}`); }},

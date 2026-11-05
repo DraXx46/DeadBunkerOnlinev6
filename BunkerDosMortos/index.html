@@ -1861,23 +1861,25 @@ function fittedProp(name,x,y,z,ry,width,height,depth,rx){
    One grid holds both maps: the bunker in rows 0-23, the asylum (hospital) in rows 24-56.
    Each map's meshes live in their own group; only the chosen map is visible. */
 const S=2, WH=3.2, ROOM_CEIL=3.85, EYE_HEIGHT=1.50, MW=48;
-const FARM_END=136, SANDBOX_START=139, SANDBOX_END=154, X1_START=157, X1_END=172, X1_X0=14, MH=X1_END+1;
+const FARM_END=136, SANDBOX_START=139, SANDBOX_END=154, X1_START=157, X1_END=172, X1_X0=14;
+// v7.7: o hospício saiu das linhas 24-56 e ganhou um bloco próprio no fim da grade (área externa + 3 andares + quintal)
+const HSPLIT=X1_END+1, HZ=HSPLIT+23, HEND=HZ+36, MH=HEND+1, BEND=56;
 const cx=c=>c*S+S/2;
 const grid=[], roomOf=[];
 for(let z=0;z<MH;z++){ grid.push(new Array(MW).fill('#')); roomOf.push(new Array(MW).fill(null)); }
 const inB=(x,z)=>x>=0&&z>=0&&x<MW&&z<MH;
 const at=(x,z)=>inB(x,z)?grid[z][x]:'#';
 function carve(x0,z0,x1,z1,ch,r){ for(let z=z0;z<=z1;z++) for(let x=x0;x<=x1;x++){ grid[z][x]=ch; if(r) roomOf[z][x]=r; } }
-const OUTR=new Set(['E','L','FY','FK']);
-const HX=3, HZ=27, HSPLIT=24;
-const mapAtRow=z=>z>=X1_START?'x1':z>=SANDBOX_START?'sandbox':z>=57?'farm':z>=HSPLIT?'hosp':'bunker';
+const OUTR=new Set(['E','L','FY','FK','HE']);
+const HX=3;
+const mapAtRow=z=>z>=HSPLIT?'hosp':z>=X1_START?'x1':z>=SANDBOX_START?'sandbox':z>=57?'farm':'bunker';
 const hx=x=>x+HX, hz=z=>z+HZ;
 const set=(x,z,c)=>{ grid[z][x]=c; };
 /* ---- per-cell floor and ceiling heights: the farm has a two-storey mansion, a cellar and a lab under the woods.
    Height changes only ever happen across walls/railings or along ramps (stairs), so the 2D flow field still holds. ---- */
 const FH=new Float32Array(MW*MH), CH=new Float32Array(MW*MH).fill(WH), RAMPC=new Int16Array(MW*MH).fill(-1);
 // Extra headroom only in the bunker and hospital; farm levels stay unchanged.
-CH.fill(ROOM_CEIL,0,57*MW);
+CH.fill(ROOM_CEIL,0,57*MW); CH.fill(ROOM_CEIL,HSPLIT*MW,MH*MW);
 const RAMPS=[];
 function addRamp(x0,z0,x1,z1,axis,h0,h1){ const r={x0,z0,x1,z1,axis,h0,h1,a0:axis==='z'?z0*S:x0*S,a1:axis==='z'?(z1+1)*S:(x1+1)*S}; RAMPS.push(r); const i=RAMPS.length-1; for(let z=z0;z<=z1;z++) for(let x=x0;x<=x1;x++) RAMPC[z*MW+x]=i; return r; }
 function rampH(r,x,z){ const a=r.axis==='z'?z:x; return r.h0+(r.h1-r.h0)*Math.min(1,Math.max(0,(a-r.a0)/(r.a1-r.a0))); }
@@ -1903,12 +1905,13 @@ setFH(X1_X0-1,X1_START,X1_X0+20,X1_END,0,9);
 const X1_CX=(X1_X0*S+(X1_X0+20)*S)/2, X1_CZ=((X1_START+1)*S+X1_END*S)/2;
 
 /* ---- bunker (post-war) ---- */
-const ROOMS={A:[1,4,10,10],B:[12,4,25,10],C:[1,12,25,19]};
+const ROOMS={A:[1,4,10,10],B:[12,4,25,10],C:[1,12,25,19],D:[3,21,14,30],F:[16,21,26,30],G:[3,32,26,44]};   // v7.7: paiol (D), enfermaria (F) e garagem subterrânea (G) — nas linhas que eram do hospício
 const EXT=[30,2,45,21];
 for(const k in ROOMS){ const r=ROOMS[k]; carve(r[0],r[1],r[2],r[3],'.',k); }
 carve(EXT[0],EXT[1],EXT[2],EXT[3],'.','E');
 carve(27,19,29,19,'.','E');
 carve(8,15,8,16,'#'); carve(18,15,18,16,'#');
+for(const [x,z] of [[9,36],[9,40],[20,36],[20,40]]) set(x,z,'#');   // pilares da garagem
 const crateCells=[[15,8],[21,5],[21,6],[8,8]];
 for(const [x,z] of crateCells) set(x,z,'c');
 // street obstacles: x = burnt truck / abandoned tank, s = sandbags, t = dead tree, # = broken wall chunk
@@ -1921,6 +1924,7 @@ set(9,11,'r'); set(10,11,'r');
 set(0,8,'v'); set(0,9,'v'); set(0,16,'v');
 const GSPAWN=[];
 for(const [x,z] of [[31,21],[37,21],[45,20],[45,11],[45,3],[33,9],[43,13],[31,3]]) GSPAWN.push({x:cx(x),z:cx(z),room:'E',map:'bunker'});
+for(const [x,z,room] of [[5,42,'G'],[14,43,'G'],[24,34,'G'],[12,28,'D'],[24,22,'F']]) GSPAWN.push({x:cx(x),z:cx(z),room,map:'bunker'});
 for(const [x,z] of [[5,142],[11,142],[19,142],[27,142],[35,142],[42,142],[5,151],[12,151],[20,151],[28,151],[36,151],[42,151]]) GSPAWN.push({x:cx(x),z:cx(z),room:'SB',map:'sandbox'});
 
 /* ---- asylum (abandoned psychiatric hospital) ---- */
@@ -1932,6 +1936,19 @@ for(const [x,z] of [[37,10],[38,10],[37,11],[38,11]]) set(hx(x),hz(z),'k');  // 
 for(let x=40;x<=41;x++) for(let z=15;z<=17;z++) set(hx(x),hz(z),'x');      // ambulance
 set(hx(34),hz(7),'t'); set(hx(42),hz(6),'t');
 for(const [x,z] of [[34,3],[41,3],[42,10],[35,15],[43,20],[37,21]]) GSPAWN.push({x:cx(hx(x)),z:cx(hz(z)),room:'L',map:'hosp'});
+/* v7.7 — área externa (onde o jogo começa), 2º e 3º andar, escadas */
+const HF2=4.2, HF3=8.4;
+carve(hx(-2),hz(23),hx(43),hz(35),'.','HE');
+carve(hx(1),hz(-10),hx(14),hz(-1),'.','H2A'); carve(hx(16),hz(-10),hx(30),hz(-1),'.','H2B');
+carve(hx(16),hz(-21),hx(30),hz(-12),'.','H3A'); carve(hx(1),hz(-21),hx(14),hz(-12),'.','H3B');
+carve(hx(1),hz(0),hx(2),hz(4),'.','H'); for(let z=1;z<=4;z++) set(hx(3),hz(z),'#');                 // escada 1: térreo → 2º andar
+carve(hx(29),hz(-11),hx(30),hz(-7),'.','H2B'); for(let z=-10;z<=-7;z++) set(hx(28),hz(z),'#');       // escada 2: 2º → 3º andar
+for(const [wx] of [[7],[19],[27]]) for(let z=23;z<=24;z++) for(let x=wx-1;x<=wx+1;x++) set(hx(x),hz(z),'o');   // canteiros cercados na frente das janelas do térreo
+setFH(hx(1),hz(-10),hx(30),hz(-1),HF2,HF2+ROOM_CEIL); setFH(hx(1),hz(-21),hx(30),hz(-12),HF3,HF3+ROOM_CEIL);
+addRamp(hx(1),hz(0),hx(2),hz(4),'z',HF2,0); setFH(hx(1),hz(0),hx(2),hz(4),0,HF2+ROOM_CEIL);
+addRamp(hx(29),hz(-11),hx(30),hz(-7),'z',HF3,HF2); setFH(hx(29),hz(-11),hx(30),hz(-7),HF2,HF3+ROOM_CEIL);
+for(const [x,z] of [[2,30],[9,33],[17,34],[27,34],[35,32],[41,29],[42,24],[33,26],[-1,27],[13,28]]) GSPAWN.push({x:cx(hx(x)),z:cx(hz(z)),room:'HE',map:'hosp'});
+for(const [x,z,room] of [[5,-8,'H2A'],[11,-3,'H2A'],[19,-9,'H2B'],[25,-2,'H2B'],[20,-19,'H3A'],[26,-14,'H3A'],[4,-19,'H3B'],[11,-14,'H3B'],[28,8,'I'],[20,16,'K']]) GSPAWN.push({x:cx(hx(x)),z:cx(hz(z)),room,map:'hosp'});
 
 /* ---- farm (Fazenda Santa Luzia): rows 57+ ----
    barn (spawn) at the south, a long front yard, the two-storey mansion ~60 m north,
@@ -2049,7 +2066,7 @@ function repairView(dt){
 }
 
 const windows=[];
-const WIN_DEF=[[5,3],[9,3],[18,3],[26,7],[6,20],[20,20],[26,16]].concat([[4,0],[10,0],[0,6],[19,0],[27,0],[0,16],[7,22],[19,22],[27,22]].map(([x,z])=>[hx(x),hz(z)])).concat(FWIN);
+const WIN_DEF=[[5,3],[9,3],[18,3],[26,7],[26,16],[2,24],[27,27],[2,38],[8,45],[17,45],[24,45]].concat([[0,6],[0,16],[7,22],[19,22],[27,22]].map(([x,z])=>[hx(x),hz(z)])).concat(FWIN);
 for(const [x,z] of WIN_DEF){
   let ix=0,iz=0; for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){ const r=inB(x+dx,z+dz)?roomOf[z+dz][x+dx]:null; if(at(x+dx,z+dz)==='.'&&r&&!OUTR.has(r)){ix=dx;iz=dz;} }
   set(x,z,'W');
@@ -2072,6 +2089,22 @@ const doors=[
 ];
 for(let i=4;i<doors.length;i++) doors[i].cells=doors[i].cells.map(([x,z])=>[hx(x),hz(z)]);
 for(const d of FDOORS) doors.push(d);
+const BDOORS=[
+  {cells:[[6,20],[7,20]],cost:1000,rooms:['C','D'],label:'o paiol',msg:'O paiol está aberto',sub:'Munição velha e caixotes do exército'},
+  {cells:[[21,20],[22,20]],cost:1000,rooms:['C','F'],label:'a enfermaria do bunker'},
+  {cells:[[15,25],[15,26]],cost:750,rooms:['D','F'],label:'a passagem lateral'},
+  {cells:[[8,31],[9,31]],cost:1250,rooms:['D','G'],label:'a garagem subterrânea',msg:'A garagem está aberta',sub:'Os caminhões ainda têm combustível'},
+  {cells:[[21,31],[22,31]],cost:1250,rooms:['F','G'],label:'a garagem subterrânea'},
+];
+for(const d of BDOORS) doors.push(d);
+const HDOORS=[
+  {cells:[[21,22],[22,22]],cost:750,noMult:true,rooms:['HE','K'],label:'a entrada do hospício',msg:'A entrada está aberta',sub:'Encontre os três geradores para religar a luz'},
+  {cells:[[1,-1],[2,-1]],cost:1000,rooms:['H','H2A'],label:'a escada do 2º andar',y:HF2,msg:'2º andar liberado',sub:'Enfermaria feminina'},
+  {cells:[[15,-6],[15,-5]],cost:1000,rooms:['H2A','H2B'],label:'a sala de terapia',y:HF2},
+  {cells:[[29,-12],[30,-12]],cost:1250,rooms:['H2B','H3A'],label:'a escada do 3º andar',y:HF3,msg:'3º andar liberado',sub:'Arquivo e diretoria'},
+  {cells:[[15,-17],[15,-16]],cost:1000,rooms:['H3A','H3B'],label:'a sala do diretor',y:HF3},
+];
+for(const d of HDOORS){ d.cells=d.cells.map(([x,z])=>[hx(x),hz(z)]); doors.push(d); }
 for(const d of doors){ d.map=mapAtRow(d.cells[0][1]); for(const [x,z] of d.cells) set(x,z,'D'); }
 // V5: exploration should feel like a sequence of hard choices, not a quick shopping tour.
 // Standard routes cost 2.35× their old value; objective gates cost 3×.
@@ -2080,7 +2113,7 @@ doors[3].objectiveGate=true;                 // Bunker: street gate
  doors[8].objectiveGate=true; doors[9].objectiveGate=true; // Hospício: courtyard gates
 FDOORS[6].objectiveGate=true;                // Fazenda: storm-cellar hatch
 FDOORS[7].needsSurgeClear=true;              // Tunnel only opens after the hatch horde is cleared
-for(const d of doors) if(d.cost>0){ const mult=d.objectiveGate?3.0:2.35; d.cost=Math.ceil((d.cost*mult)/50)*50; }
+for(const d of doors) if(d.cost>0&&!d.noMult){ const mult=d.objectiveGate?3.0:2.35; d.cost=Math.ceil((d.cost*mult)/50)*50; }
 
 const indoor=new Uint8Array(MW*MH);
 for(let z=0;z<MH;z++) for(let x=0;x<MW;x++){ const r=roomOf[z][x], c=grid[z][x]; if((r&&!OUTR.has(r))||c==='W'||c==='r') indoor[z*MW+x]=1; }
@@ -2097,7 +2130,7 @@ const FR0=r=>cx(r+57);
 const MAPS={
   bunker:{name:'Bunker dos Mortos',start:[cx(5),cx(7)+0.5],start2:[cx(6),cx(8)],room:'A',menu:{x:cx(5),z:cx(7)+0.5,yaw:0.2},fog:0x07090d,fogD:0.038,bg:0x05070c,sky:'bunker'},
   farm:{name:'Fazenda Santa Luzia',start:[cx(23),FR0(70)],start2:[cx(25),FR0(70)],room:'FB',menu:{x:cx(23.5),z:FR0(52),yaw:0.0},fog:0x0b0e12,fogD:0.022,bg:0x06080b,sky:'farm'},
-  hosp:{name:'Hospício Vale Negro',start:[cx(hx(5)),cx(hz(5))],start2:[cx(hx(6)),cx(hz(6))],room:'H',menu:{x:cx(hx(7)),z:cx(hz(9)),yaw:0.0},fog:0x090c0a,fogD:0.052,bg:0x040605,sky:'hosp'},
+  hosp:{name:'Hospício Vale Negro',start:[cx(hx(21.5)),cx(hz(29))],start2:[cx(hx(22.5)),cx(hz(30))],room:'HE',menu:{x:cx(hx(21.5)),z:cx(hz(33)),yaw:0.0},fog:0x090c0a,fogD:0.052,bg:0x040605,sky:'hosp'},
   x1:{name:'Arena X1',start:[cx(X1_X0+1),cx(164.5)],start2:[cx(X1_X0+18),cx(164.5)],room:'X1',menu:{x:cx(X1_X0+1),z:cx(164.5),yaw:-Math.PI/2},fog:0x0a0c10,fogD:0.012,bg:0x07090c,sky:'bunker'},
   sandbox:{name:'Sandbox de Testes',start:[cx(23),cx(146)],start2:[cx(24),cx(146)],room:'SB',menu:{x:cx(23),z:cx(146),yaw:0.0},fog:0x101820,fogD:0.009,bg:0x080d14,sky:'bunker'},
 };
@@ -2421,7 +2454,7 @@ function buildWorld(){
 function setMap(k){
   if(k==='sandbox'&&!CHEAT.sandboxAccess) k='bunker';
   if(!MAPS[k]) k='bunker';
-  CUR=k; const m=MAPS[k]; FLOORS=k==='farm';
+  CUR=k; const m=MAPS[k]; FLOORS=k==='farm'||k==='hosp';
   for(const key in MAPG){ const on=key===k; MAPG[key].visible=on; if(on){ if(MAPG[key].parent!==scene) scene.add(MAPG[key]); } else if(MAPG[key].parent===scene){ MAPG[key].updateMatrixWorld(true); scene.remove(MAPG[key]); } }
   if(typeof ZC!=='undefined') ZC.map=null;
   scene.fog.color.setHex(m.fog); scene.fog.density=m.fogD; scene.background.setHex(m.bg);
@@ -2564,7 +2597,7 @@ function propAt(x,z,nx,nz,lat,y,kind){
   return g;
 }
 function decorWalls(map){
-  const D=decTexs(); ROOT=MAPG[map]; DROOT=new THREE.Group(); const hosp=map==='hosp'; const z0=hosp?HSPLIT:0, z1=hosp?FZ0-1:HSPLIT-1;
+  const D=decTexs(); ROOT=MAPG[map]; DROOT=new THREE.Group(); const hosp=map==='hosp'; const z0=hosp?HSPLIT:0, z1=hosp?HEND:BEND;
   for(const wb of wallBuys){ const x=Math.round((wb.fx-wb.nx*S/2-S/2)/S), z=Math.round((wb.fz-wb.nz*S/2-S/2)/S); USED_FACE.add(faceKey(x,z,wb.nx,wb.nz)); }
   const faces=[];
   for(let z=z0;z<=z1;z++) for(let x=0;x<MW;x++){ if(grid[z][x]!=='#') continue;
@@ -2709,10 +2742,10 @@ function updateLights(dt){
       let on;
       if(G.power) on=Math.sin(l.ph*0.8)>0.985?(Math.random()<0.5?0.15:1):1;
       else { const n=Math.sin(l.ph*2.3+l.room.charCodeAt(0))*Math.sin(l.ph*0.71); on=n>0.55?(Math.random()<0.35?0:0.9):(Math.random()<0.012?0.8:0.06); }
-      const base=G.power?1.15:0.7; l.L.intensity=base*on; l.bulb.material.color.setScalar(0.12+0.88*on);
+      const base=G.power?1.15:(l.map==='hosp'?0.35:0.7); l.L.intensity=base*on; l.bulb.material.color.setScalar(0.12+0.88*on);
       if(l.swing) l.swing.rotation.x=Math.sin(l.ph*1.3)*0.12;
       continue; }
-    if(l.kind==='surg'){ const base=G.power?1.6:0.55; let f=1; if(!G.power&&Math.sin(l.ph*7)*Math.sin(l.ph*1.9)>0.8) f=0.3; l.L.intensity=base*f; l.bulb.material.color.setScalar(0.3+0.7*f*(base/1.6)); continue; }
+    if(l.kind==='surg'){ const base=G.power?1.6:(l.map==='hosp'?0.08:0.55); let f=1; if(!G.power&&Math.sin(l.ph*7)*Math.sin(l.ph*1.9)>0.8) f=0.3; l.L.intensity=base*f; l.bulb.material.color.setScalar(0.3+0.7*f*(base/1.6)); continue; }
     let base= G.power ? 1.25 : (l.room==='C'?0.42:0.85);
     let f=1;
     if(!G.power){ const n=Math.sin(l.ph*13)*Math.sin(l.ph*3.7); if(n>0.82) f=0.25; }
@@ -2885,11 +2918,12 @@ function updateCity(dt){
 function buildBunker(){
   // floors
   const wood=new THREE.Mesh(new THREE.PlaneGeometry(28*S,24*S),M.floor); wood.rotation.x=-Math.PI/2; wood.position.set(14*S,0,12*S); ROOT.add(wood);
+  { const cf=M.floor.clone(); cf.map=M.floor.map.clone(); cf.map.needsUpdate=true; cf.map.repeat.set(14,13); const nf=new THREE.Mesh(new THREE.PlaneGeometry(28*S,26*S),cf); nf.rotation.x=-Math.PI/2; nf.position.set(14*S,0,(21+13)*S); ROOT.add(nf); }
   const mud=new THREE.Mesh(new THREE.PlaneGeometry((MW-27)*S+40,24*S+40),M.mud); mud.material.map.repeat.set(14,16); mud.rotation.x=-Math.PI/2; mud.position.set(27*S+((MW-27)*S+40)/2,0.002,12*S); ROOT.add(mud);
   const west=new THREE.Mesh(new THREE.PlaneGeometry(140,140),M.mud.clone()); west.material.map=M.mud.map.clone(); west.material.map.needsUpdate=true; west.material.map.repeat.set(18,18); west.rotation.x=-Math.PI/2; west.position.set(-70,0.002,20); ROOT.add(west);
   const dirtGeo=new THREE.PlaneGeometry(S,S);
-  for(let z=0;z<24;z++) for(let x=0;x<28;x++){ const c=grid[z][x]; if(c==='o'||c==='W'){ const m=new THREE.Mesh(dirtGeo,M.dirt); m.rotation.x=-Math.PI/2; m.position.set(cx(x),0.01,cx(z)); ROOT.add(m);} }
-  buildWalls(0,HSPLIT-1,M.wallV,M.brick,false);
+  for(let z=0;z<=BEND;z++) for(let x=0;x<28;x++){ const c=grid[z][x]; if(c==='o'||c==='W'){ const m=new THREE.Mesh(dirtGeo,M.dirt); m.rotation.x=-Math.PI/2; m.position.set(cx(x),0.01,cx(z)); ROOT.add(m);} }
+  buildWalls(0,BEND,M.wallV,M.brick,false);
   ceilingFor(ROOMS,M.ceil,true);
   for(const d of doors) if(d.map==='bunker'&&!d.gate) for(const [x,z] of d.cells){ const c=new THREE.Mesh(new THREE.PlaneGeometry(S,S),M.ceil); c.rotation.x=Math.PI/2; c.position.set(cx(x),ROOM_CEIL,cx(z)); ROOT.add(c); }
   { const c=new THREE.Mesh(new THREE.BoxGeometry(S,0.4,S),M.wall); c.position.set(cx(26),WH+0.2,cx(19)); ROOT.add(c); }
@@ -2929,7 +2963,29 @@ function buildBunker(){
   for(const [x,z] of [[5,7],[18,8],[13,16],[22,15]]) floorDecal(cx(x)+rand(-.5,.5),cx(z)+rand(-.5,.5),rand(1.2,2),M.smear);
   // lights
   for(const [x,z,room] of [[5,7,'A'],[15,7,'B'],[22,7,'B'],[5,15,'C'],[13,14,'C'],[21,17,'C']]) hangingBulb(cx(x),cx(z),room,'bunker');
-  buildStreet(); buildWestRuins(); buildCity();
+  buildStreet(); buildWestRuins(); buildCity(); try{ buildBunkerNew(); }catch(e){ console.warn("[Bunker] alas novas",e); }
+}
+/* v7.7: alas novas do bunker — paiol, enfermaria e garagem */
+function buildBunkerNew(){
+  // paiol: prateleiras de munição, caixotes, mesa de mapas
+  for(const [x,z] of [[4,21],[8,21],[12,21]]){ mkShelf(cx(x),cx(z)-0.45,0,true); propCell[z*MW+x]=1; addPropBox(cx(x),cx(z)-0.45,0.8,0.25); }
+  for(const [x,z] of [[4,27],[5,29],[12,29],[13,24]]){ const g=G3(cx(x),0,cx(z),rand(-.3,.3)); bx(g,1.2,0.75,0.9,M.crate,0,0.375,0); bx(g,1.0,0.6,0.8,M.crate,rand(-.15,.15),1.05,rand(-.1,.1),0,rand(-.5,.5),0); bake(g); cellProp(x,z,0.7,0.55); }
+  mkTable(cx(9),cx(26),0.2,true); cellProp(9,26,0.9,0.6); mkChair(cx(9)+0.2,cx(27)-0.3,Math.PI); mkDrums(cx(3)+0.4,cx(24),3); addPropBox(cx(3)+0.4,cx(24),0.65,0.65);
+  for(const [x,z] of [[7,23],[11,27],[5,25]]){ floorDecal(cx(x),cx(z),rand(1.2,2.0)); }
+  // enfermaria do bunker: macas do exército, soro, armário
+  for(const [x,z,c] of [[17,22,'sheet'],[20,22,'straps'],[24,22,null],[18,29,'body'],[23,29,'sheet']]){ mkBed(cx(x),cx(z),z<25?0:Math.PI,c,200+x); cellProp(x,z,0.5,1.0); }
+  for(const [x,z] of [[18.5,22],[21.5,22],[19.5,29]]) mkIV(cx(x),cx(z)-0.4);
+  mkCabinet(cx(26)+0.3,cx(25),-Math.PI/2); propCell[25*MW+26]=1; addPropBox(cx(26)+0.3,cx(25),0.32,0.3); mkCurtain(cx(22),cx(26),0,3.0);
+  // garagem: caminhões, tambores, sacos de areia e marcas no chão
+  const truck=(x,z,ry)=>{ const g=G3(x,0,z,ry); bx(g,2.3,1.2,5.2,M.burnt,0,1.0,0.4); bx(g,2.2,1.4,1.9,M.rust,0,1.4,-2.6); bx(g,2.0,0.6,0.06,new THREE.MeshPhongMaterial({color:0x101418,shininess:90}),0,1.75,-3.56); bx(g,2.36,1.5,4.9,M.cloth||M.burnt,0,2.3,0.6);
+    for(const sx of [-1,1]) for(const sz of [-2.4,0.2,2.0]) cy(g,0.45,0.45,0.32,M.rubber,sx*1.1,0.45,sz,0,0,Math.PI/2,14); bake(g); };
+  truck(cx(5)+1,cx(36),0); addPropBox(cx(5)+1,cx(36),1.25,3.6); truck(cx(15),cx(41)+1,Math.PI/2+0.05); addPropBox(cx(15),cx(41)+1,3.6,1.25);
+  for(const [x,z] of [[24,33],[12,34],[25,43],[4,43]]){ mkDrums(cx(x),cx(z),3); addPropBox(cx(x),cx(z),0.65,0.65); }
+  for(const [x,z,r] of [[14,37,0],[22,38,Math.PI/2]]){ mkSandPile(cx(x),cx(z),r,2); addPropBox(cx(x),cx(z),Math.abs(Math.sin(r))>0.5?0.45:1.0,Math.abs(Math.sin(r))>0.5?1.0:0.45); }
+  for(let k=0;k<6;k++){ const l=new THREE.Mesh(new THREE.PlaneGeometry(0.15,4.6),new THREE.MeshBasicMaterial({color:0x8a7a30})); l.rotation.x=-Math.PI/2; l.position.set(cx(4)+k*7.6,0.012,cx(43)); ROOT.add(l); }
+  for(const [x,z] of [[6,33],[17,35],[23,40],[11,43]]) floorDecal(cx(x),cx(z),rand(1.4,2.6));
+  writing(2,29,1,0,'PAIOL — NÃO FUME',1.8,2.6,60); writing(27,22,-1,0,'TRIAGEM',1.9,2.0,72); writing(14,45,0,-1,'ELES VÊM PELO TÚNEL',2.0,3.0,56); writing(27,40,-1,0,'GARAGEM 2',1.9,2.2,70);
+  for(const [x,z,r] of [[8,25,'D'],[11,29,'D'],[19,25,'F'],[24,27,'F'],[7,35,'G'],[15,34,'G'],[23,36,'G'],[7,42,'G'],[18,43,'G']]) hangingBulb(cx(x),cx(z),r,'bunker');
 }
 function buildStreet(){
   // burnt truck
@@ -3000,23 +3056,23 @@ function buildHospital(){
   // floors
   const fl=new THREE.Mesh(new THREE.PlaneGeometry(33*S,27*S),M.hfloor); fl.rotation.x=-Math.PI/2; fl.position.set(hx(-1)*S+33*S/2,0,hz(-2)*S+27*S/2); ROOT.add(fl);
   const gr=new THREE.Mesh(new THREE.PlaneGeometry(16*S,28*S),M.grass); gr.rotation.x=-Math.PI/2; gr.position.set(hx(31)*S+16*S/2,0.003,hz(-3)*S+28*S/2); ROOT.add(gr);
-  const outer=new THREE.Mesh(new THREE.PlaneGeometry(240,240),M.grass.clone()); outer.material.map=M.grass.map.clone(); outer.material.map.needsUpdate=true; outer.material.map.repeat.set(30,30); outer.rotation.x=-Math.PI/2; outer.position.set(48,-0.02,84); ROOT.add(outer);
+  const outer=new THREE.Mesh(new THREE.PlaneGeometry(240,240),M.grass.clone()); outer.material.map=M.grass.map.clone(); outer.material.map.needsUpdate=true; outer.material.map.repeat.set(30,30); outer.rotation.x=-Math.PI/2; outer.position.set(48,-0.03,cx(hz(6))); ROOT.add(outer);
   { const pt=new THREE.Mesh(new THREE.PlaneGeometry(2.6,21*S),M.path); pt.material.map.repeat.set(1,16); pt.rotation.x=-Math.PI/2; pt.position.set(cx(hx(36)),0.008,cx(hz(11))); ROOT.add(pt); const pt2=new THREE.Mesh(new THREE.PlaneGeometry(12*S,2.6),M.path.clone()); pt2.material.map=M.path.map.clone(); pt2.material.map.needsUpdate=true; pt2.material.map.repeat.set(10,1); pt2.rotation.x=-Math.PI/2; pt2.position.set(cx(hx(37)),0.009,cx(hz(18.5))); ROOT.add(pt2); }
   const dirtGeo=new THREE.PlaneGeometry(S,S);
-  for(let z=HSPLIT;z<FZ0;z++) for(let x=0;x<MW;x++){ const c=grid[z][x]; if(c==='o'||c==='W'){ const m=new THREE.Mesh(dirtGeo,M.dirt); m.rotation.x=-Math.PI/2; m.position.set(cx(x),0.01,cx(z)); ROOT.add(m);} }
-  buildWalls(HSPLIT,FZ0-1,M.hwallV,M.facade,true);
+  for(let z=HSPLIT;z<=HEND;z++) for(let x=0;x<MW;x++){ const c=grid[z][x]; if(c==='o'||c==='W'){ const m=new THREE.Mesh(dirtGeo,M.dirt); m.rotation.x=-Math.PI/2; m.position.set(cx(x),0.01,cx(z)); ROOT.add(m);} }
+  buildWalls(hz(0),HEND,M.hwallV,M.facade,true);
   // padded isolation booths: cover the partition walls with quilted pads
   for(const x of [18,22,26]) for(let z=1;z<=3;z++){ const [px,pz]=H(x,z); for(const sx of [-1,1]){ const p=new THREE.Mesh(new THREE.PlaneGeometry(S,WH),M.pad); p.position.set(px+sx*(S/2+0.01),WH/2,pz); p.rotation.y=sx*Math.PI/2; ROOT.add(p); } }
   for(const x of [15,19,23,27]){ const w=x===27?4:3; const [px]=H(x+(w-1)/2,0); const p=new THREE.Mesh(new THREE.PlaneGeometry(w*S,WH),M.pad); p.position.set(px,WH/2,cx(hz(0))+S/2+0.012); ROOT.add(p); }
-  ceilingFor(Object.fromEntries(Object.entries(HROOMS).map(([k,r])=>[k,[hx(r[0]),hz(r[1]),hx(r[2]),hz(r[3])]])),M.hceil,false);
-  for(const d of doors) if(d.map==='hosp'&&!d.gate) for(const [x,z] of d.cells){ const c=new THREE.Mesh(new THREE.PlaneGeometry(S,S),M.hceil); c.rotation.x=Math.PI/2; c.position.set(cx(x),ROOM_CEIL,cx(z)); ROOT.add(c); }
+  ceilingFor(Object.fromEntries(Object.entries(Object.assign({},HROOMS,{H:[4,1,13,10],H_:[1,5,3,10]})).map(([k,r])=>[k,[hx(r[0]),hz(r[1]),hx(r[2]),hz(r[3])]])),M.hceil,false);
+  for(const d of doors) if(d.map==='hosp'&&!d.gate) for(const [x,z] of d.cells){ const c=new THREE.Mesh(new THREE.PlaneGeometry(S,S),M.hceil); c.rotation.x=Math.PI/2; c.position.set(cx(x),(d.y||0)+ROOM_CEIL,cx(z)); ROOT.add(c); }
   for(const d of doors) if(d.map==='hosp'&&d.gate) for(const [x,z] of d.cells){ const c=new THREE.Mesh(new THREE.BoxGeometry(S,0.5,S),M.hwall); c.position.set(cx(x),WH+0.25,cx(z)); ROOT.add(c); }
   // ---- H: the ward
-  const beds=[[3,3,'sheet'],[6,3,'straps'],[9,3,'body'],[12,3,null],[2,8,'body'],[4,8,'sheet'],[10,8,'sheet'],[12,8,'straps']];
+  const beds=[[5,3,'sheet'],[6.9,3,'straps'],[9,3,'body'],[12,3,null],[2,8,'body'],[4,8,'sheet'],[10,8,'sheet'],[12,8,'straps']];
   beds.forEach(([x,z,c],i)=>{ const [px,pz]=H(x,z); mkBed(px+rand(-.1,.1),pz,(z<5?0:Math.PI)+rand(-.08,.08),c,31+i); cellProp(hx(x),hz(z),0.5,1.0); });
   for(const [x,z] of [[4.5,3],[7.5,3],[10.5,8],[3,8]]){ const [px,pz]=H(x,z); mkIV(px,pz-0.4); }
   { const [px,pz]=H(7.5,3); mkCurtain(px,pz,Math.PI/2,1.9); const [qx,qz]=H(11,8); mkCurtain(qx-0.95,qz,Math.PI/2,1.9); }
-  { const [px,pz]=H(8,6); mkWheelchair(px,pz,0.8,true); const [qx,qz]=H(2,5); mkChair(qx,qz,0.4,false); }
+  { const [px,pz]=H(8,6); mkWheelchair(px,pz,0.8,true); const [qx,qz]=H(4,6); mkChair(qx,qz,0.4,false); }
   writing(hx(14),hz(8),-1,0,'ELES NÃO ESTÃO MORTOS',1.8,3.0,60); writing(hx(0),hz(5),1,0,'NÃO HÁ CURA',2.3,2.2,70); writing(hx(7),hz(0),0,1,'SOCORRO',1.8,2.0,72);
   wallDecal(hx(13),hz(0),0,1,1.2,0.7,0.7,M.hand); wallDecal(hx(0),hz(3),1,0,1.0,0.7,0.7,M.hand);
   for(const [x,z] of [[5,6],[9,9],[3,5]]){ const [px,pz]=H(x,z); floorDecal(px,pz,rand(1.4,2.4)); }
@@ -3052,19 +3108,118 @@ function buildHospital(){
   mkTree(...H(34,7)); mkTree(...H(42,6));
   for(const [x,z,r] of [[33,12,Math.PI/2],[43,13,-Math.PI/2],[39,4,0]]){ const [px,pz]=H(x,z); mkBench(px,pz,r); addPropBox(px,pz,Math.abs(Math.sin(r))>0.5?0.3:0.9,Math.abs(Math.sin(r))>0.5?0.9:0.3); }
   { const [px,pz]=H(34,19); mkWheelchair(px,pz,1.0,true); const [qx,qz]=H(42,21); mkGurney(qx,qz,0.6,null); }
-  for(const s of GSPAWN) if(s.map==='hosp'){ const g=G3(s.x+rand(-.3,.3),0,s.z+rand(-.3,.3),rand(0,3)); const mound=sp(g,0.7,M.dirt,0,0,0.9,1,0.25,1.6); const v=bx(g,0.1,1.0,0.08,M.stone,0,0.45,-0.1,rand(-.2,.2),0,rand(-.2,.2)); bx(g,0.5,0.6,0.12,M.stone,0,0.3,-0.25,rand(-.3,.1),0,rand(-.1,.1)); bake(g); }
+  for(const s of GSPAWN) if(s.map==='hosp'&&(s.room==='L'||s.room==='HE')){ const g=G3(s.x+rand(-.3,.3),0,s.z+rand(-.3,.3),rand(0,3)); const mound=sp(g,0.7,M.dirt,0,0,0.9,1,0.25,1.6); const v=bx(g,0.1,1.0,0.08,M.stone,0,0.45,-0.1,rand(-.2,.2),0,rand(-.2,.2)); bx(g,0.5,0.6,0.12,M.stone,0,0.3,-0.25,rand(-.3,.1),0,rand(-.1,.1)); bake(g); }
   // perimeter fence on the courtyard walls
   { const g=G3(); for(let z=hz(0);z<=hz(22);z++){ for(let k=0;k<4;k++) cy(g,0.018,0.018,1.3,M.iron,cx(hx(44)),3.6+0.65,z*S+k*0.5,0,0,0,4); } for(let x=hx(32);x<=hx(44);x++) for(const zz of [hz(0),hz(22)]) for(let k=0;k<4;k++) cy(g,0.018,0.018,1.3,M.iron,x*S+k*0.5,3.6+0.65,cx(zz),0,0,0,4); bake(g); }
   // the rest of the asylum looming beyond the walls
   { const dark=new THREE.MeshBasicMaterial({color:0x0c0f0d,fog:false}); const win=new THREE.MeshBasicMaterial({color:0x4a3a1a,fog:false}); const g=G3();
-    bx(g,40,16,12,dark,cx(hx(22)),8,cx(hz(-9))); bx(g,8,30,8,dark,cx(hx(14)),15,cx(hz(-12))); mk(g,new THREE.ConeGeometry(6.2,9,4),dark,cx(hx(14)),34.5,cx(hz(-12)),0,Math.PI/4,0); bx(g,1.2,1.8,0.2,win,cx(hx(14)),22,cx(hz(-12))+4.05);
-    bx(g,14,20,40,dark,cx(hx(52)),10,cx(hz(10))); bx(g,40,14,10,dark,cx(hx(20)),7,cx(hz(32))); bake(g); }
+    bx(g,40,16,12,dark,cx(hx(22)),8,cx(hz(-31))); bx(g,8,30,8,dark,cx(hx(14)),15,cx(hz(-34))); mk(g,new THREE.ConeGeometry(6.2,9,4),dark,cx(hx(14)),34.5,cx(hz(-34)),0,Math.PI/4,0); bx(g,1.2,1.8,0.2,win,cx(hx(14)),22,cx(hz(-34))+4.05);
+    bx(g,14,20,40,dark,cx(hx(52)),10,cx(hz(10))); bx(g,40,14,10,dark,cx(hx(20)),7,cx(hz(44))); bake(g); }
+  try{ buildHospNew(); }catch(e){ console.warn('[Bunker] hospício novo',e); }
   const fb=H(42.4,2.2); fireBarrel(fb[0],fb[1],'hosp'); fires[fires.length-1].base=1.1;
   streetLamp(...H(35,13),'hosp',0xc8e0d0);
   writing(hx(44),hz(8),-1,0,'NINGUÉM SAI',2.0,2.6,70);
   for(let i=0;i<40;i++){ const [px,pz]=H(rand(32.5,43.5),rand(1.5,21.5)); const l=new THREE.Mesh(new THREE.PlaneGeometry(0.12,0.08),new THREE.MeshLambertMaterial({color:pick([0x3a2a12,0x4a3a1a,0x2a2010]),side:THREE.DoubleSide})); l.rotation.set(-Math.PI/2,0,rand(0,6)); l.position.set(px,0.02,pz); ROOT.add(l); }
 }
 
+/* ================= HOSPÍCIO v7.7: área externa, 2º e 3º andar ================= */
+function hFluo(x,y,z,room,ry,broken){ const g=new THREE.Group(); g.position.set(x,y-0.06,z); g.rotation.y=ry||0; if(broken){ g.rotation.z=0.5; g.position.y=y-0.55; }
+  const house=new THREE.Mesh(new THREE.BoxGeometry(1.35,0.08,0.28),M.paintIron); g.add(house); const tubeM=M.glowFluo.clone(); for(const o of [-0.07,0.07]){ const t=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,1.2,6),tubeM); t.rotation.z=Math.PI/2; t.position.set(0,-0.05,o); g.add(t); }
+  MAPG.hosp.add(g); const L=new THREE.PointLight(0xd6ecff,1,16,1.7); L.position.set(x,y-0.35,z); MAPG.hosp.add(L); lamps.push({L,bulb:{material:tubeM},room,ph:Math.random()*100,kind:'fluo',map:'hosp',swing:broken?g:null}); }
+function hFloorDecor(fy,fn){ const oldB=BATCH, oldR=ROOT; const grp=new THREE.Group(); grp.position.y=fy; MAPG.hosp.add(grp); BATCH=new Batch(); ROOT=grp; try{ fn(); }catch(e){ console.warn('[Bunker] decoração do andar',e); } BATCH.flush(grp); BATCH=oldB; ROOT=oldR; }
+function hCabinet(g,x,z,ry){ const c=G3(x,0,z,ry); bx(c,0.5,1.35,0.6,M.paintIron,0,0.675,0); for(let i=0;i<3;i++){ bx(c,0.44,0.36,0.03,M.chrome,0,0.25+i*0.43,0.31); bx(c,0.14,0.03,0.04,M.iron,0,0.36+i*0.43,0.33); } g.add(c); }
+function buildHospNew(){
+  const H=(x,z)=>[cx(hx(x)),cx(hz(z))];
+  // ---- paredes, pisos e tetos dos andares de cima e das escadas (cada face tão alta quanto o lado que ela fecha)
+  const q=new QB(), z0=HSPLIT, z1=hz(4), wv=M.hwallV;
+  for(let z=z0;z<=z1;z++) for(let x=0;x<MW;x++){ const c=grid[z][x], i=z*MW+x, ramp=RAMPC[i];
+    if(c==='#'){ for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx=x+dx, nz=z+dz; if(!inB(nx,nz)) continue; const nc=grid[nz][nx]; if(nc==='#') continue; const ni=nz*MW+nx;
+        const nR=RAMPC[ni]>=0?RAMPS[RAMPC[ni]]:null; const upper=nz<hz(0); if(!upper&&!nR) continue;
+        const top=nR?Math.max(nR.h0,nR.h1)+ROOM_CEIL:CH[ni]; const bot=upper?(nR?Math.min(nR.h0,nR.h1):FH[ni])-0.02:ROOM_CEIL-0.01;
+        const h=((x*73856093)^(z*19349663))>>>0; qWall(q,wv[h%wv.length],x,z,dx,dz,bot,top); } continue; }
+    if(z>=hz(0)&&ramp<0) continue;
+    if(ramp>=0) qSteps(q,M.hfloor,RAMPS[ramp],x,z); else qFlat(q,M.hfloor,x,z,FH[i],true);
+    if(indoor[i]) qFlat(q,M.hceil,x,z,CH[i],false); }
+  q.flush(MAPG.hosp);
+  // vergas acima das portas dos andares
+  for(const d of doors) if(d.map==='hosp'&&(d.y||0)>0) for(const [x,z] of d.cells){ const m=new THREE.Mesh(new THREE.BoxGeometry(S,ROOM_CEIL-WH,S),M.hwall); m.position.set(cx(x),d.y+(WH+ROOM_CEIL)/2,cx(z)); MAPG.hosp.add(m); }
+  // ---- casca de fora: o prédio de 3 andares atrás da ala térrea, telhado da ala térrea
+  { const fac=M.facade, g=G3(); const X0=hx(0)*S, X1=(hx(31)+1)*S, Zn=hz(-22)*S, Zs=(hz(0)+1)*S, top=HF3+ROOM_CEIL+0.6;
+    bx(g,X1-X0,top-ROOM_CEIL,Zs-Zn,fac,(X0+X1)/2,(top+ROOM_CEIL)/2,(Zn+Zs)/2);
+    bx(g,3*S+0.02,HF2+ROOM_CEIL+0.3-ROOM_CEIL,4*S,fac,hx(0)*S+1.5*S,ROOM_CEIL+(HF2+0.3)/2,(hz(1))*S+2*S);
+    bx(g,X1-X0+0.6,0.3,(hz(22)+1)*S-hz(5)*S,M.hwall,(X0+X1)/2,ROOM_CEIL+0.2,(hz(5)*S+(hz(22)+1)*S)/2);
+    bx(g,X1-hx(4)*S,0.3,hz(5)*S-Zs,M.hwall,(hx(4)*S+X1)/2,ROOM_CEIL+0.2,(Zs+hz(5)*S)/2);
+    bx(g,X1-X0+0.8,0.5,Zs-Zn+0.8,M.hwall,(X0+X1)/2,top+0.25,(Zn+Zs)/2);
+    bake(g);
+    const winM=new THREE.MeshBasicMaterial({color:0x2a2412}), litM=new THREE.MeshBasicMaterial({color:0x6a5a2a});
+    const wg=new THREE.Group(); for(const fy of [HF2+1.6,HF3+1.6]) for(let k=0;k<12;k++){ const x=X0+3+k*((X1-X0-6)/11); const w=new THREE.Mesh(new THREE.PlaneGeometry(1.1,1.7),Math.random()<0.15?litM:winM); w.position.set(x,fy,Zs+0.02); wg.add(w); const w2=w.clone(); w2.position.set(x,fy,Zn-0.02); w2.rotation.y=Math.PI; wg.add(w2); }
+    for(const fy of [HF2+1.6,HF3+1.6]) for(let k=0;k<8;k++){ const z=Zn+3+k*((Zs-Zn-6)/7); for(const [x,ry] of [[X1+0.02,Math.PI/2],[X0-0.02,-Math.PI/2]]){ const w=new THREE.Mesh(new THREE.PlaneGeometry(1.1,1.7),Math.random()<0.12?litM:winM); w.position.set(x,fy,z); w.rotation.y=ry; wg.add(w); } }
+    MAPG.hosp.add(wg); }
+  // ---- área externa: chão, estacionamento, caminho até a entrada, letreiro, carros, postes
+  { const asph=tex(256,256,(c,w,h)=>{ c.fillStyle='#24262a'; c.fillRect(0,0,w,h); speckle(c,w,h,9000,['#1a1b1e','#303236','#2a2c30','#3a3c40'],0.5,1.6); for(let i=0;i<5;i++) crackPath(c,rand(0,w),rand(0,h),rand(8,16),1.4,'rgba(10,10,10,.7)'); });
+    asph.wrapS=asph.wrapT=THREE.RepeatWrapping; const A=new THREE.MeshLambertMaterial({map:asph});
+    const plane=(x0,z0,x1,z1,mat,y,rep)=>{ const w=(x1-x0+1)*S, d=(z1-z0+1)*S; const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat); if(rep&&mat.map){ m.material=mat.clone(); m.material.map=mat.map.clone(); m.material.map.needsUpdate=true; m.material.map.repeat.set(w/rep,d/rep); } m.rotation.x=-Math.PI/2; m.position.set(hx(x0)*S+w/2,y,hz(z0)*S+d/2); ROOT.add(m); return m; };
+    plane(-2,23,43,35,M.grass,0.004,6); plane(-2,32,43,35,A,0.006,6); plane(1,25,15,31,A,0.006,6); plane(20,23,23,31,M.path,0.008,3);
+    for(let k=0;k<7;k++){ const l=new THREE.Mesh(new THREE.PlaneGeometry(0.12,4.4),new THREE.MeshBasicMaterial({color:0xb8b4a0})); l.rotation.x=-Math.PI/2; l.position.set(cx(hx(1))+k*4.6-1,0.012,cx(hz(26))+1); ROOT.add(l); }
+    for(let k=0;k<12;k++){ const l=new THREE.Mesh(new THREE.PlaneGeometry(2.4,0.18),new THREE.MeshBasicMaterial({color:0xb09a40})); l.rotation.x=-Math.PI/2; l.position.set(cx(hx(-1))+k*8,0.012,cx(hz(33))+1); ROOT.add(l); }
+    // marquise da entrada e letreiro
+    const g=G3(); const ez=(hz(22)+1)*S, ex=(hx(21)*S+(hx(22)+1)*S)/2;
+    for(const sx of [-1,1]){ bx(g,0.35,3.1,0.35,M.facade,ex+sx*2.6,1.55,ez+2.4); } bx(g,6.2,0.25,3.0,M.hwall,ex,3.2,ez+1.4); for(let k=0;k<3;k++) bx(g,6.4-k*0.6,0.18,0.5,M.stone,ex,0.09+k*0.18,ez+0.3+(2-k)*0.45);
+    bake(g); addPropBox(ex-2.6,ez+2.4,0.2,0.2); addPropBox(ex+2.6,ez+2.4,0.2,0.2);
+    const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.4,1.1),new THREE.MeshLambertMaterial({map:tex(1024,176,(c,w,h)=>{ c.fillStyle='#1c1e1a'; c.fillRect(0,0,w,h); c.strokeStyle='#6a6450'; c.lineWidth=8; c.strokeRect(6,6,w-12,h-12); c.fillStyle='#c8c0a0'; c.font='bold 92px "Stardos Stencil", Impact, sans-serif'; c.textAlign='center'; c.fillText('HOSPÍCIO VALE NEGRO',w/2,118); c.fillStyle='rgba(120,20,10,.85)'; c.font='54px "Special Elite", monospace'; c.fillText('FECHADO',w*0.78,160); }),emissive:0x111008}));
+    sign.position.set(ex,4.6,ez+0.03); ROOT.add(sign);
+    // carros, ambulância e barreiras
+    mkCar(cx(hx(4)),cx(hz(28)),0.1); addPropBox(cx(hx(4)),cx(hz(28)),1.0,2.2); mkCar(cx(hx(12)),cx(hz(27)),-0.25); addPropBox(cx(hx(12)),cx(hz(27)),1.2,2.2);
+    mkCar(cx(hx(33)),cx(hz(33))+1,Math.PI/2+0.2); addPropBox(cx(hx(33)),cx(hz(33))+1,2.2,1.1);
+    mkHedgehog(cx(hx(26)),cx(hz(30)),0.6); addPropBox(cx(hx(26)),cx(hz(30)),0.6,0.6); mkHedgehog(cx(hx(38)),cx(hz(27)),1.4); addPropBox(cx(hx(38)),cx(hz(27)),0.6,0.6);
+    for(const [x,z] of [[17,24],[27,26],[40,33],[-1,33]]) streetLamp(...H(x,z),'hosp',0xc8e0d0);
+    for(const [x,z] of [[0,24],[42,23],[43,35],[30,29],[8,35]]) mkTree(...H(x,z));
+    const fb=H(24.5,25); fireBarrel(fb[0],fb[1],'hosp'); addPropBox(fb[0],fb[1],0.35,0.35);
+    for(const [x,z,r] of [[17,29,0],[36,24,Math.PI/2]]){ const [px,pz]=H(x,z); mkBench(px,pz,r); addPropBox(px,pz,Math.abs(Math.sin(r))>0.5?0.3:0.9,Math.abs(Math.sin(r))>0.5?0.9:0.3); }
+    writing(hx(10),hz(22),0,1,'VOLTE PARA CASA',2.1,2.6,62); writing(hx(33),hz(22),0,1,'A LUZ MENTE',2.0,2.4,66);
+    // cerquinhas dos canteiros na frente das janelas
+    const fg=G3(); for(const wx of [7,19,27]){ const X0=hx(wx-1)*S, X1=(hx(wx+1)+1)*S, Z1=(hz(24)+1)*S; for(let x=X0;x<=X1+0.01;x+=0.5) cy(fg,0.02,0.02,0.9,M.iron,x,0.45,Z1,0,0,0,4); bx(fg,X1-X0,0.04,0.04,M.iron,(X0+X1)/2,0.85,Z1); for(const xx of [X0,X1]){ for(let z=hz(23)*S;z<=Z1;z+=0.5) cy(fg,0.02,0.02,0.9,M.iron,xx,0.45,z,0,0,0,4); } } bake(fg);
+    for(let i=0;i<30;i++){ const [px,pz]=H(rand(-1.5,43.5),rand(23.2,31.5)); const l=new THREE.Mesh(new THREE.PlaneGeometry(0.12,0.08),new THREE.MeshLambertMaterial({color:pick([0x3a2a12,0x4a3a1a,0x2a2010]),side:THREE.DoubleSide})); l.rotation.set(-Math.PI/2,0,rand(0,6)); l.position.set(px,0.02,pz); ROOT.add(l); } }
+  // ---- 2º andar: enfermaria feminina (oeste) e sala de terapia (leste)
+  hFloorDecor(HF2,()=>{
+    [[4,-9,'sheet'],[7,-9,'straps'],[10,-9,null],[13,-9,'body'],[5,-3,'sheet'],[9,-3,null],[12,-3,'straps']].forEach(([x,z,c],i)=>{ const [px,pz]=H(x,z); mkBed(px,pz,(z<-5?0:Math.PI)+rand(-.08,.08),c,140+i); cellProp(hx(x),hz(z),0.5,1.0); });
+    for(const [x,z] of [[5.5,-9],[8.5,-3]]){ const [px,pz]=H(x,z); mkIV(px,pz); } { const [px,pz]=H(8.5,-9); mkCurtain(px,pz,Math.PI/2,1.9); }
+    { const [px,pz]=H(7,-6); mkWheelchair(px,pz,2.2,true); }
+    { const [px,pz]=H(24,-3); mkDesk(px,pz,0); cellProp(hx(24),hz(-3),0.8,0.45); mkChair(px,pz-0.8,Math.PI,false); }
+    for(const [x,z,r] of [[19,-8,0.3],[22,-8,-0.2]]){ const [px,pz]=H(x,z); const g=G3(px,0,pz,r); bx(g,0.6,0.08,0.6,M.furn,0,0.48,0); bx(g,0.6,0.7,0.08,M.furn,0,0.85,-0.28); for(const sx of [-1,1]){ bx(g,0.06,0.48,0.06,M.iron,sx*0.27,0.24,0.27); bx(g,0.06,0.48,0.06,M.iron,sx*0.27,0.24,-0.27); bx(g,0.08,0.05,0.5,M.rubber,sx*0.3,0.62,0); } bx(g,0.5,0.04,0.06,M.rubber,0,1.08,-0.24); const cap=bx(g,0.3,0.12,0.3,M.chrome,0,1.36,-0.18); bake(g); cellProp(hx(x),hz(z),0.4,0.4); }
+    { const [px,pz]=H(20.5,-5.6); const g=G3(px,0,pz); bx(g,0.6,1.1,0.4,M.paintIron,0,0.55,0); for(let i=0;i<4;i++) cy(g,0.04,0.04,0.04,M.chrome,-0.2+i*0.13,0.95,0.21,Math.PI/2,0,0,8); bake(g); }
+    for(const [x,z] of [[17,-1],[26,-10]]){ const [px,pz]=H(x,z); const g=G3(); hCabinet(g,px,pz,z<-5?0:Math.PI); bake(g); }
+    writing(hx(0),hz(-6),1,0,'ELAS CANTAM À NOITE',1.8,2.8,56); writing(hx(14),hz(-11),0,1,'2º ANDAR',2.2,1.8,80); writing(hx(31),hz(-4),-1,0,'CHOQUE 3x AO DIA',1.8,2.8,56);
+    for(const [x,z] of [[6,-6],[11,-7],[21,-4],[26,-6]]){ const [px,pz]=H(x,z); floorDecal(px,pz,rand(1.2,2.2)); }
+  });
+  // ---- 3º andar: arquivo (leste) e sala do diretor (oeste)
+  hFloorDecor(HF3,()=>{
+    for(let k=0;k<5;k++){ const [px,pz]=H(17+k*2,-21); const g=G3(); hCabinet(g,px-0.3,pz-0.3,0); hCabinet(g,px+0.3,pz-0.3,0); bake(g); }
+    for(const [x,z] of [[19,-16],[23,-16]]){ const [px,pz]=H(x,z); const g=G3(px,0,pz); for(const sx of [-1,1]){ bx(g,0.08,2.2,1.8,M.furn,sx*0.9,1.1,0); } for(let k=0;k<5;k++){ bx(g,1.8,0.05,1.8,M.furn,0,0.15+k*0.48,0); for(let j=0;j<6;j++) bx(g,0.25,0.32,0.3,new THREE.MeshLambertMaterial({color:pick([0x8a7a5a,0x6a5a3a,0x9a8a6a])}),-0.7+j*0.28,0.35+k*0.48,rand(-0.5,0.5),0,rand(-0.3,0.3),0); } bake(g); cellProp(hx(x),hz(z),1.0,1.0); }
+    { const [px,pz]=H(26,-15); mkDesk(px,pz,Math.PI/2); cellProp(hx(26),hz(-15),0.45,0.8); mkChair(px+0.8,pz,-Math.PI/2,true); }
+    { const [px,pz]=H(6,-15); mkDesk(px,pz,Math.PI); cellProp(hx(6),hz(-15),0.8,0.45); mkChair(px,pz+0.8,0,false); const [bx2,bz2]=H(10,-19); mkGurney(bx2,bz2,0.4,'body',171); cellProp(hx(10),hz(-19),0.6,1.0); }
+    for(let i=0;i<60;i++){ const [px,pz]=H(rand(16,30),rand(-20.5,-12)); const l=new THREE.Mesh(new THREE.PlaneGeometry(0.21,0.3),new THREE.MeshLambertMaterial({color:pick([0xd8d0b8,0xc8c0a0,0xe0d8c0])})); l.rotation.set(-Math.PI/2,0,rand(0,6)); l.position.set(px,0.016,pz); ROOT.add(l); }
+    writing(hx(0),hz(-17),1,0,'O DIRETOR SABIA',1.8,2.8,58); writing(hx(31),hz(-14),-1,0,'ARQUIVO MORTO',1.9,2.6,60); writing(hx(14),hz(-22),0,1,'3º ANDAR',2.2,1.8,80);
+    for(const [x,z] of [[4,-13],[12,-17],[22,-13],[28,-19]]){ const [px,pz]=H(x,z); floorDecal(px,pz,rand(1.2,2.2)); }
+  });
+  for(const [x,z,room,b] of [[5,-6,'H2A',false],[11,-6,'H2A',true],[20,-5,'H2B',false],[26,-6,'H2B',false],[20,-16,'H3A',false],[27,-17,'H3A',true],[5,-17,'H3B',false],[11,-15,'H3B',false]]){ const [px,pz]=H(x,z); hFluo(px,(z<-11?HF3:HF2)+ROOM_CEIL,pz,room,0,b); }
+  { const [px,pz]=H(1.5,2); hFluo(px,HF2+ROOM_CEIL-0.3,pz,'H',Math.PI/2,false); const [qx,qz]=H(29.5,-9); hFluo(qx,HF3+ROOM_CEIL-0.3,qz,'H2B',Math.PI/2,false); }
+}
+/* gerador: três espalhados pelos andares; os três ligados religam a luz do hospício */
+function mkGenerator(gx,gy,gz,ry,num){ const g=new THREE.Group(); g.position.set(gx,gy,gz); g.rotation.y=ry;
+  const olive=new THREE.MeshPhongMaterial({color:0x3c4a2c,shininess:25}), dark=new THREE.MeshPhongMaterial({color:0x1c1e1c,shininess:40}), rust=M.rust||dark;
+  const skid=new THREE.Mesh(new THREE.BoxGeometry(1.7,0.14,0.95),dark); skid.position.y=0.07; g.add(skid);
+  const body=new THREE.Group(); g.add(body);
+  const b=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.75,0.75),olive); b.position.set(-0.15,0.52,0); body.add(b);
+  const tank=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,1.1,14),rust); tank.rotation.z=Math.PI/2; tank.position.set(-0.15,1.1,-0.12); body.add(tank);
+  const eng=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.5,14),dark); eng.rotation.z=Math.PI/2; eng.position.set(0.62,0.55,0); body.add(eng);
+  const fly=new THREE.Group(); fly.position.set(0.9,0.55,0); body.add(fly); const wheel=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,0.06,18),M.iron); wheel.rotation.z=Math.PI/2; fly.add(wheel); for(let k=0;k<3;k++){ const sp=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.55,0.05),olive); sp.rotation.x=k*Math.PI/3; fly.add(sp); }
+  const pipe=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.9,8),dark); pipe.position.set(-0.6,1.25,0.25); body.add(pipe);
+  const panel=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.35,0.05),dark); panel.position.set(-0.2,0.6,0.4); body.add(panel);
+  const lampM=new THREE.MeshBasicMaterial({color:0x8a1010}); const lamp=new THREE.Mesh(new THREE.SphereGeometry(0.05,10,8),lampM); lamp.position.set(-0.08,0.68,0.43); body.add(lamp);
+  const lab=new THREE.Mesh(new THREE.PlaneGeometry(0.42,0.14),new THREE.MeshBasicMaterial({map:tex(256,84,(c,w,h)=>{ c.fillStyle='#d0b030'; c.fillRect(0,0,w,h); c.fillStyle='#111'; c.font='bold 40px "Stardos Stencil", Impact, sans-serif'; c.textAlign='center'; c.fillText('GERADOR '+num,w/2,58); })})); lab.position.set(-0.15,0.95,0.38); body.add(lab);
+  const L=new THREE.PointLight(0x7aff9a,0,4,2); L.position.set(-0.1,1.0,0.7); g.add(L);
+  return {g,body,fly,lampM,L}; }
 /* ---- windows ---- */
 function buildWindows(){
   for(const w of windows){
@@ -4519,6 +4674,7 @@ function buildWallBuys(){
     {id:'trench',cell:[0,13],n:[1,0]}, {id:'garand',cell:[9,22],n:[0,-1]},
     {id:'stg44',cell:[24,22],n:[0,-1]}, {id:'bar',cell:[14,13],n:[1,0]},
     {id:'ppsh',cell:[44,12],n:[-1,0]},
+    {id:'mp40',cell:[8,-11],n:[0,1]}, {id:'bar',cell:[21,-22],n:[0,1]}, {id:'stg44',cell:[14,22],n:[0,1]},
   ]) defs.push({id:d.id,cell:[hx(d.cell[0]),hz(d.cell[1])],n:d.n});
   for(const d of [
     {id:'kar98k',cell:[14,66],n:[1,0]}, {id:'db',cell:[33,75],n:[-1,0]}, {id:'nades',cell:[14,74],n:[1,0]},
@@ -4594,7 +4750,7 @@ function setPerkSigns(on){ for(const s of perkSigns){ s.sign.material.color.setH
 
 /* ---- mystery box ---- */
 const BOX={spots:[{cells:[[13,12],[14,12]],n:[0,1]},{cells:[[22,10],[23,10]],n:[0,-1]},{cells:[[38,2],[39,2]],n:[0,1],room:'E'},
-  {cells:[[hx(1),hz(2)],[hx(1),hz(3)]],n:[1,0]},{cells:[[hx(25),hz(12)],[hx(26),hz(12)]],n:[0,1],room:'K'},{cells:[[hx(36),hz(1)],[hx(37),hz(1)]],n:[0,1],room:'L'},{cells:[[16,132],[17,132]],n:[0,-1]},{cells:[[19,75],[20,75]],n:[0,1],room:'FK'},{cells:[[26,69],[27,69]],n:[0,1],room:'FC'},{cells:[[43,58],[44,58]],n:[0,1],room:'FL'},{cells:[[34,82],[35,82]],n:[0,1],room:'FU'}],spot:0,state:'idle',t:0,uses:0,weapon:null,gun:null,owner:null,pending:0};
+  {cells:[[hx(11),hz(23)],[hx(12),hz(23)]],n:[0,1],room:'HE'},{cells:[[hx(6),hz(-21)],[hx(7),hz(-21)]],n:[0,1],room:'H3B'},{cells:[[hx(25),hz(12)],[hx(26),hz(12)]],n:[0,1],room:'K'},{cells:[[hx(36),hz(1)],[hx(37),hz(1)]],n:[0,1],room:'L'},{cells:[[16,132],[17,132]],n:[0,-1]},{cells:[[19,75],[20,75]],n:[0,1],room:'FK'},{cells:[[26,69],[27,69]],n:[0,1],room:'FC'},{cells:[[43,58],[44,58]],n:[0,1],room:'FL'},{cells:[[34,82],[35,82]],n:[0,1],room:'FU'}],spot:0,state:'idle',t:0,uses:0,weapon:null,gun:null,owner:null,pending:0};
 BOX.spots.push({cells:[[20,144],[21,144]],n:[0,1],room:'SB',map:'sandbox'});
 for(const s of BOX.spots) s.map=mapAtRow(s.cells[0][1]);
 const firstBoxSpot=()=>BOX.spots.findIndex(s=>s.map===CUR);
@@ -4711,7 +4867,7 @@ function updateAfiador(dt){
 
 /* ---- power lever ---- */
 const LEVERS=[];
-const LEVER_SPOTS=[{x:10,z:20,n:[0,-1]},{x:hx(27),z:hz(11),n:[0,-1]},{x:31,z:81,n:[0,1]},{x:43,z:151,n:[-1,0]}];
+const LEVER_SPOTS=[{x:10,z:20,n:[0,-1]},{x:31,z:81,n:[0,1]},{x:43,z:151,n:[-1,0]}];
 const LEVER={get pending(){ return LEVERS.length?LEVERS[0].pending:0; },set pending(v){ for(const l of LEVERS) l.pending=v; }};
 function buildLever(){
   const st=tex(128,48,(c,w,h)=>{ c.fillStyle='#d0b030'; c.fillRect(0,0,w,h); c.fillStyle='#111'; for(let i=-2;i<10;i++){ c.beginPath(); c.moveTo(i*18,0); c.lineTo(i*18+9,0); c.lineTo(i*18-5,h); c.lineTo(i*18-14,h); c.fill(); } c.fillStyle='#111'; c.fillRect(10,14,w-20,20); c.fillStyle='#f0e6c0'; c.font='bold 16px "Stardos Stencil", Impact, sans-serif'; c.textAlign='center'; c.fillText('ENERGIA',w/2,30); });
@@ -4853,9 +5009,9 @@ const MAP_OBJECTIVE_ITEMS={
     {id:'b_fuse_3',x:22,z:17,room:'C',label:'Fusível industrial',detail:'Terceiro fusível recuperado.',color:0xe06a46,mark:'FUSÍVEL 03'},
   ],
   hosp:[
-    {id:'h_record_1',x:'H',cx:11,z:7,room:'H',label:'Prontuário — dígito 7',detail:'O prontuário revela o primeiro número: 7.',color:0xcad1a1,mark:'ARQUIVO 07',digit:'7'},
-    {id:'h_record_2',x:'H',cx:27,z:7,room:'I',label:'Prontuário — dígito 4',detail:'O prontuário revela o segundo número: 4.',color:0x8bc9d0,mark:'ARQUIVO 04',digit:'4'},
-    {id:'h_record_3',x:'H',cx:10,z:19,room:'J',label:'Prontuário — dígito 2',detail:'O prontuário revela o último número: 2.',color:0xd9a47b,mark:'ARQUIVO 02',digit:'2'},
+    {id:'h_gen_1',gen:1,cx:10,z:19,ry:Math.PI,room:'J',label:'Gerador do térreo',detail:'O gerador do centro cirúrgico pegou no tranco.',color:0x7aff9a,mark:'GERADOR 1'},
+    {id:'h_gen_2',gen:2,cx:26.5,z:-4,ry:-Math.PI/2,room:'H2B',label:'Gerador do 2º andar',detail:'O gerador da sala de terapia está funcionando.',color:0x7aff9a,mark:'GERADOR 2'},
+    {id:'h_gen_3',gen:3,cx:12,z:-13,ry:Math.PI,room:'H3B',label:'Gerador do 3º andar',detail:'O gerador da diretoria voltou a roncar.',color:0x7aff9a,mark:'GERADOR 3'},
   ],
   farm:[
     {id:'f_relic_1',x:28,z:68,room:'FB',label:'Medalhão de bronze',detail:'O medalhão parece pertencer à família Brandão.',color:0xe0bd60,mark:'RELICÁRIO'},
@@ -4870,7 +5026,8 @@ function mapObjectiveGateOpen(map=CUR){ return doors.some(d=>d.map===map&&d.obje
 function objectiveDoorCheck(d){
   if(d.objectiveGate){
     const n=mapObjectiveCount(d.map);
-    if(n<3) return {ok:false,text:d.map==='bunker'?`Faltam ${3-n} fusível(is). Explore as alas A, B e C.`:d.map==='hosp'?`Faltam ${3-n} prontuário(s). Procure os arquivos nas alas.`:`Faltam ${3-n} peça(s) do ritual. Explore o celeiro, quintal e mansão.`};
+    if(d.map==='hosp'&&!G.power) return {ok:false,text:`O quintal só abre com a luz ligada. Geradores ${n}/3 — térreo, 2º e 3º andar.`};
+    if(n<3&&d.map!=='hosp') return {ok:false,text:d.map==='bunker'?`Faltam ${3-n} fusível(is). Explore as alas A, B e C.`:`Faltam ${3-n} peça(s) do ritual. Explore o celeiro, quintal e mansão.`};
     if(d.map==='bunker'&&!G.power) return {ok:false,text:'Os três fusíveis foram encontrados. Volte ao painel e religue a energia.'};
   }
   if(d.needsSurgeClear&&!G.surgeCleared) return {ok:false,text:'O túnel segue bloqueado. Elimine a horda que saiu do alçapão.'};
@@ -4888,10 +5045,12 @@ function objectiveDescription(map=CUR){
     return ['EXPLORE O BUNKER','Procure recursos e prepare-se para abrir a próxima área.','OBJETIVO EM ANDAMENTO'];
   }
   if(map==='hosp'){
-    if(count<3) return ['DESCUBRA A SENHA','Reúna os três prontuários. Cada um revela um dígito do código do pátio.',`PRONTUÁRIOS ${count}/3`];
-    if(!mapObjectiveGateOpen('hosp')) return ['ABRA O PORTÃO DO PÁTIO','A senha encontrada é 742. Volte ao painel eletrônico e libere o pátio.','CÓDIGO 742 · ACESSO AUTORIZADO'];
-    if(G.surgeActive) return ['SOBREVIVA AO APAGÃO','O portão abriu e os infectados invadiram o pátio. Elimine a horda.','INFECTADOS DO PÁTIO'];
-    if(G.surgeCleared) return ['INVESTIGUE O PÁTIO','O pátio está seguro por enquanto. Procure uma passagem para o próximo setor.','PÁTIO LIBERADO'];
+    const ent=doors.find(d=>d.map==='hosp'&&d.rooms[0]==='HE');
+    if(ent&&!ent.open) return ['ENTRE NO HOSPÍCIO','Você está do lado de fora. Junte pontos e abra a porta da entrada.','ENTRADA PRINCIPAL'];
+    if(!G.power) return ['RELIGUE A LUZ','Ache os três geradores: um no térreo, um no 2º e um no 3º andar.',`GERADORES ${Math.min(3,count)}/3`];
+    if(!mapObjectiveGateOpen('hosp')) return ['ABRA O QUINTAL','A luz voltou. Abra o portão que leva ao quintal dos fundos.','PORTÃO DO QUINTAL'];
+    if(G.surgeActive) return ['SOBREVIVA À HORDA','O portão abriu e os infectados invadiram o quintal. Elimine a horda.','INFECTADOS DO QUINTAL'];
+    if(G.surgeCleared) return ['EXPLORE O QUINTAL','O quintal está seguro por enquanto. Ainda há caixas misteriosas pelo hospício.','QUINTAL LIBERADO'];
     return ['EXPLORE O HOSPÍCIO','Procure prontuários e recursos nas alas interditadas.','OBJETIVO EM ANDAMENTO'];
   }
   if(count<3) return ['DESCUBRA O SEGREDO DA FAZENDA','Reúna as três peças do ritual no celeiro, quintal e mansão.',`PEÇAS DO RITUAL ${count}/3`];
@@ -4912,6 +5071,12 @@ function updateMissionHud(){
 function buildMapObjectives(){
   for(const map of ['bunker','hosp','farm']){
     for(const def of MAP_OBJECTIVE_ITEMS[map]){
+      if(def.gen){ const gx=cx(hx(def.cx)), gz=cx(hz(def.z)), M3=mkGenerator(gx,floorAt(gx,gz),gz,def.ry||0,def.gen); MAPG.hosp.add(M3.g); addPropBox(gx,gz,0.85,0.85);
+        const item={...def,map,x:gx,z:gz,group:M3.g,gen:M3,collected:false}; MAP_OBJECTIVE_RUNTIME[map].push(item);
+        interacts.push({x:gx,z:gz,r:2.4,enabled:()=>!item.collected&&!G.power&&G.rooms.has(item.room),text:()=>`${PRESS} para dar a partida no ${item.label.toLowerCase()} [${mapObjectiveCount('hosp')}/3]`,
+          use:()=>{ if(item.collected||G.power) return; item.collected=true; try{ Snd.rl('lever'); Snd.power(); }catch(e){} shake(0.15); const n=mapObjectiveCount('hosp'); banner(item.label.toUpperCase(),n<3?`${item.detail} Faltam ${3-n}.`:item.detail,'gold'); actLog('{n} ligou o '+item.label.toLowerCase());
+            if(n>=3){ banner('A LUZ VOLTOU','Os três geradores estão ligados. O portão do quintal pode ser aberto.','gold'); if(NET.mode==='client') netAct(['pw']); else powerOn(); } updateMissionHud(); }});
+        continue; }
       const gx=map==='hosp'?cx(hx(def.cx)):cx(def.x);
       const gz=map==='hosp'?cx(hz(def.z)):map==='farm'?cx(fz(def.z)):cx(def.z);
       const floor=floorAt(gx,gz);
@@ -4940,12 +5105,13 @@ function buildMapObjectives(){
   updateMissionHud();
 }
 function resetMapObjectives(){
-  for(const map of Object.keys(MAP_OBJECTIVE_RUNTIME)) for(const item of MAP_OBJECTIVE_RUNTIME[map]){ item.collected=false; item.group.visible=true; }
+  for(const map of Object.keys(MAP_OBJECTIVE_RUNTIME)) for(const item of MAP_OBJECTIVE_RUNTIME[map]){ item.collected=false; item.group.visible=true; if(item.gen){ item.gen.fly.rotation.x=0; item.gen.L.intensity=0; } }
   G.surgeActive=false; G.surgeTriggered=false; G.surgeCleared=false; G.surgeBossPending=false;
   updateMissionHud();
 }
 function updateMapObjectives(dt){
-  for(const item of MAP_OBJECTIVE_RUNTIME[CUR]||[]){ if(item.collected) continue; item.group.position.y=item.baseY+0.08+Math.sin(G.t*2.4+item.x)*0.08; item.ring.rotation.z+=dt*0.85; item.core.rotation.y+=dt*1.2; item.halo.material.opacity=0.34+Math.sin(G.t*3+item.z)*0.12; }
+  for(const item of MAP_OBJECTIVE_RUNTIME[CUR]||[]){ if(item.gen){ const on=item.collected||G.power, Gn=item.gen; Gn.run=(Gn.run||0)+(on?dt:0); Gn.fly.rotation.x+=dt*(on?22:0); Gn.body.position.set(on?Math.sin(G.t*60)*0.006:0,on?Math.abs(Math.sin(G.t*47))*0.006:0,0); Gn.lampM.color.setHex(on?0x5aff7a:(Math.sin(G.t*3)>0?0x8a1010:0x3a0606)); Gn.L.intensity=on?0.8+Math.sin(G.t*13)*0.15:0; continue; }
+    if(item.collected) continue; item.group.position.y=item.baseY+0.08+Math.sin(G.t*2.4+item.x)*0.08; item.ring.rotation.z+=dt*0.85; item.core.rotation.y+=dt*1.2; item.halo.material.opacity=0.34+Math.sin(G.t*3+item.z)*0.12; }
 }
 function startMapSurge(map){
   if(G.surgeTriggered||NET.mode==='client') return;
@@ -5130,7 +5296,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v7.6';
+const GAME_VERSION='v7.7';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -9669,7 +9835,7 @@ $('#contbtn').addEventListener('click',resumeRun);
 /* ================= DEATH CINEMATIC: menu music, slow takes of the map, the dead walking around and sometimes feeding on you ================= */
 const CINE={on:false,corpse:null,cx:0,cz:0,cyaw:0,eaters:[],roamers:[],shot:null,list:[],idx:0,cutT:-1,feedT:0};
 function cineCell(near,maxD,minD){
-  const z0=CUR==='sandbox'?SANDBOX_START:CUR==='farm'?57:CUR==='hosp'?HSPLIT:0, z1=CUR==='sandbox'?SANDBOX_END:CUR==='farm'?FARM_END:CUR==='hosp'?56:HSPLIT-1;
+  const z0=CUR==='sandbox'?SANDBOX_START:CUR==='farm'?57:CUR==='hosp'?HSPLIT:0, z1=CUR==='sandbox'?SANDBOX_END:CUR==='farm'?FARM_END:CUR==='hosp'?HEND:BEND;
   for(let tries=0;tries<260;tries++){
     const x=Math.floor(rand(0,MW)), z=Math.floor(rand(z0,z1+1));
     if(grid[z][x]!=='.'||propCell[z*MW+x]) continue; const r=roomOf[z][x]; if(tries<200&&r&&!G.rooms.has(r)) continue;

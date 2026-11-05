@@ -691,6 +691,7 @@ body.touch #roundc{width:120px;height:60px}
 #boxer{position:fixed;inset:0;z-index:65;display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--f-type);--rc:#a7adb3}
 .bxbg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 55%,color-mix(in srgb,var(--rc) 18%,#0a0806),#020202 75%)}
 .bxrays{position:absolute;left:50%;top:50%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;opacity:0;background:repeating-conic-gradient(from 0deg,rgba(255,30,40,.28) 0deg 6deg,transparent 6deg 18deg);transition:opacity .6s;pointer-events:none}
+#boxer .bxauto{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:12px;font-size:12px;color:var(--muted);cursor:pointer;user-select:none}#boxer .bxauto input{accent-color:#ff1a2a;width:15px;height:15px}
 #boxer.redwin .bxrays{opacity:1;animation:bxspin 9s linear infinite}
 @keyframes bxspin{to{transform:rotate(360deg)}}
 .bxstage{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:14px;width:min(1100px,100%);padding:16px;box-sizing:border-box;text-align:center}
@@ -1066,8 +1067,8 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
   <div class="bxbox" id="bx-box"><i class="lid"></i><i class="body"></i><i class="band"></i><i class="lock"></i></div>
   <div class="bxreel" id="bx-reel" hidden><div class="bxmark"></div><div class="bxstrip" id="bx-strip"></div></div>
   <div class="bxwin" id="bx-win" hidden></div>
-  <div class="row bxbtns"><button id="bx-open" class="cta" type="button" data-snd="none">Abrir</button><button id="bx-again" class="cta small" type="button" hidden data-snd="none">Abrir outra</button><button id="bx-close" class="ghost" type="button">Fechar</button></div>
-</div><div class="bxsparks" id="bx-sparks"></div></div>
+  <div class="row bxbtns"><button id="bx-open" class="cta" type="button" data-snd="none">Abrir</button><button id="bx-skip" class="ghost" type="button" hidden>Pular ▸▸</button><button id="bx-again" class="cta small" type="button" hidden data-snd="none">Abrir outra</button><button id="bx-close" class="ghost" type="button">Fechar</button></div>
+<label class="bxauto"><input type="checkbox" id="bx-auto"> Sempre pular a animação</label></div><div class="bxsparks" id="bx-sparks"></div></div>
 <div id="clickhint" hidden><b>Clique na tela para travar o mouse</b><small>Esc ou P pausa</small></div>
 <div id="pickscr" hidden><div class="pkbox">
   <div class="pkhead"><div><p class="file">Antes de descer ao bunker</p><h2>Escolha seu personagem</h2><p class="pksub" id="pk-sub">Cada jogador usa um personagem diferente.</p></div><div class="pktime"><b id="pk-t">30</b><small>segundos</small></div></div>
@@ -4941,7 +4942,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v6.8.2';
+const GAME_VERSION='v6.8.3';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -7463,7 +7464,11 @@ $('#boxbtn').addEventListener('click',()=>{ arsTab='cases'; openArsenal(); });
 function boxDropToast(b){ toast(`📦 ${b.name} guardada no inventário`); renderDrax(); }
 
 /* ---- abertura de caixa: a caixa cai, você abre, a roleta gira estilo CS; item vermelho vem numa maleta com muito brilho ---- */
-const BX={busy:false,t:null,forceRed:false};
+const BX={busy:false,t:null,forceRed:false,skip:false,auto:false};
+try{ BX.auto=localStorage.getItem('bdm_bxauto')==='1'; }catch(e){}
+$('#bx-auto').checked=BX.auto; $('#bx-auto').addEventListener('change',e=>{ BX.auto=e.target.checked; try{ localStorage.setItem('bdm_bxauto',BX.auto?'1':'0'); }catch(err){} });
+function boxSkip(){ if(!BX.busy||BX.skip) return; BX.skip=true; $('#bx-skip').hidden=true; }
+$('#bx-skip').addEventListener('click',boxSkip);
 const prizeRar=p=>p.red?5:p.kind==='art'?p.art.r:itemR(p.item);
 function prizeTile(p){ if(p.red) return `<div class="bt red" style="--rc:#ff1a2a"><div class="brief"></div><b>Oculto</b><span>???</span></div>`;
   if(p.kind==='art') return `<div class="bt" style="--rc:${RAR[p.art.r].col}">${artIcon(p.art,54)}<b>${RAR[p.art.r].name}</b><span>${artName(p.art)}</span></div>`;
@@ -7479,10 +7484,12 @@ $('#bx-close').addEventListener('click',closeBoxUI);
 $('#bx-again').addEventListener('click',()=>openBoxUI(BX.t));
 $('#bx-open').addEventListener('click',()=>{
   if(BX.busy) return; const b=BOX_BY[BX.t]; const i=PROG.boxes.findIndex(x=>x.t===BX.t); if(i<0&&!BX.forceRed) return;
-  BX.busy=true; if(i>=0) PROG.boxes.splice(i,1); const prize=rollBox(b,BX.forceRed); grantPrize(prize); BX.forceRed=false;
-  $('#bx-open').hidden=true; const box=$('#bx-box'); box.classList.add('shake'); Snd.ui('confirm');
+  BX.busy=true; BX.skip=false; if(i>=0) PROG.boxes.splice(i,1); const prize=rollBox(b,BX.forceRed); grantPrize(prize); BX.forceRed=false;
+  $('#bx-open').hidden=true; const box=$('#bx-box'); Snd.ui('confirm');
+  if(BX.auto){ BX.skip=true; box.classList.add('open','gone'); setTimeout(()=>boxReveal(prize),120); return; }
+  $('#bx-skip').hidden=false; box.classList.add('shake');
   setTimeout(()=>{ box.classList.remove('shake'); box.classList.add('open'); try{ Snd.reelTick(1.6); Snd.ui('unlock'); }catch(e){} },560);
-  setTimeout(()=>{ box.classList.add('gone'); boxSpin(b,prize); },1100);
+  setTimeout(()=>{ box.classList.add('gone'); if(BX.skip){ boxReveal(prize); return; } boxSpin(b,prize); },1100);
 });
 function boxSpin(b,prize){
   const reel=$('#bx-reel'), strip=$('#bx-strip'); reel.hidden=false; const N=62, WIN=54; const tiles=[];
@@ -7491,9 +7498,9 @@ function boxSpin(b,prize){
   strip.innerHTML=tiles.map(prizeTile).join(''); strip.style.transition='none'; strip.style.transform='translateX(0px)';
   requestAnimationFrame(()=>{ const tileW=strip.firstElementChild.getBoundingClientRect().width+8, wrapW=reel.getBoundingClientRect().width;
     const target=WIN*tileW+tileW/2-wrapW/2+rand(-tileW*0.36,tileW*0.36); const dur=7.2, t0=performance.now(); let last=-1;
-    const step=now=>{ const k=clamp((now-t0)/1000/dur,0,1); const e=1-Math.pow(1-k,4.2); const x=target*e; strip.style.transform=`translateX(${-x}px)`;
+    const step=now=>{ const k=BX.skip?1:clamp((now-t0)/1000/dur,0,1); const e=1-Math.pow(1-k,4.2); const x=target*e; strip.style.transform=`translateX(${-x}px)`;
       const ti=Math.floor((x+wrapW/2)/tileW); if(ti!==last){ last=ti; try{ Snd.reelTick(0.6+k*0.5); }catch(e){} }
-      if(k<1) requestAnimationFrame(step); else setTimeout(()=>boxReveal(prize),350); };
+      if(k<1) requestAnimationFrame(step); else setTimeout(()=>boxReveal(prize),BX.skip?0:350); };
     requestAnimationFrame(step); });
 }
 function boxSparks(n,col){ const sp=$('#bx-sparks'); for(let i=0;i<n;i++){ const d=document.createElement('i'); const a=Math.random()*Math.PI*2, r=rand(160,620); d.style.setProperty('--dx',(Math.cos(a)*r).toFixed(0)+'px'); d.style.setProperty('--dy',(Math.sin(a)*r).toFixed(0)+'px'); d.style.animationDelay=(Math.random()*0.35).toFixed(2)+'s'; d.style.animationDuration=rand(1.1,2.2).toFixed(2)+'s'; if(col) d.style.background=col; sp.appendChild(d); } setTimeout(()=>{ sp.textContent=''; },3200); }
@@ -7502,14 +7509,14 @@ function prizeWinHTML(p){
   if(p.kind==='art'){ const a=p.art; return `<span class="rr">${RAR[a.r].name} · artefato</span><h3>${artName(a)}</h3>${artIcon(a,110)}<ul>${artLines(a).map(l=>`<li>${l}</li>`).join('')}</ul><p class="rec">${ART_T[a.a].lore}</p>`; }
   const it=p.item, r=itemRar(it); return `<span class="rr">${r.name}${it.rp?' · ★ padrão raro':''}</span><h3>${itemName(it)}</h3><img alt="" src="${knifeThumb(it,300,140)}"><ul>${(it.pas||[]).map(q=>`<li>${fmtPas(q)}</li>`).join('')}</ul>`; }
 function boxReveal(p){
-  const el=$('#boxer'), win=$('#bx-win'); $('#bx-reel').hidden=true; const r=prizeRar(p); const col=RAR[r].col; win.style.setProperty('--rc',col);
+  const el=$('#boxer'), win=$('#bx-win'); $('#bx-reel').hidden=true; $('#bx-skip').hidden=true; const r=prizeRar(p); const col=RAR[r].col; win.style.setProperty('--rc',col);
   const done=()=>{ BX.busy=false; const left=PROG.boxes.filter(x=>x.t===BX.t).length; $('#bx-kick').textContent=`Caixa · ${left} no inventário`; $('#bx-again').hidden=!left; renderDrax(); };
   if(p.red){ el.classList.add('redwin','redflash'); try{ Snd.reveal(4); setTimeout(()=>Snd.levelUp(9),400); setTimeout(()=>Snd.reveal(4),900); }catch(e){} boxSparks(90); setTimeout(()=>boxSparks(60,'#ffd24a'),700);
     win.hidden=false; win.innerHTML=`<span class="rr">Algo vermelho saiu da caixa…</span><div class="brief bigbrief"></div>`;
-    setTimeout(()=>{ boxSparks(70); win.style.animation='none'; void win.offsetWidth; win.style.animation=''; win.innerHTML=prizeWinHTML(p); done(); sysLog('Item Oculto conseguido!'); },1700); return; }
+    setTimeout(()=>{ boxSparks(70); win.style.animation='none'; void win.offsetWidth; win.style.animation=''; win.innerHTML=prizeWinHTML(p); done(); sysLog('Item Oculto conseguido!'); },BX.skip?450:1700); return; }
   try{ Snd.reveal(Math.min(4,r)); }catch(e){} if(r>=3) boxSparks(r>=4?50:24,col);
   win.hidden=false; win.innerHTML=prizeWinHTML(p); done(); }
-addEventListener('keydown',e=>{ if($('#boxer').hidden) return; if(e.key==='Escape'){ e.preventDefault(); e.stopImmediatePropagation(); closeBoxUI(); } },true);
+addEventListener('keydown',e=>{ if($('#boxer').hidden) return; if((e.key===' '||e.key==='Enter'||e.key==='Escape')&&BX.busy){ e.preventDefault(); e.stopImmediatePropagation(); boxSkip(); return; } if(e.key==='Escape'){ e.preventDefault(); e.stopImmediatePropagation(); closeBoxUI(); } },true);
 
 /* ---- case opening: a reel of knives that slows down onto the prize ---- */
 function rollCase(c){ let r=Math.random(), ri=0; for(let i=0;i<c.odds.length;i++){ r-=c.odds[i]; if(r<=0){ ri=i; break; } ri=i; } if(c.odds[ri]<=0) ri=c.odds.findIndex(o=>o>0); return rollItem(ri); }

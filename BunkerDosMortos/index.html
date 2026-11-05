@@ -2467,8 +2467,8 @@ function buildWorld(){
   buildStaticLighting();
   buildSandboxExtras();
   try{ const r=buildCellBoxes(); console.log('[Bunker] colisão dos objetos ajustada',r); }catch(e){ console.warn('[Bunker] colisão',e); }
-  setMap('bunker');
   world=true;
+  setMap('bunker');
 }
 function setMap(k){
   if(k==='sandbox'&&!CHEAT.sandboxAccess) k='bunker';
@@ -2482,6 +2482,7 @@ function setMap(k){
   if(hemi){ if(k==='farm'){ hemi.color.setHex(0x8a98b4); hemi.groundColor.setHex(0x1c1a12); } else if(k==='hosp'){ hemi.color.setHex(0x8aa094); hemi.groundColor.setHex(0x1a1c14); } else { hemi.color.setHex(0x8e97ad); hemi.groundColor.setHex(0x2a2016); } }
   if(typeof resetDecals==='function') resetDecals();
   Snd.setMap(k);
+  try{ if(world) renderer.compile(scene,camera); }catch(e){}   // compila os materiais do mapa de uma vez (evita travadinha na primeira vez que algo aparece na tela)
 }
 
 /* ---- walls of one map region ---- */
@@ -5552,7 +5553,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v7.9.5';
+const GAME_VERSION='v7.9.6';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -5804,10 +5805,11 @@ addEventListener('mouseup',e=>{ if(e.button===0) IN.fire=false; if(e.button===2)
 const MLOOK={ema:6,last:0,lockT:0,drop:0,pend:null};
 addEventListener('mousemove',e=>{ if(!((G.state==='playing'||G.state==='lobby')&&(locked||noLock))) return;
   const now=performance.now(); let dx=e.movementX||0, dy=e.movementY||0; if(now-MLOOK.lockT<110) return;
-  const m=Math.hypot(dx,dy), lim=Math.max(420,MLOOK.ema*14);
-  if(m>lim){ MLOOK.drop++; return; }   // só descarta o salto absurdo e isolado; movimento rápido de verdade passa direto (segurar o evento causava trancos)
+  // sem filtro de "picos": com mouse de DPI alto o navegador junta vários movimentos num evento só e um giro rápido passava do limite;
+  // como a média só subia com eventos aceitos, todos os eventos seguintes eram descartados e a mira ficava parada até o mouse desacelerar
+  const m=Math.hypot(dx,dy);
   MLOOK.ema=MLOOK.ema*0.85+Math.min(m,400)*0.15; MLOOK.last=now;
-  IN.lookX+=clamp(dx,-300,300); IN.lookY+=clamp(dy,-300,300); });
+  IN.lookX+=clamp(dx,-2000,2000); IN.lookY+=clamp(dy,-2000,2000); });
 addEventListener('wheel',e=>{ if(G.state==='playing'&&Math.abs(e.deltaY)>2) press(e.deltaY>0?'next':'prev'); },{passive:true});
 document.addEventListener('pointerlockchange',()=>{ locked=document.pointerLockElement===canvas; if(locked) lockEverWorked=true; MLOOK.lockT=performance.now(); MLOOK.ax=0; MLOOK.ay=0; IN.lookX=0; IN.lookY=0;
   // um pedido de mira que chegou depois das cartas abrirem (ex.: ao fechar o console) não pode prender o mouse; só um clique fora das cartas faz isso

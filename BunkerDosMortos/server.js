@@ -278,7 +278,10 @@ wss.on('connection', (ws) => {
         if (json.length > 12000) { sendError(ws, reqId, 'Estado de jogo muito grande.'); return; }
       }
       client.presence = data;
-      broadcastRoom(room);
+      // só o estado deste jogador vai para os outros (antes a sala inteira era reenviada a cada pacote: muitos dados e travadas)
+      const json = data ? JSON.stringify(data) : 'null';
+      const out = '{"type":"pres","id":' + JSON.stringify(client.id) + ',"data":' + json + '}';
+      for (const p of room.players.values()) if (p !== client && p.ws && p.ws.readyState === WebSocket.OPEN) { try { p.ws.send(out); } catch (_) {} }
       return;
     }
     if (msg.type === 'ready') {

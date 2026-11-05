@@ -640,6 +640,10 @@ body.touch #roundc{width:120px;height:60px}
 .toast button.ok{border-color:#5f9a4e;color:#a6e494}
 .toast.out{opacity:0;transform:translateX(20px);transition:opacity .3s,transform .3s}
 @keyframes toastin{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+#mappick{transition:background-image .25s}
+/* modo cinema (trailer): só o jogo na tela */
+body.cinema>*:not(#game):not(#con):not(script){visibility:hidden!important}
+body.cinema #game{cursor:none}
 #mappick .dossier{max-width:980px}
 #mappick .maps{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
 .mpopts{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:flex-end}
@@ -5517,7 +5521,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v7.9.1';
+const GAME_VERSION='v7.9.2';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -9094,6 +9098,7 @@ const CMDS={
   vm_mao_print:{d:'mostra o JSON da pegada da arma atual (copie para RIG_HANDS no index.html)',f:()=>{ const id=curSlot()&&curSlot().id; cprint(`${id}:${JSON.stringify(RIG_HANDS[id])},`); }},
   drax:{cheat:1,d:'drax N soma drax para testar o Arsenal',f:a=>{ const n=num(a[0],1000)|0; PROG.drax=Math.max(0,PROG.drax+n); saveProg(); cprint(`Drax: ${PROG.drax}`); }},
   knife:{cheat:1,d:'knife <tipo> [acabamento] [raro] cria e equipa uma faca',f:a=>{ const t=(a[0]||'').toLowerCase(); if(!KTYPES[t]){ cprint(`Tipos: ${KT_KEYS.join(', ')}`,'err'); return; } let s=(a[1]||'').toLowerCase(); if(s&&!SKINS[s]){ cprint(`Acabamentos: ${Object.keys(SKINS).join(', ')}`,'err'); return; } const r=s?Math.max(0,SKINS[s].r):4; const it=rollItem(r,null,t); if(s) it.s=s; if(a[2]==='raro'||a[2]==='1') it.rp=true; PROG.items.push(it); PROG.eq=it.uid; saveProg(); recomputeMods(); setKnifeModel(); hudAmmo(); cprint(`Equipada: ${itemName(it)} (${itemRar(it).name})${it.pas.length?' · '+it.pas.map(fmtPas).join(' · '):''}`); }},
+  cinema:{d:'cinema [0|1|2] modo trailer: tira HUD, retícula, textos e avisos (2 também esconde a arma e as mãos) · F8 liga/desliga',f:a=>{ const v=a[0]==null?(CINEMA.on?0:1):clamp(num(a[0],1)|0,0,2); setCinema(v); cprint(v?`Modo cinema ligado${v===2?' (sem arma)':''} · F8 ou "cinema 0" para sair`:'Modo cinema desligado'); }},
   mouse_suave:{d:'mouse_suave N suavização da mira em milissegundos (0 desliga; padrão 10)',f:a=>{ if(a[0]!=null){ CFG.mouseSmooth=clamp(num(a[0],10),0,40)/1000; try{ saveCfg(); }catch(e){} } cprint('Suavização da mira: '+Math.round((CFG.mouseSmooth===0?0:(CFG.mouseSmooth||0.010))*1000)+' ms · picos descartados: '+MLOOK.drop); }},
   cartas_todas:{cheat:1,d:'cartas_todas [N] dá todas as cartas no nível máximo e +N de cada carta infinita (padrão 10) — para testar o fim de jogo',f:a=>{ if(!needGame()) return; const n=clamp(num(a[0],10)|0,1,999); let k=0, inf=0;
     for(const c of CARDS.concat(STACK_CARDS)){ if(c.stack){ for(let i=0;i<n;i++) addCard(c.id); inf++; } else { for(let i=0;i<(c.lv?3:1);i++) addCard(c.id); k++; } }
@@ -12147,7 +12152,7 @@ function toMenu(){ closeChat(); chatClear(); if(G.state==='playing'||G.state==='
 function updateRec(){ $('#rec').innerHTML=best>0?`Recorde neste navegador: rodada <b>${best}</b>.`:'Nenhuma noite registrada ainda.'; }
 
 let pickMode='solo';
-function openMapPick(mode){ pickMode=mode; const grp=inParty(); $('#mp-file').textContent=grp?`Grupo de ${SOC.party.members.length} · escolha o mapa`:'Escolha o mapa e a dificuldade'; const chk=$('#mp-online'); chk.checked=grp; chk.disabled=grp; $('#mp-note').textContent=grp?'Seu grupo entra junto na sala e já fica pronto.':'A Arena X1 é sempre online (1 contra 1).'; show('#mappick'); for(const b of document.querySelectorAll('.mapc')) b.classList.toggle('on',b.dataset.map===CUR); }
+function openMapPick(mode){ pickMode=mode; try{ mapThumb(MAPS[CUR]&&CUR!=='x1'&&CUR!=='sandbox'?CUR:'bunker'); }catch(e){} const grp=inParty(); $('#mp-file').textContent=grp?`Grupo de ${SOC.party.members.length} · escolha o mapa`:'Escolha o mapa e a dificuldade'; const chk=$('#mp-online'); chk.checked=grp; chk.disabled=grp; $('#mp-note').textContent=grp?'Seu grupo entra junto na sala e já fica pronto.':'A Arena X1 é sempre online (1 contra 1).'; show('#mappick'); for(const b of document.querySelectorAll('.mapc')) b.classList.toggle('on',b.dataset.map===CUR); }
 let mpBusy=false;
 async function playChoice(k){
   if(mpBusy) return; const grp=inParty(), online=grp||$('#mp-online').checked||k==='x1', diff=$('#mp-diff').value;
@@ -12158,6 +12163,12 @@ async function playChoice(k){
   $('#room-map').value=k; $('#room-cap').value=k==='x1'?'2':'4'; $('#room-difficulty').value=diff; if(SOC.acc) $('#player-name').value=SOC.acc.name;
   mpBusy=true; try{ await hostGame(); if(NET.mode==='host'&&grp) netSendRaw({type:'partyGo'}); } finally{ mpBusy=false; }
 }
+const CINEMA={on:false,noVm:false};
+function setCinema(v){ CINEMA.on=v>0; CINEMA.noVm=v===2; document.body.classList.toggle('cinema',CINEMA.on); }
+addEventListener('keydown',e=>{ if(e.code==='F8'&&!e.repeat){ e.preventDefault(); setCinema(CINEMA.on?0:(CINEMA.noVm?2:1)); } },true);
+/* seleção de mapas: passar o mouse mostra uma foto pronta do mapa (antes trocava o mapa 3D inteiro e travava) */
+function mapThumb(k){ const el=$('#mappick'); if(!el) return; for(const b of document.querySelectorAll('.mapc')) b.classList.toggle('on',b.dataset.map===k);
+  const img={bunker:'img/map_bunker.jpg',hosp:'img/map_hosp.jpg',farm:'img/map_farm.jpg'}[k]; el.style.backgroundImage=img?`linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.72)),url(${img})`:''; el.style.backgroundSize='cover'; el.style.backgroundPosition='center'; }
 function previewMap(k){ if(k===CUR) return; setMap(k); const m=MAPS[k].menu; P.pos.set(m.x,0,m.z); for(const b of document.querySelectorAll('.mapc')) b.classList.toggle('on',b.dataset.map===k); }
 $('#play').addEventListener('click',()=>{ if(inParty()&&!isLeader()){ toast(`${SOC.party.leader} é o líder do grupo e escolhe o mapa. Quando ele começar, você entra junto.`); return; } openMapPick(inParty()?'host':'solo'); });
 $('#tab-play').addEventListener('click',()=>{ closeSocial(); });
@@ -12181,7 +12192,7 @@ addEventListener('beforeunload',()=>{try{netSendRaw({type:'leave'});}catch(e){}}
 $('#mp-back').addEventListener('click',()=>show('#menu'));
 for(const b of document.querySelectorAll('.mapc[data-map=x1]')) b.addEventListener('click',()=>playChoice('x1'));
 $('#room-map').addEventListener('change',()=>{ const x=$('#room-map').value==='x1', cap=$('#room-cap'); if(x) cap.value='2'; cap.disabled=x; $('#room-difficulty').disabled=x; });
-for(const b of document.querySelectorAll('.mapc:not([data-map=x1])')){ b.addEventListener('pointerenter',()=>previewMap(b.dataset.map)); b.addEventListener('focus',()=>previewMap(b.dataset.map)); b.addEventListener('click',()=>playChoice(b.dataset.map)); }
+for(const b of document.querySelectorAll('.mapc:not([data-map=x1])')){ b.addEventListener('pointerenter',()=>mapThumb(b.dataset.map)); b.addEventListener('focus',()=>mapThumb(b.dataset.map)); b.addEventListener('click',()=>playChoice(b.dataset.map)); }
 $('#again').addEventListener('click',startGame);
 $('#restart').addEventListener('click',()=>{ if(NET.mode!=='client') startGame(); });
 $('#resume').addEventListener('click',resumeGame);
@@ -12296,7 +12307,7 @@ function frame(now){
   try{ zcFrame(); }catch(e){ ZC.on=false; console.warn('[Bunker] corte de salas desligado',e); }
   const tR0=performance.now();
   renderer.clear(); if(!menuScene) renderer.render(scene,camera);
-  if(showVm){ renderer.clearDepth(); renderer.render(vmScene,vmCam); }
+  if(showVm&&!CINEMA.noVm){ renderer.clearDepth(); renderer.render(vmScene,vmCam); }
   drawDoom(rawDt);
   const tR1=performance.now(); perfFrame(rawDt,tR0-tF0,tR1-tR0);
 }

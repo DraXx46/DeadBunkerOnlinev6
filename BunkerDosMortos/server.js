@@ -13,7 +13,7 @@ const MAX_PAYLOAD = 16 * 1024;
 const rooms = new Map();
 const clients = new Map();
 const CODE_CHARS = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
-const MAPS = new Set(['bunker', 'hosp', 'farm', 'x1']);
+const MAPS = new Set(['bunker', 'hosp', 'farm', 'x1', 'tz']);
 const DIFFICULTIES = new Set(['normal', 'hard', 'nightmare']);
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',

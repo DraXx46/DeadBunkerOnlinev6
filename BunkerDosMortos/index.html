@@ -6188,7 +6188,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v8.4';
+const GAME_VERSION='v8.4.1';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -12510,9 +12510,9 @@ function checkCoopOver(){
 /* ---- independent WebSocket multiplayer + safe map lobbies ---- */
 function lobbyMsg(t){ const el=$('#netmsg'); if(el) el.textContent=t; }
 let lobbyBusy=false, lobbySig='';
-// v8.4: os arquivos do jogo podem vir do Cloudflare (ou de qualquer lugar); o online continua no servidor do Render
-const GAME_SERVER_HOST='bunker-dos-mortos.onrender.com';
-const SERVER_WSS=()=>{ const h=location.host, same=/onrender\.com$|^localhost(:|$)|^127\.|^192\.168\./.test(h)||location.protocol==='file:'&&false; return same?((location.protocol==='https:'?'wss://':'ws://')+h+'/ws'):('wss://'+GAME_SERVER_HOST+'/ws'); };
+// v8.4.1: site estático no Cloudflare Pages; o online roda num Cloudflare Worker (Durable Object)
+const GAME_SERVER_HOST='bunker-server.wincklerleonardo12.workers.dev';
+const SERVER_WSS=()=>{ const h=location.host, local=/^localhost(:|$)|^127\.|^192\.168\./.test(h); return local?((location.protocol==='https:'?'wss://':'ws://')+h+'/ws'):('wss://'+GAME_SERVER_HOST+'/ws'); };
 function netSendRaw(obj){ if(!NET.ws||NET.ws.readyState!==WebSocket.OPEN) return false; NET.ws.send(JSON.stringify(obj)); return true; }
 function netRequest(type,payload={}){
   return new Promise((resolve,reject)=>{

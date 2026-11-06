@@ -764,6 +764,17 @@ body.cinema #game{cursor:none}
 .bigbrief{width:180px;height:120px;margin:10px auto;animation:bfopen 1.4s ease both}
 @keyframes bfopen{0%{transform:scale(.3) rotate(-10deg);filter:brightness(3)}50%{transform:scale(1.15) rotate(3deg)}100%{transform:none}}
 .bxbtns{justify-content:center}
+.bxmulti{display:grid;grid-template-columns:repeat(var(--n,5),130px);gap:10px;justify-content:center;margin-top:auto;perspective:900px;z-index:2}
+.bxmulti .mt{all:unset;cursor:pointer;opacity:0;transform:rotateY(100deg) scale(.7);animation:mtin .5s cubic-bezier(.2,1.3,.4,1) var(--d) forwards}
+.bxmulti .mt .bt{transition:transform .15s}.bxmulti .mt:hover .bt{transform:translateY(-4px)}
+.bxmulti .mt.hi .bt{box-shadow:0 0 22px color-mix(in srgb,var(--rc) 70%,transparent),inset 0 0 18px color-mix(in srgb,var(--rc) 30%,transparent)}
+.bxmulti .mt.hi{animation:mtin .5s cubic-bezier(.2,1.3,.4,1) var(--d) forwards,mtglow 1.6s ease-in-out calc(var(--d) + .5s) infinite}
+@keyframes mtin{to{opacity:1;transform:none}}
+@keyframes mtglow{50%{filter:brightness(1.25)}}
+@media (max-width:760px){.bxmulti{grid-template-columns:repeat(3,104px);gap:6px}.bxmulti .bt{width:104px;height:110px}}
+.case .cbtns{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.case.artcase{border-color:color-mix(in srgb,var(--rc) 45%,transparent);box-shadow:inset 3px 0 0 var(--rc)}
+.boxc .ghost.small{margin-top:-2px}
 
 /* ---------- online ---------- */
 #online .lede{font-size:16px}
@@ -1095,8 +1106,9 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
   <p class="file" id="bx-kick">Caixa</p><h2 id="bx-name">Caixa</h2>
   <div class="bxbox" id="bx-box"><i class="lid"></i><i class="body"></i><i class="band"></i><i class="lock"></i></div>
   <div class="bxreel" id="bx-reel" hidden><div class="bxmark"></div><div class="bxstrip" id="bx-strip"></div></div>
+  <div class="bxmulti" id="bx-multi" hidden></div>
   <div class="bxwin" id="bx-win" hidden></div>
-  <div class="row bxbtns"><button id="bx-open" class="cta" type="button" data-snd="none">Abrir</button><button id="bx-skip" class="ghost" type="button" hidden>Pular ▸▸</button><button id="bx-again" class="cta small" type="button" hidden data-snd="none">Abrir outra</button><button id="bx-close" class="ghost" type="button">Fechar</button></div>
+  <div class="row bxbtns"><button id="bx-open" class="cta" type="button" data-snd="none">Abrir</button><button id="bx-skip" class="ghost" type="button" hidden>Pular ▸▸</button><button id="bx-open10" class="cta" type="button" hidden data-snd="none">Abrir ×10</button><button id="bx-again" class="cta small" type="button" hidden data-snd="none">Abrir outra</button><button id="bx-again10" class="cta small" type="button" hidden data-snd="none">Mais ×10</button><button id="bx-close" class="ghost" type="button">Fechar</button></div>
 <label class="bxauto"><input type="checkbox" id="bx-auto"> Sempre pular a animação</label></div><div class="bxsparks" id="bx-sparks"></div></div>
 <div id="clickhint" hidden><b>Clique na tela para travar o mouse</b><small>Esc ou P pausa</small></div>
 <div id="pickscr" hidden><div class="pkbox">
@@ -5557,7 +5569,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v8.0';
+const GAME_VERSION='v8.1';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -8313,7 +8325,13 @@ const BOXES=[
   {t:'sombra',name:'Caixa Sombria',col:'#f4c03a',red:0.018,art:0.45,knife:[0,0,0.45,0.4,0.15],arto:[0,0,0.45,0.4,0.15],desc:'Selada com cera preta. Só itens raros para cima.'},
   {t:'oculta',name:'Caixa Oculta',col:'#ff1a2a',red:0.03,art:0.5,knife:[0,0,0,0.6,0.4],arto:[0,0,0,0.6,0.4],desc:'A mais rara. 3% de chance de um item Oculto vermelho.'},
   {t:'vermelha',name:'Caixa Vermelha',col:'#ff1a2a',red:1,art:0,knife:[0,0,0,0,1],arto:[0,0,0,0,1],dev:1,desc:'Só do console de dev. Sempre sai um item Oculto vermelho.'},
+  /* baús só de artefato, comprados com drax no Arsenal (abrem 1 ou 10 de uma vez) */
+  {t:'art1',name:'Baú de Achados',col:'#a7adb3',shop:1,price:300,red:0,art:1,knife:[1],arto:[0.56,0.28,0.12,0.035,0.005],desc:'Bugigangas dos escombros. Quase sempre comum.'},
+  {t:'art2',name:'Baú do Explorador',col:'#5fb0ef',shop:1,price:1000,red:0,art:1,knife:[1],arto:[0,0.48,0.34,0.14,0.04],desc:'Nada comum. Boa chance de rara.'},
+  {t:'art3',name:'Relicário Antigo',col:'#b45cff',shop:1,price:3200,red:0,art:1,knife:[1],arto:[0,0,0.5,0.36,0.14],desc:'Só rara para cima. 14% de lendária.'},
+  {t:'art4',name:'Cofre Proibido',col:'#f4c03a',shop:1,price:9000,red:0,art:1,knife:[1],arto:[0,0,0,0.58,0.38,0.04],desc:'Épica ou melhor. 4% de artefato Oculto.'},
 ];
+const ART_BOXES=BOXES.filter(b=>b.shop);
 const BOX_BY={}; for(const b of BOXES) BOX_BY[b.t]=b;
 const pickW=w=>{ let r=Math.random()*w.reduce((a,b)=>a+b,0); for(let i=0;i<w.length;i++){ r-=w[i]; if(r<=0) return i; } return w.length-1; };
 function giveBox(t){ const b=BOX_BY[t]||BOXES[0]; const box={t:b.t,id:'b'+Date.now().toString(36)+Math.floor(Math.random()*1e5).toString(36)}; PROG.boxes.push(box); saveProg(); return box; }
@@ -8675,7 +8693,7 @@ function renderArsenal(){
   for(const t of ['cases','shop','inv','arts','skins']) $('#tab-'+t).hidden=t!==arsTab;
   if(arsTab==='arts'){ renderArtsTab(); renderSel(); return; }
   if(arsTab==='skins'){ renderSkinsTab(); renderSel(); return; }
-  if(arsTab==='cases') $('#tab-cases').innerHTML=boxInvHTML()+'<p class="file" style="margin:6px 0 10px">Caixas de facas (drax)</p>'+CASES.map(c=>`<div class="case"><div class="cbars">${c.odds.map((o,i)=>o>0?`<i style="flex:${o};background:${RAR[i].col}" title="${RAR[i].name}: ${(o*100).toFixed(o<0.02?1:0)}%"></i>`:'').join('')}</div><div class="cmeta"><h3>${c.name}</h3><p>${c.desc}</p><p class="codds">${c.odds.map((o,i)=>o>0?`<span style="color:${RAR[i].col}">${RAR[i].name} ${(o*100).toFixed(o<0.02?1:0)}%</span>`:'').join(' · ')}</p></div><button class="cta small" data-case="${c.id}" ${PROG.drax<c.price?'disabled':''}>Abrir · ◆ ${c.price.toLocaleString('pt-BR')}</button></div>`).join('');
+  if(arsTab==='cases') $('#tab-cases').innerHTML=boxInvHTML()+'<p class="file" style="margin:6px 0 10px">Caixas de facas (drax)</p>'+CASES.map(c=>`<div class="case"><div class="cbars">${c.odds.map((o,i)=>o>0?`<i style="flex:${o};background:${RAR[i].col}" title="${RAR[i].name}: ${(o*100).toFixed(o<0.02?1:0)}%"></i>`:'').join('')}</div><div class="cmeta"><h3>${c.name}</h3><p>${c.desc}</p><p class="codds">${c.odds.map((o,i)=>o>0?`<span style="color:${RAR[i].col}">${RAR[i].name} ${(o*100).toFixed(o<0.02?1:0)}%</span>`:'').filter(Boolean).join(' · ')}</p></div><div class="cbtns"><button class="cta small" data-case="${c.id}" ${PROG.drax<c.price?'disabled':''}>Abrir · ◆ ${c.price.toLocaleString('pt-BR')}</button><button class="ghost small" data-case10="${c.id}" type="button" ${PROG.drax<c.price*10?'disabled':''}>Abrir 10× · ◆ ${(c.price*10).toLocaleString('pt-BR')}</button></div></div>`).join('')+artBoxShopHTML();
   else if(arsTab==='shop'){ const offers=dailyOffers(); const d=dayNum(); const bought=PROG.bought.d===d?PROG.bought.i:[]; $('#tab-shop').innerHTML=`<p class="rec">A vitrine troca todo dia. Cada peça sai uma vez só.</p><div class="kgrid">${offers.map((it,i)=>bought.includes(i)?`<div class="kcard sold"><span class="kn">Vendida</span></div>`:itemCardHTML(it,{price:it.price,sel:arsSel&&arsSel.uid===it.uid})).join('')}</div>`; }
   else { const items=[BASE_ITEM].concat(PROG.items.slice().sort((a,b)=>itemR(b)-itemR(a))); $('#tab-inv').innerHTML=`<p class="rec">${PROG.items.length} faca${PROG.items.length===1?'':'s'} na coleção.</p><div class="kgrid">${items.map(it=>itemCardHTML(it,{sel:arsSel&&arsSel.uid===it.uid})).join('')}</div>`; }
   renderSel();
@@ -8707,9 +8725,10 @@ $('#k-inspect').addEventListener('click',()=>{ const it=arsSel||equippedItem(); 
 
 /* ---- caixas ganhas, artefatos e skins pagas no Arsenal ---- */
 const ART_SELL=[80,240,600,1500,4000,9000];
+function artBoxShopHTML(){ return '<p class="file" style="margin:18px 0 10px">Baús de artefatos (drax) · só artefatos</p>'+ART_BOXES.map(b=>{ const o=b.arto; return `<div class="case artcase" style="--rc:${b.col}"><div class="cbars">${o.map((x,i)=>x>0?`<i style="flex:${x};background:${RAR[i].col}" title="${RAR[i].name}: ${(x*100).toFixed(x<0.02?1:0)}%"></i>`:'').join('')}</div><div class="cmeta"><h3>${b.name}</h3><p>${b.desc}</p><p class="codds">${o.map((x,i)=>x>0?`<span style="color:${RAR[i].col}">${RAR[i].name} ${(x*100).toFixed(x<0.02?1:0).replace('.',',')}%</span>`:'').filter(Boolean).join(' · ')}</p></div><div class="cbtns"><button class="cta small" data-artbox="${b.t}" type="button" ${PROG.drax<b.price?'disabled':''}>Abrir · ◆ ${b.price.toLocaleString('pt-BR')}</button><button class="ghost small" data-artbox10="${b.t}" type="button" ${PROG.drax<b.price*10?'disabled':''}>Abrir 10× · ◆ ${(b.price*10).toLocaleString('pt-BR')}</button></div></div>`; }).join(''); }
 function boxInvHTML(){ const cnt={}; for(const b of PROG.boxes||[]) cnt[b.t]=(cnt[b.t]||0)+1;
   const have=BOXES.filter(b=>cnt[b.t]);
-  return `<p class="file" style="margin:0 0 10px">Suas caixas · uma a cada 5 rodadas</p>`+(have.length?`<div class="boxinv">${have.map(b=>`<div class="boxc" style="--rc:${b.col}"><div class="mini"><i class="lid"></i><i class="body"></i></div><b>${b.name}</b><span class="n">×${cnt[b.t]}</span><small>${b.desc} · Oculto ${(b.red*100).toFixed(1).replace('.',',')}%</small><button class="cta small" data-box="${b.t}" type="button">Abrir</button></div>`).join('')}</div>`:`<p class="rec" style="margin-bottom:18px">Nenhuma caixa ainda. Sobreviva 5 rodadas em qualquer mapa para ganhar uma.</p>`); }
+  return `<p class="file" style="margin:0 0 10px">Suas caixas · uma a cada 5 rodadas</p>`+(have.length?`<div class="boxinv">${have.map(b=>`<div class="boxc" style="--rc:${b.col}"><div class="mini"><i class="lid"></i><i class="body"></i></div><b>${b.name}</b><span class="n">×${cnt[b.t]}</span><small>${b.desc} · Oculto ${(b.red*100).toFixed(1).replace('.',',')}%</small><button class="cta small" data-box="${b.t}" type="button">Abrir</button>${cnt[b.t]>=2?`<button class="ghost small" data-box10="${b.t}" type="button">Abrir ×${Math.min(10,cnt[b.t])}</button>`:''}</div>`).join('')}</div>`:`<p class="rec" style="margin-bottom:18px">Nenhuma caixa ainda. Sobreviva 5 rodadas em qualquer mapa para ganhar uma.</p>`); }
 function renderArtsTab(){ const arts=(PROG.arts||[]).slice().sort((a,b)=>b.r-a.r); const who=uid=>{ for(const c in PROG.artEq||{}) if(PROG.artEq[c]===uid) return CHARS[c]?CHARS[c].vars[varKeys(c)[0]].name:c; return null; };
   const cur=CHARS[PROG.char].vars[PROG.cv]?CHARS[PROG.char].vars[PROG.cv].name:'';
   $('#tab-arts').innerHTML=`<p class="rec">Artefatos dão passivas ao personagem em que estão vinculados. Vincule aqui ao personagem em uso (${cur}) ou escolha em Personagens. ${arts.length} no inventário.</p>`+(arts.length?`<div class="artgrid">${arts.map(a=>{ const w=who(a.uid); return `<div class="artc" style="--rc:${RAR[a.r].col}"><div class="top">${artIcon(a,48)}<div><b>${artName(a)}</b><div class="rr">${RAR[a.r].name}</div></div></div><ul>${artLines(a).map(l=>`<li>${l}</li>`).join('')}</ul><small style="color:var(--muted)">${w?'Vinculado a '+w:'Sem vínculo'}</small><div class="row">${w?`<button class="ghost" data-art-un="${a.uid}" type="button">Remover</button>`:`<button class="cta small" data-art-eq="${a.uid}" type="button">Vincular</button>`}<button class="ghost" data-art-sell="${a.uid}" type="button">Vender ◆ ${ART_SELL[a.r].toLocaleString('pt-BR')}</button></div></div>`; }).join('')}</div>`:`<p class="rec">Nenhum artefato. Eles saem das caixas ganhas a cada 5 rodadas.</p>`); }
@@ -8718,8 +8737,12 @@ function renderSkinsTab(){
   <div class="skgrid">${SKIN_DEFS.map(d=>{ const own=ownSkin(d.c,d.k); const C=CHARS[d.c]; let img=''; try{ img=charThumb3d(d.c,d.k); }catch(e){}
     return `<div class="skc${own?' own':''}" style="--rc:#ff1a2a"><div class="top"><img alt="" src="${img}"><div><b>${d.name}</b><div class="rr">Oculto · ${C.vars[varKeys(d.c)[0]].name}</div></div></div><p>${d.lore}</p><div class="row">${own?`<button class="ghost" data-skin-see="${d.c}:${d.k}" type="button">Seu · ver</button>`:`<button class="cta small" data-skin-buy="${d.c}:${d.k}" type="button"${PROG.rubies<d.price?' disabled':''}>♦ ${d.price.toLocaleString('pt-BR')}</button><button class="ghost" data-skin-see="${d.c}:${d.k}" type="button">Ver</button>`}</div></div>`; }).join('')}</div>`; }
 function buySkin(c,k){ const d=SKIN_DEFS.find(x=>x.c===c&&x.k===k); if(!d||ownSkin(c,k)) return false; if(PROG.rubies<d.price){ Snd.ui('deny'); toast(`Faltam ♦ ${(d.price-PROG.rubies).toLocaleString('pt-BR')} rubis.`,{bad:true}); return false; } PROG.rubies-=d.price; PROG.skins.push(skinKey(c,k)); saveProg(); Snd.ui('buy'); toast(`${d.name} é seu! Use em Personagens.`); return true; }
-$('#arsenal').addEventListener('click',e=>{ if(arsBusy) return; const t=e.target.closest('[data-box],[data-art-eq],[data-art-un],[data-art-sell],[data-skin-buy],[data-skin-see]'); if(!t) return;
+$('#arsenal').addEventListener('click',e=>{ if(arsBusy) return; const t=e.target.closest('[data-box],[data-box10],[data-case10],[data-artbox],[data-artbox10],[data-art-eq],[data-art-un],[data-art-sell],[data-skin-buy],[data-skin-see]'); if(!t) return;
   if(t.dataset.box){ openBoxUI(t.dataset.box); return; }
+  if(t.dataset.box10){ openBoxUI(t.dataset.box10,false,10); return; }
+  if(t.dataset.case10){ openCaseMulti(CASES.find(x=>x.id===t.dataset.case10),10); return; }
+  if(t.dataset.artbox){ buyArtBox(t.dataset.artbox,1); return; }
+  if(t.dataset.artbox10){ buyArtBox(t.dataset.artbox10,10); return; }
   if(t.dataset.artEq){ equipArt(PROG.char,t.dataset.artEq); Snd.ui('select'); renderArsenal(); return; }
   if(t.dataset.artUn){ const uid=t.dataset.artUn; for(const c in PROG.artEq) if(PROG.artEq[c]===uid) delete PROG.artEq[c]; saveProg(); recomputeMods(); renderArsenal(); return; }
   if(t.dataset.artSell){ const a=PROG.arts.find(x=>x.uid===t.dataset.artSell); if(!a) return; if(!t.dataset.armed){ t.dataset.armed='1'; t.textContent='Confirmar venda?'; return; } PROG.arts=PROG.arts.filter(x=>x!==a); for(const c in PROG.artEq) if(PROG.artEq[c]===a.uid) delete PROG.artEq[c]; PROG.drax+=ART_SELL[a.r]; saveProg(); recomputeMods(); Snd.buy(); renderArsenal(); return; }
@@ -8731,7 +8754,7 @@ function boxDropToast(b){ toast(`📦 ${b.name} guardada no inventário`); rende
 
 /* ---- caixa em 3D: galpão cheio de caixas, a sua cai do alto, levanta poeira e abre ---- */
 const BX3={r:null,on:false,state:'off',t:0,parts:[],shake:0,last:0};
-const BX3_STYLE={sup:{base:'#7a5a36',ink:'#2a1d10',band:'#3a3a3a',metal:0,txt:'SUPRIMENTOS'},mil:{base:'#4c5a34',ink:'#1b2212',band:'#22261c',metal:0,txt:'EXÉRCITO 07'},bunker:{base:'#3b2c52',ink:'#140c22',band:'#555060',metal:1,txt:'BUNKER'},sombra:{base:'#1c1914',ink:'#000',band:'#b8902a',metal:1,txt:'LACRADA'},oculta:{base:'#5a0a12',ink:'#120003',band:'#2a0206',metal:1,txt:'OCULTO'},vermelha:{base:'#6a0814',ink:'#120003',band:'#ff2a3a',metal:1,txt:'DEV'}};
+const BX3_STYLE={sup:{base:'#7a5a36',ink:'#2a1d10',band:'#3a3a3a',metal:0,txt:'SUPRIMENTOS'},mil:{base:'#4c5a34',ink:'#1b2212',band:'#22261c',metal:0,txt:'EXÉRCITO 07'},bunker:{base:'#3b2c52',ink:'#140c22',band:'#555060',metal:1,txt:'BUNKER'},sombra:{base:'#1c1914',ink:'#000',band:'#b8902a',metal:1,txt:'LACRADA'},oculta:{base:'#5a0a12',ink:'#120003',band:'#2a0206',metal:1,txt:'OCULTO'},vermelha:{base:'#6a0814',ink:'#120003',band:'#ff2a3a',metal:1,txt:'DEV'},art1:{base:'#6a5a44',ink:'#241a10',band:'#8a7a60',metal:0,txt:'ACHADOS'},art2:{base:'#25384a',ink:'#0a121a',band:'#5fb0ef',metal:1,txt:'EXPLORADOR'},art3:{base:'#2e1f3e',ink:'#0e0716',band:'#b45cff',metal:1,txt:'RELICÁRIO'},art4:{base:'#1e1a10',ink:'#000',band:'#f4c03a',metal:1,txt:'PROIBIDO'}};
 function bx3Canvas(w,h,draw){ const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); const t=new THREE.CanvasTexture(c); t.anisotropy=4; return t; }
 const BX3_TEX={};
 function bx3CrateTex(t,top){ const k=t+(top?'_t':''); if(BX3_TEX[k]) return BX3_TEX[k]; const S=BX3_STYLE[t]||BX3_STYLE.sup, col=(BOX_BY[t]||BOXES[0]).col;
@@ -8871,27 +8894,78 @@ function bx3Loop(now){
 const BX={busy:false,t:null,forceRed:false,skip:false,auto:false};
 try{ BX.auto=localStorage.getItem('bdm_bxauto')==='1'; }catch(e){}
 $('#bx-auto').checked=BX.auto; $('#bx-auto').addEventListener('change',e=>{ BX.auto=e.target.checked; try{ localStorage.setItem('bdm_bxauto',BX.auto?'1':'0'); }catch(err){} });
-function boxSkip(){ if(!BX.busy||BX.skip) return; BX.skip=true; $('#bx-skip').hidden=true; }
+function boxSkip(){ if(!BX.busy||BX.skip) return; BX.skip=true; $('#bx-skip').hidden=true; if(BX.multiTimers&&!$('#bx-multi').hidden){ for(const t of BX.multiTimers) clearTimeout(t); for(const m of document.querySelectorAll('#bx-multi .mt')) m.style.setProperty('--d','0s'); BX.multiTimers=null; const pr=BX.multi; BX.skip=true; boxMultiShow(pr); } }
 $('#bx-skip').addEventListener('click',boxSkip);
 const prizeRar=p=>p.red?5:p.kind==='art'?p.art.r:itemR(p.item);
-function prizeTile(p){ if(p.red) return `<div class="bt red" style="--rc:#ff1a2a"><div class="brief"></div><b>Oculto</b><span>???</span></div>`;
+function prizeTile(p,real){ if(p.red&&!real) return `<div class="bt red" style="--rc:#ff1a2a"><div class="brief"></div><b>Oculto</b><span>???</span></div>`;
+  if(p.kind==='skin'){ const d=SKIN_DEFS.find(x=>x.c===p.c&&x.k===p.k); let img=''; try{ img=charThumb3d(p.c,p.k); }catch(e){} return `<div class="bt red" style="--rc:#ff1a2a"><img alt="" src="${img}" style="height:58px;width:58px;object-fit:cover"><b>Oculto</b><span>${d?d.name:'Visual'}</span></div>`; }
   if(p.kind==='art') return `<div class="bt" style="--rc:${RAR[p.art.r].col}">${artIcon(p.art,54)}<b>${RAR[p.art.r].name}</b><span>${artName(p.art)}</span></div>`;
   const it=p.item, r=itemRar(it); return `<div class="bt" style="--rc:${r.col}"><img alt="" src="${knifeThumb(it,118,54)}"><b>${r.name}</b><span>${KTYPES[it.t].name} | ${(SKINS[it.s]||SKINS.padrao).name}</span></div>`; }
-function openBoxUI(t,forceRed){ const b=BOX_BY[t]; if(!b) return; const have=PROG.boxes.some(x=>x.t===t); if(!have&&!forceRed){ toast('Você não tem essa caixa.',{bad:true}); return; }
-  BX.t=t; BX.forceRed=!!forceRed; BX.busy=false; const el=$('#boxer'); el.hidden=false; el.classList.remove('redwin','redflash'); el.style.setProperty('--rc',b.col);
+const boxCount=t=>PROG.boxes.filter(x=>x.t===t).length;
+function boxBtns(){ const n=BX.caseMode?0:boxCount(BX.t); const n10=Math.min(10,n); $('#bx-open10').hidden=BX.busy||BX.opened||n<2; $('#bx-open10').textContent=`Abrir ×${n10}`; }
+function openBoxUI(t,forceRed,autoMulti){ const b=BOX_BY[t]; if(!b) return; const have=PROG.boxes.some(x=>x.t===t); if(!have&&!forceRed){ toast('Você não tem essa caixa.',{bad:true}); return; }
+  BX.t=t; BX.forceRed=!!forceRed; BX.busy=false; BX.caseMode=null; BX.opened=false; BX.autoMulti=autoMulti||0; $('#bx-multi').hidden=true; $('#bx-multi').textContent=''; $('#bx-again10').hidden=true; const el=$('#boxer'); el.hidden=false; el.classList.remove('redwin','redflash'); el.style.setProperty('--rc',b.col);
   $('#bx-kick').textContent=`Caixa · ${PROG.boxes.filter(x=>x.t===t).length} no inventário`; $('#bx-name').textContent=b.name;
   const box=$('#bx-box'); box.className='bxbox'; box.style.animation='none'; void box.offsetWidth; box.style.animation='';
   $('#bx-reel').hidden=true; $('#bx-win').hidden=true; $('#bx-win').textContent=''; $('#bx-open').hidden=false; $('#bx-again').hidden=true; $('#bx-sparks').textContent='';
-  el.classList.remove('dim'); let d3=false; try{ el.classList.add('b3d'); d3=bx3Drop(t,()=>{ if(!BX.busy) $('#bx-open').hidden=false; }); }catch(e){ console.warn(e); d3=false; }
+  const landed=()=>{ if(BX.busy) return; if(BX.autoMulti){ const n=BX.autoMulti; BX.autoMulti=0; openBoxMulti(n); return; } $('#bx-open').hidden=false; boxBtns(); };
+  $('#bx-open10').hidden=true;
+  el.classList.remove('dim'); let d3=false; try{ el.classList.add('b3d'); d3=bx3Drop(t,landed); }catch(e){ console.warn(e); d3=false; }
   if(d3){ $('#bx-open').hidden=true; return; }
-  el.classList.remove('b3d'); setTimeout(()=>{ try{ Snd.place(); }catch(e){} },620); }
-function closeBoxUI(){ if(BX.busy) return; $('#boxer').hidden=true; bx3Stop(); renderDrax(); if(!$('#arsenal').hidden) renderArsenal(); }
+  el.classList.remove('b3d'); setTimeout(()=>{ try{ Snd.place(); }catch(e){} },620); if(BX.autoMulti) setTimeout(landed,700); else boxBtns(); }
+function closeBoxUI(){ if(BX.busy) return; BX.caseMode=null; BX.multi=null; $('#boxer').hidden=true; bx3Stop(); renderDrax(); if(!$('#arsenal').hidden) renderArsenal(); }
 $('#bx-close').addEventListener('click',closeBoxUI);
-$('#bx-again').addEventListener('click',()=>openBoxUI(BX.t));
+$('#bx-again').addEventListener('click',()=>{ if(BX.busy) return; if(BX.caseMode){ const c=BX.caseMode; closeBoxUI(); openCaseMulti(c,1); return; } if(!boxCount(BX.t)&&BOX_BY[BX.t].shop){ buyArtBox(BX.t,1); return; } openBoxUI(BX.t); });
+$('#bx-again10').addEventListener('click',()=>{ if(BX.busy) return; if(BX.caseMode){ openCaseMulti(BX.caseMode,10); return; } if(boxCount(BX.t)<2&&BOX_BY[BX.t].shop){ buyArtBox(BX.t,10); return; } openBoxUI(BX.t,false,10); });
+function boxAfter(){ const left=boxCount(BX.t), sb=BOX_BY[BX.t]||{};
+  $('#bx-again').hidden=!left&&!sb.shop; $('#bx-again').textContent=left?'Abrir outra':`Comprar 1 · ◆ ${sb.price.toLocaleString('pt-BR')}`; $('#bx-again').disabled=!left&&PROG.drax<sb.price;
+  $('#bx-again10').hidden=left<2&&!sb.shop; $('#bx-again10').textContent=left>=2?`Mais ×${Math.min(10,left)}`:`Comprar ×10 · ◆ ${(sb.price*10).toLocaleString('pt-BR')}`; $('#bx-again10').disabled=left<2&&PROG.drax<sb.price*10; }
+$('#bx-open10').addEventListener('click',()=>openBoxMulti(10));
+/* ---- abrir várias de uma vez: a caixa abre uma vez e os prêmios viram um painel que vira carta por carta ---- */
+function openBoxMulti(n){ if(BX.busy) return; const b=BOX_BY[BX.t]; if(!b) return; n=Math.min(n,boxCount(BX.t)); if(n<1) return;
+  const prizes=[]; for(let k=0;k<n;k++){ const i=PROG.boxes.findIndex(x=>x.t===BX.t); if(i<0) break; PROG.boxes.splice(i,1); const p=rollBox(b); grantPrize(p); prizes.push(p); }
+  boxMultiRun(prizes); }
+function boxMultiRun(prizes){
+  BX.busy=true; BX.opened=true; BX.skip=!!BX.auto; $('#bx-open').hidden=true; $('#bx-open10').hidden=true; $('#bx-again').hidden=true; $('#bx-again10').hidden=true; $('#bx-win').hidden=true; $('#bx-reel').hidden=true;
+  const box=$('#bx-box'), el=$('#boxer'), d3=el.classList.contains('b3d'); try{ Snd.ui('confirm'); }catch(e){}
+  if(d3) bx3Open(BX.skip); box.classList.add('shake');
+  setTimeout(()=>{ box.classList.remove('shake'); box.classList.add('open'); try{ Snd.reelTick(1.6); Snd.ui('unlock'); }catch(e){} },BX.skip?0:520);
+  setTimeout(()=>{ box.classList.add('gone'); el.classList.add('dim'); boxMultiShow(prizes); },BX.skip?300:(d3?1300:950));
+}
+function boxMultiShow(prizes){
+  const g=$('#bx-multi'), el=$('#boxer'); g.hidden=false; $('#bx-skip').hidden=BX.skip; const step=BX.skip?0.03:0.17;
+  let best=0, bi=0; prizes.forEach((p,i)=>{ const r=prizeRar(p); if(r>best){ best=r; bi=i; } });
+  g.style.setProperty('--n',Math.min(5,prizes.length));
+  g.innerHTML=prizes.map((p,i)=>{ const r=prizeRar(p); return `<button type="button" class="mt${r>=3?' hi':''}${p.red?' rd':''}" data-i="${i}" style="--d:${(i*step).toFixed(2)}s;--rc:${RAR[r].col}">${prizeTile(p,true)}</button>`; }).join('');
+  BX.multi=prizes; const timers=[];
+  prizes.forEach((p,i)=>timers.push(setTimeout(()=>{ const r=prizeRar(p); try{ if(r>=3) Snd.reveal(Math.min(4,r)); else Snd.reelTick(0.9+r*0.15); }catch(e){} if(r>=4||p.red) boxSparks(p.red?60:30,RAR[r].col); },(i*step*1000)+260)));
+  const end=(prizes.length*step*1000)+700;
+  timers.push(setTimeout(()=>{ BX.busy=false; $('#bx-skip').hidden=true; const p=prizes[bi]; if(p.red){ el.classList.add('redwin','redflash'); sysLog('Item Oculto conseguido!'); }
+    const cnt=[0,0,0,0,0,0]; for(const q of prizes) cnt[prizeRar(q)]++;
+    $('#bx-kick').textContent=cnt.map((c,r)=>c?`${c} ${c>1&&r<5?RAR[r].name.toLowerCase().replace(/m$/,'n')+'s':RAR[r].name.toLowerCase()}`:'').filter(Boolean).join(' · ');
+    if(BX.caseMode){ $('#bx-again').hidden=false; $('#bx-again').textContent=`Abrir 1 · ◆ ${BX.caseMode.price.toLocaleString('pt-BR')}`; $('#bx-again').disabled=PROG.drax<BX.caseMode.price; $('#bx-again10').hidden=false; $('#bx-again10').textContent=`Mais ×10 · ◆ ${(BX.caseMode.price*10).toLocaleString('pt-BR')}`; $('#bx-again10').disabled=PROG.drax<BX.caseMode.price*10; }
+    else boxAfter();
+    renderDrax(); },BX.skip?Math.min(end,600):end));
+  BX.multiTimers=timers;
+}
+$('#bx-multi').addEventListener('click',e=>{ const t=e.target.closest('.mt'); if(!t||!BX.multi) return; const p=BX.multi[+t.dataset.i]; if(!p) return; const w=$('#bx-win'); w.style.setProperty('--rc',RAR[prizeRar(p)].col); w.hidden=false; w.innerHTML=prizeWinHTML(p)+'<button type="button" class="ghost small" id="bx-win-x">Voltar</button>'; $('#bx-multi').hidden=true; try{ Snd.cardFlip(); }catch(e){} });
+$('#bx-win').addEventListener('click',e=>{ if(e.target.id==='bx-win-x'){ $('#bx-win').hidden=true; $('#bx-multi').hidden=false; } });
+/* abre o Boxer sem caixa do inventário (caixas de facas e baús comprados na hora) */
+function boxerBare(t,title){ const b=BOX_BY[t]||BOXES[0]; BX.t=t; BX.forceRed=false; BX.busy=false; BX.opened=false; BX.autoMulti=0; const el=$('#boxer'); el.hidden=false; el.classList.remove('redwin','redflash','dim'); el.style.setProperty('--rc',b.col);
+  $('#bx-kick').textContent='Abrindo…'; $('#bx-name').textContent=title||b.name; const box=$('#bx-box'); box.className='bxbox'; box.style.animation='none'; void box.offsetWidth; box.style.animation='';
+  for(const id of ['#bx-reel','#bx-win','#bx-open','#bx-open10','#bx-again','#bx-again10','#bx-multi']) $(id).hidden=true; $('#bx-sparks').textContent=''; $('#bx-again').disabled=false; $('#bx-again10').disabled=false;
+  let d3=false; try{ el.classList.add('b3d'); d3=bx3Drop(t,()=>{}); }catch(e){ d3=false; } if(!d3) el.classList.remove('b3d'); return d3; }
+const CASE_CRATE={campo:'sup',elite:'mil',reliquia:'sombra'};
+function openCaseMulti(c,n){ if(!c||arsBusy&&n===1) return; const cost=c.price*n; if(PROG.drax<cost){ Snd.ui('deny'); toast(`Faltam ◆ ${(cost-PROG.drax).toLocaleString('pt-BR')} drax.`,{bad:true}); return; }
+  if(n===1){ openCase(c); return; }
+  PROG.drax-=cost; PROG.cases=(PROG.cases|0)+n; const prizes=[]; for(let i=0;i<n;i++){ const it=rollCase(c); PROG.items.push(it); prizes.push({kind:'knife',item:it}); } saveProg(); renderDrax();
+  const d3=boxerBare(CASE_CRATE[c.id]||'sup',c.name+' ×'+n); BX.caseMode=c; setTimeout(()=>boxMultiRun(prizes),d3?1400:500); }
+function buyArtBox(t,n){ const b=BOX_BY[t]; if(!b||!b.shop) return; const cost=b.price*n; if(PROG.drax<cost){ Snd.ui('deny'); toast(`Faltam ◆ ${(cost-PROG.drax).toLocaleString('pt-BR')} drax.`,{bad:true}); return; }
+  PROG.drax-=cost; for(let i=0;i<n;i++) giveBox(t); try{ Snd.buy(); }catch(e){} renderDrax(); openBoxUI(t,false,n>1?n:0); }
 $('#bx-open').addEventListener('click',()=>{
   if(BX.busy) return; const b=BOX_BY[BX.t]; const i=PROG.boxes.findIndex(x=>x.t===BX.t); if(i<0&&!BX.forceRed) return;
-  BX.busy=true; BX.skip=false; if(i>=0) PROG.boxes.splice(i,1); const prize=rollBox(b,BX.forceRed); grantPrize(prize); BX.forceRed=false;
-  $('#bx-open').hidden=true; const box=$('#bx-box'); Snd.ui('confirm');
+  BX.busy=true; BX.opened=true; BX.skip=false; if(i>=0) PROG.boxes.splice(i,1); const prize=rollBox(b,BX.forceRed); grantPrize(prize); BX.forceRed=false;
+  $('#bx-open').hidden=true; $('#bx-open10').hidden=true; const box=$('#bx-box'); Snd.ui('confirm');
   const d3=$('#boxer').classList.contains('b3d');
   if(BX.auto){ BX.skip=true; box.classList.add('open','gone'); if(d3){ bx3Open(true); setTimeout(()=>{ $('#boxer').classList.add('dim'); boxReveal(prize); },420); } else setTimeout(()=>boxReveal(prize),120); return; }
   if(d3) bx3Open(false); $('#bx-skip').hidden=false; box.classList.add('shake');
@@ -8900,7 +8974,7 @@ $('#bx-open').addEventListener('click',()=>{
 });
 function boxSpin(b,prize){
   const reel=$('#bx-reel'), strip=$('#bx-strip'); reel.hidden=false; const N=62, WIN=54; const tiles=[];
-  const teas=prize.red?[]:[WIN-6,WIN+2,Math.floor(rand(8,WIN-12))];
+  const teas=prize.red||!(b.red>0)?[]:[WIN-6,WIN+2,Math.floor(rand(8,WIN-12))];
   for(let i=0;i<N;i++) tiles.push(i===WIN?prize:teas.includes(i)?{red:true}:rollBox(b));
   strip.innerHTML=tiles.map(prizeTile).join(''); strip.style.transition='none'; strip.style.transform='translateX(0px)';
   requestAnimationFrame(()=>{ const tileW=strip.firstElementChild.getBoundingClientRect().width+8, wrapW=reel.getBoundingClientRect().width;
@@ -8917,7 +8991,7 @@ function prizeWinHTML(p){
   const it=p.item, r=itemRar(it); return `<span class="rr">${r.name}${it.rp?' · ★ padrão raro':''}</span><h3>${itemName(it)}</h3><img alt="" src="${knifeThumb(it,300,140)}"><ul>${(it.pas||[]).map(q=>`<li>${fmtPas(q)}</li>`).join('')}</ul>`; }
 function boxReveal(p){
   const el=$('#boxer'), win=$('#bx-win'); $('#bx-reel').hidden=true; $('#bx-skip').hidden=true; const r=prizeRar(p); const col=RAR[r].col; win.style.setProperty('--rc',col);
-  const done=()=>{ BX.busy=false; const left=PROG.boxes.filter(x=>x.t===BX.t).length; $('#bx-kick').textContent=`Caixa · ${left} no inventário`; $('#bx-again').hidden=!left; renderDrax(); };
+  const done=()=>{ BX.busy=false; const left=PROG.boxes.filter(x=>x.t===BX.t).length; $('#bx-kick').textContent=`Caixa · ${left} no inventário`; boxAfter(); renderDrax(); };
   if(p.red){ el.classList.add('redwin','redflash'); try{ Snd.reveal(4); setTimeout(()=>Snd.levelUp(9),400); setTimeout(()=>Snd.reveal(4),900); }catch(e){} boxSparks(90); setTimeout(()=>boxSparks(60,'#ffd24a'),700);
     win.hidden=false; win.innerHTML=`<span class="rr">Algo vermelho saiu da caixa…</span><div class="brief bigbrief"></div>`;
     setTimeout(()=>{ boxSparks(70); win.style.animation='none'; void win.offsetWidth; win.style.animation=''; win.innerHTML=prizeWinHTML(p); done(); sysLog('Item Oculto conseguido!'); },BX.skip?450:1700); return; }

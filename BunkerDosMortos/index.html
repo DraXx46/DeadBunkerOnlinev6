@@ -1229,6 +1229,7 @@ body.cinema #tzcap{display:none}
         <div><dt>F · V</dt><dd>Golpe rápido · F inspeciona a faca</dd></div>
         <div><dt>Ctrl · C</dt><dd>Agachar: 90% mais precisão</dd></div>
         <div><dt>G</dt><dd>Granada</dd></div>
+        <div><dt>H</dt><dd>Largar a arma da mão</dd></div>
         <div><dt>L</dt><dd>Liga e desliga a lanterna</dd></div>
         <div><dt>1 · 2 · 3</dt><dd>Escolher carta no fim da rodada</dd></div>
         <div><dt>Esc</dt><dd>Pausa · voltar nos menus</dd></div>
@@ -2882,6 +2883,7 @@ function tzMove(dx,dz,teleport){   // leva junto tudo que está no ônibus
   if(!dx&&!dz) return; const inP=tzInBus(P.pos.x,P.pos.z,0.35);
   const rs=NET.mode==='client'?[]:tzRiders();
   if(inP){ P.pos.x+=dx; P.pos.z+=dz; if(teleport){ flowDirty=true; } }
+  for(const d of WDROP.list) if(tzInBus(d.x,d.z,0.1)){ d.x+=dx; d.z+=dz; }
   for(const z of rs){ z.pos.x+=dx; z.pos.z+=dz; if(z.from){ z.from.x+=dx; z.from.z+=dz; } if(z.root){ z.root.position.x+=dx; z.root.position.z+=dz; } }
   if(teleport&&NET.mode!=='client'){ // quem ficou para trás some (volta para a fila da rodada), a não ser que tenha alguém perto
     const keep=new Set(rs); const tg=[{x:P.pos.x,z:P.pos.z}]; for(const rp of NET.players.values()) if(rp.x!=null) tg.push({x:rp.x,z:rp.z});
@@ -2973,7 +2975,7 @@ function tzRoofState(z,dt,w){
     const fl=floorAt(z.pos.x,z.pos.z); z.g.position.y=lerp(0,TZ_ROOF,k)-fl+Math.sin(k*Math.PI)*0.4; z.moving=true; z.yaw=Math.PI; if(k>=1){ z.state='roofWalk'; z.t=0; } return; }
   if(z.state==='roofWalk'){ z.g.position.y=TZ_ROOF-TZ_FLOOR; const d=moveToward(z,w.tearPt.x,w.tearPt.z,dt,1.4); if(d<0.15){ z.state='tear'; z.tearT=0; } return; }
   if(z.state==='roofDrop'){ const k=Math.min(z.t/0.55,1); z.pos.x=lerp(z.from.x,w.land.x,k); z.pos.z=lerp(z.from.z,w.land.z,k); z.g.position.y=(TZ_ROOF-TZ_FLOOR)*(1-k*k); z.moving=true;
-    if(k>=1){ z.state='inside'; z.g.position.y=0; if(w.occupant===z) w.occupant=null; } } }
+    if(k>=1){ z.state='inside'; z.g.position.y=0; z.landT=0.9; if(w.occupant===z) w.occupant=null; } } }
 /* ================= missão do posto: 5 peças → bancada → manequim com ventilador → porta de aço ================= */
 const TZ_PARTS=[{n:'Cabeça do manequim',k:'head'},{n:'Tronco do manequim',k:'torso'},{n:'Braços do manequim',k:'arms'},{n:'Pernas do manequim',k:'legs'},{n:'Ventilador',k:'fan'}];
 const TZ_PSPOTS=[[33,9.2,0.95],[34.5,10,1.6],[37,15,1.6],[34.5,15,0.9],[40,16.4,0.05],[39.6,8.3,0.05],[32.6,16.8,0.05],[37,10,0.9],[40.3,12.2,0.05],[35.8,12.5,0.05]];
@@ -6203,7 +6205,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v8.4.2';
+const GAME_VERSION='v8.4.3';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -6431,7 +6433,7 @@ addEventListener('keydown',e=>{
   if(G.cardsOpen&&/^(Digit|Numpad)[123]$/.test(e.code)){ pickCard(+e.code.slice(-1)-1); return; }
   switch(e.code){
     case 'KeyR': press('reload'); break; case 'KeyE': press('use'); IN.use=true; break;
-    case 'KeyF': press(Wp.knifeOut?'inspect':'knife'); break; case 'KeyV': press('knife'); break; case 'KeyG': press('nade'); break;
+    case 'KeyF': press(Wp.knifeOut?'inspect':'knife'); break; case 'KeyV': press('knife'); break; case 'KeyG': press('nade'); break; case 'KeyH': dropWeapon(); break;
     case 'Digit1': press('slot0'); break; case 'Digit2': press('slot1'); break; case 'Digit3': press('slot2'); break; case 'KeyQ': press('swap'); break;
     case 'Space': press('jump'); e.preventDefault(); break;
     case 'KeyL': toggleFlash(); break;
@@ -8263,7 +8265,7 @@ function eventsVisual(dt){
   if(scene.fog&&scene.fog.density!=null){ if(EVT.base==null||EVT.baseMap!==CUR){ EVT.base=scene.fog.density; EVT.baseMap=CUR; } const want=EVT.k==='neblina'?EVT.base*2.8:inv?EVT.base*1.9:EVT.base; scene.fog.density=lerp(scene.fog.density,want,Math.min(1,dt*0.8)); }
 }
 /* tranzitch: quem está dentro do ônibus só apanha de zumbi que já entrou (nada de golpe pela parede, pela janela com tábua ou pelo teto) */
-function tzCanHit(z,T){ if(CUR!=='tz'||!T||!TZB.present||!tzInBus(T.x,T.z,0.15)) return true; return z.state==='inside'&&tzInBus(z.pos.x,z.pos.z,0); }
+function tzCanHit(z,T){ if(CUR!=='tz'||!T||!TZB.present||!tzInBus(T.x,T.z,0.25)) return true; return z.state==='inside'&&tzInBus(z.pos.x,z.pos.z,0)&&!(z.landT>0); }
 function zombieAttack(z,dt,T,dist,reach){
   if(!tzCanHit(z,T)){ z.attackT=0; z.hitDone=false; return; }
   if(z.attackT===0) zvoice(z,'attack',0.7);
@@ -8302,11 +8304,11 @@ function updateZombie(z,dt){
       const dur=z.runner?0.85:1.3, k=Math.min(z.t/dur,1);
       z.pos.x=lerp(z.from.x,w.land.x,k); z.pos.z=lerp(z.from.z,w.land.z,k);
       z.g.position.y=Math.sin(k*Math.PI)*1.0+(z.hangY||0)*(1-k); z.moving=true;
-      if(k>=1){ z.state='inside'; z.g.position.y=0; z.hangY=0; if(w.occupant===z) w.occupant=null; }
+      if(k>=1){ z.state='inside'; z.g.position.y=0; z.hangY=0; if(z.win&&z.win.bus) z.landT=0.9; if(w.occupant===z) w.occupant=null; }
       break; }
     case 'roofUp': case 'roofWalk': case 'roofDrop': { if(!w){ z.state='inside'; z.g.position.y=0; break; } tzRoofState(z,dt,w); break; }
     case 'inside': {
-      z.tgtT-=dt;
+      z.tgtT-=dt; if(z.landT>0) z.landT-=dt;
       let T=z.tgtKey?TG.find(t=>t.key===z.tgtKey):null;
       if(!T||z.tgtT<=0){ T=nearestTarget(z.pos.x,z.pos.z); z.tgtKey=T?T.key:null; z.tgtT=0.6; }
       if(T){
@@ -8713,6 +8715,44 @@ function giveWeapon(id,lvl){
   Wp.knifeOut=false; Wp.kAct=null; Wp.reloading=false; Wp.swapT=0.45; setGunModel(); hudAmmo();
 }
 function switchTo(i){ if(!Wp.inv[i]||Wp.drinkT>0||Wp.upT>0) return; if(i===Wp.cur&&!Wp.knifeOut) return; Wp.knifeOut=false; Wp.kAct=null; Wp.cur=i; Wp.reloading=false; Wp.swapT=0.45; setGunModel(); hudAmmo(); }
+/* ---- v8.4.2: largar a arma da mão (H) e pegar arma do chão (E) ----
+   A arma fica no chão com nível, pente e reserva; qualquer jogador pega. No online o anfitrião guarda a lista (vai no
+   estado da partida) e os convidados pedem para largar/pegar. Some depois de 3 minutos; no máximo 14 no chão. */
+const WDROP={list:[],seq:0};
+function wdName(d){ const W=WEAPONS[d.w]; return (W?W.name:'arma')+(d.lvl>0?` Nv ${d.lvl}`:''); }
+function wdMesh(d){ const g=new THREE.Group(); try{ const m=buildGun(d.w,lvTier(d.lvl)); try{ gunGlow(m,d.lvl|0); }catch(e){} m.scale.setScalar(1.15); m.rotation.set(0,0,Math.PI/2); g.add(m); }catch(e){ g.add(new THREE.Mesh(new THREE.BoxGeometry(0.6,0.12,0.12),M.iron)); }
+  g.rotation.y=d.ry||0; scene.add(g); return g; }
+function wdPlace(d){ if(!d.g) d.g=wdMesh(d); const fy=FLOORS?floorAt(d.x,d.z):0; d.g.position.set(d.x,fy+0.07,d.z); }
+function wdAdd(d){ if(WDROP.list.some(q=>q.id===d.id)) return; d.t=d.t||0; wdPlace(d);
+  d.it={x:d.x,z:d.z,r:1.5,enabled:()=>!d.gone&&!x1Live(),text:()=>`${PRESS} para pegar ${wdName(d)}`,use:()=>wdTake(d)}; interacts.push(d.it);
+  WDROP.list.push(d); while(WDROP.list.length>14) wdRemove(WDROP.list[0]); }
+function wdRemove(d){ d.gone=true; const i=WDROP.list.indexOf(d); if(i>=0) WDROP.list.splice(i,1); const j=interacts.indexOf(d.it); if(j>=0) interacts.splice(j,1); if(d.g){ scene.remove(d.g); d.g=null; } }
+function wdClear(){ for(const d of WDROP.list.slice()) wdRemove(d); WDROP.list.length=0; WDROP.taken=null; }
+function wdSpot(){ const fx=-Math.sin(P.yaw), fz=-Math.cos(P.yaw);
+  for(const k of [0.9,0.5,0]){ const v={x:P.pos.x+fx*k,z:P.pos.z+fz*k}; if(CUR==='tz'&&tzInBus(P.pos.x,P.pos.z,0)&&!tzInBus(v.x,v.z,-0.3)) continue; const ox=v.x, oz=v.z; collide(v,0.25,solidIn,true); if(Math.hypot(v.x-ox,v.z-oz)<0.05) return v; }
+  return {x:P.pos.x,z:P.pos.z}; }
+function wdNew(slot,x,z){ return {id:(NET.me||'l')+':'+(++WDROP.seq),w:slot.id,lvl:slot.lvl|0,mag:slot.mag|0,res:slot.reserve|0,x,z,ry:rand(0,6.28),t:0}; }
+function wdShare(d){ if(NET.mode==='client'){ d.local=true; } if(NET.mode==='client') netAct(['wdrop',d.id,d.w,d.lvl,d.mag,d.res,Math.round(d.x*10),Math.round(d.z*10),Math.round(d.ry*100)]); }
+function dropWeapon(){
+  if(G.state!=='playing'||P.down||x1Live()||busy()||Wp.knifeOut) return;
+  if(Wp.inv.length<2){ toast('Você precisa ficar com pelo menos uma arma.',{bad:true}); flashPrompt(); return; }
+  const s=Wp.inv[Wp.cur]; if(!s) return; const v=wdSpot(); const d=wdNew(s,v.x,v.z);
+  Wp.inv.splice(Wp.cur,1); Wp.cur=0; Wp.reloading=false; Wp.kAct=null; Wp.swapT=0.45; setGunModel(); hudAmmo();
+  wdAdd(d); wdShare(d); try{ Snd.place&&Snd.place(); }catch(e){} try{ padRumble(0.25,0,90); }catch(e){} actLog(`{n} largou ${wdName(d)}`);
+}
+function wdTake(d){ if(d.gone||busy()) return; const s={id:d.w,lvl:d.lvl|0,mag:d.mag|0,reserve:d.res|0}; let old=null;
+  if(Wp.inv.length>=2){ old=Wp.inv[Wp.cur]; Wp.inv[Wp.cur]=s; } else { Wp.inv.push(s); Wp.cur=Wp.inv.length-1; }
+  Wp.knifeOut=false; Wp.kAct=null; Wp.reloading=false; Wp.swapT=0.45; setGunModel(); hudAmmo();
+  const x=d.x, z=d.z; wdRemove(d); if(NET.mode==='client'){ (WDROP.taken||(WDROP.taken=new Set())).add(d.id); netAct(['wtake',d.id]); }
+  if(old){ const n=wdNew(old,x,z); wdAdd(n); wdShare(n); }
+  try{ Snd.puGet&&Snd.puGet(); }catch(e){} actLog(`{n} pegou ${wdName(d)} do chão`); }
+function wdFrame(dt){ for(const d of WDROP.list.slice()){ d.t+=dt; if(NET.mode!=='client'&&d.t>180){ wdRemove(d); continue; } if(d.g){ const fy=FLOORS?floorAt(d.x,d.z):0; d.g.position.set(d.x,fy+0.07,d.z); } if(d.it){ d.it.x=d.x; d.it.z=d.z; } } }
+function wdPack(){ return WDROP.list.map(d=>[d.id,d.w,d.lvl,d.mag,d.res,Math.round(d.x*10),Math.round(d.z*10),Math.round((d.ry||0)*100)]); }
+function wdApply(arr){ if(!Array.isArray(arr)) return; const seen=new Set();
+  for(const a of arr){ if(!Array.isArray(a)||typeof a[0]!=='string'||!WEAPONS[a[1]]) continue; seen.add(a[0]); const ex=WDROP.list.find(d=>d.id===a[0]);
+    if(ex){ ex.local=false; ex.x=(+a[5]||0)/10; ex.z=(+a[6]||0)/10; continue; } if(WDROP.taken&&WDROP.taken.has(a[0])) continue;
+    wdAdd({id:a[0],w:a[1],lvl:clamp(a[2]|0,0,MAXLV),mag:a[3]|0,res:a[4]|0,x:(+a[5]||0)/10,z:(+a[6]||0)/10,ry:(+a[7]||0)/100,t:0}); }
+  for(const d of WDROP.list.slice()) if(!seen.has(d.id)&&(!d.local||d.t>6)) wdRemove(d); }
 const KDRAW={karambit:1.05,butterfly:1.15,flip:0.85};
 function drawKnife(){ if(Wp.knifeOut||Wp.drinkT>0||Wp.upT>0||P.down) return; const it=equippedItem(); Wp.knifeOut=true; Wp.reloading=false; Wp.kAct='draw'; Wp.kT=0; Wp.kDur=KDRAW[it.t]||0.8; Wp.knifeT=0; Snd.kdraw(it.t); hudAmmo(); }
 function cycleWeapon(dir){ const opts=Wp.inv.map((s,i)=>i).concat(['k']); let cur=Wp.knifeOut?opts.length-1:Wp.cur; cur=(cur+dir+opts.length)%opts.length; const t=opts[cur]; if(t==='k') drawKnife(); else switchTo(t); }
@@ -8854,6 +8894,12 @@ function reviveSelf(){ if(P.down!==1) return; P.down=0; P.hp=P.maxHp; P.lastHit=
 function respawnIfDead(){
   if(P.down!==2) return;
   const st=MAPS[CUR].start; P.down=0; P.maxHp=maxHp(); P.hp=P.maxHp; P.y=0; resetMotion(); P.pos.set(st[0],0,st[1]);
+  // v8.4.2: volta perto de um parceiro vivo (antes era sempre no início do mapa — no Tranzitch, trancado no posto, longe do ônibus)
+  const mate=Array.from(NET.players.values()).find(rp=>rp.has&&rp.down===0&&rp.x!=null);
+  if(mate){ let spot=null;
+    if(CUR==='tz'&&tzInBus(mate.x,mate.z,0.3)){ for(const dz of [1.2,-1.2,2.4,-2.4,0]){ const q={x:TZB.pos.x,z:mate.z+dz*TZK}; if(tzInBus(q.x,q.z,-0.4)){ spot=q; break; } } }
+    if(!spot) for(let k=0;k<16&&!spot;k++){ const a=k*0.785+rand(-0.2,0.2), d=1.4+(k>>3)*1.2; const v={x:mate.x+Math.cos(a)*d,z:mate.z+Math.sin(a)*d}; const cX=Math.floor(v.x/S), cZ=Math.floor(v.z/S); if(!inB(cX,cZ)||!walkable(cX,cZ)) continue; const ox=v.x, oz=v.z; collide(v,0.4,solidIn,true); if(Math.hypot(v.x-ox,v.z-oz)<0.05&&losClear(v,{x:mate.x,z:mate.z})) spot=v; }
+    if(spot){ P.pos.set(spot.x,0,spot.z); P.yaw=Math.atan2(-(mate.x-spot.x),-(mate.z-spot.z)); } }
   Wp.inv=[]; Wp.cur=0; giveWeapon('m1911',0); banner('De volta','Você voltou para a nova rodada');
 }
 function resetMotion(){ P.vx=P.vz=0; P.moveAmt=0;
@@ -12412,7 +12458,7 @@ function remoteShot(rp){
 function hostState(){
   return {phase:G.state==='lobby'?'lobby':'playing',r:G.round,gp:G.roundGap>0?1:0,d:doors.map(d=>d.open?1:0),b:windows.map(w=>w.boards),pw:G.power?1:0,
     bx:[BOX.spot,BOX_ST.indexOf(BOX.state),BOX.state==='offer'?(BOX.weapon||''):'',BOX.owner||''],
-    pu:pus.map(p=>[p.id,p.type,r10(p.x),r10(p.z),Math.round(p.t)]),in:Math.ceil(G.insta),db:Math.ceil(G.double),ov:G.over?1:0,bs:G.boss&&!G.boss.dead?[G.boss.name,Math.ceil(G.boss.hp),Math.ceil(G.boss.maxHp),G.boss.bossKi]:0,evk:EVT.k?EVT_CODES.indexOf(EVT.k):0,evt:Math.ceil(EVT.t),evp:(EVT.k==='portal'||EVT.k==='armamento')?[r10(EVT.px||0),r10(EVT.pz||0)]:0,gn:NET.gen,mp:CUR==='hosp'?1:CUR==='farm'?2:CUR==='x1'?4:CUR==='tz'?5:0,tzb:CUR==='tz'?tzNetPack():0,tl:G.tl|0,x1:x1State()};
+    pu:pus.map(p=>[p.id,p.type,r10(p.x),r10(p.z),Math.round(p.t)]),in:Math.ceil(G.insta),db:Math.ceil(G.double),ov:G.over?1:0,bs:G.boss&&!G.boss.dead?[G.boss.name,Math.ceil(G.boss.hp),Math.ceil(G.boss.maxHp),G.boss.bossKi]:0,evk:EVT.k?EVT_CODES.indexOf(EVT.k):0,evt:Math.ceil(EVT.t),evp:(EVT.k==='portal'||EVT.k==='armamento')?[r10(EVT.px||0),r10(EVT.pz||0)]:0,gn:NET.gen,mp:CUR==='hosp'?1:CUR==='farm'?2:CUR==='x1'?4:CUR==='tz'?5:0,tzb:CUR==='tz'?tzNetPack():0,wd:wdPack(),tl:G.tl|0,x1:x1State()};
 }
 function encZ(){ return (G.boss&&!G.boss.dead?[G.boss].concat(zombies.filter(q=>q!==G.boss)):zombies).slice(0,48).map(z=>[z.id,r100(z.pos.x),r100(z.pos.z),r100(z.yaw),SCODE[z.state]|0,r100(z.g.position.y),(z.runner?1:0)|(z.head.visible?0:2)|(z.attackT>0?4:0)|(z.moving?8:0)|(z.crawl?16:0),Math.max(0,Math.ceil(z.hp)),z.seed,ZKIND.indexOf(z.kind)<0?0:ZKIND.indexOf(z.kind),z.bossKi!=null?z.bossKi+1:0]); }
 const ZKIND=['normal','brute','dog','bomber','fat'];
@@ -12461,6 +12507,7 @@ function applyHost(pr){
     if(Array.isArray(g.d)) g.d.forEach((o,i)=>{ if(o&&doors[i]&&!doors[i].open) openDoor(doors[i]); });
     if(Array.isArray(g.b)) g.b.forEach((n,i)=>{ const w=windows[i]; if(!w) return; n=clamp(n|0,0,6); while(w.boards>n) removeBoard(w); while(w.boards<n) addBoard(w,false); });
     if(g.pw&&!G.power) powerOn();
+    try{ wdApply(g.wd); }catch(e){}
     applyBox(g.bx);
     syncPUs(g.pu);
     G.insta=+g.in||0; G.double=+g.db||0;
@@ -12512,6 +12559,8 @@ function handleAct(peer,a){
   if(t==='h'){ const z=zombies.find(q=>q.id===a[2]&&!q.dead); if(z){ const rp=NET.players.get(peer); if(rp&&rp.x!=null) zHitReact(z,z.pos.x-rp.x,z.pos.z-rp.z,clamp(+a[3]||0,0,300),a[4],a[5]==='knife'?'knife':'gun'); const part=a[4]==='head'||a[4]==='legs'?a[4]:'body'; const src=a[5]==='knife'?'knife':'gun'; damageZombie(z,clamp(+a[3]||0,0,9e6),part,src,null,peer,clamp(+a[6]||1,0,4)); } }
   else if(t==='door'){ const d=doors[a[2]]; if(d&&!d.open) openDoor(d); }
   else if(t==='rep'){ const w=windows[a[2]]; if(w) addBoard(w,false); }
+  else if(t==='wdrop'){ if(typeof a[2]==='string'&&WEAPONS[a[3]]&&!WDROP.list.some(d=>d.id===a[2])) wdAdd({id:a[2].slice(0,60),w:a[3],lvl:clamp(a[4]|0,0,MAXLV),mag:Math.max(0,a[5]|0),res:Math.max(0,a[6]|0),x:(+a[7]||0)/10,z:(+a[8]||0)/10,ry:(+a[9]||0)/100,t:0}); }
+  else if(t==='wtake'){ const d=WDROP.list.find(q=>q.id===a[2]); if(d) wdRemove(d); }
   else if(t==='pw'){ powerOn(); }
   else if(t==='tzp'||t==='tzb'||t==='tzm'){ tzHandleAct(peer,a); }
   else if(t==='tr'){ const tr=TRAPS[a[2]|0]; if(tr&&G.power&&!(tr.on>0)&&!(tr.cd>0)){ trapStart(tr); pushEv(['tr',a[2]|0]); } else pushEv(['rf',peer,TRAP_COST]); }
@@ -13075,7 +13124,7 @@ function x1OfferCards(){
 
 /* ================= FLOW: start / pause / over ================= */
 function resetBossEvt(){ portalHide(); document.body.classList.remove('inverso'); if(SPORES) SPORES.visible=false; EVT.k=null; EVT.t=0; EVT.next=rand(55,85); document.body.classList.remove('furia'); for(const f of BFX) scene.remove(f.m); BFX.length=0; for(const p of BPATCH) scene.remove(p.s); BPATCH.length=0; }
-function resetGame(){ try{ resetBossEvt(); }catch(e){} try{ tzReset(); }catch(e){ console.warn('[Bunker] tranzitch reset',e); }
+function resetGame(){ try{ resetBossEvt(); }catch(e){} try{ wdClear(); }catch(e){} try{ tzReset(); }catch(e){ console.warn('[Bunker] tranzitch reset',e); }
   cineStop();
   for(const z of zombies.slice()) removeZombie(z);
   for(const z of Array.from(NET.ghosts.values())) removeGhost(z);
@@ -13438,6 +13487,8 @@ function frame(now){
   if(!world) return;
   if(NET.mode) netFrame(dt);
   const sim=G.state==='playing'||(G.state==='paused'&&!!NET.mode), lobbySim=G.state==='lobby';
+  // motor do ônibus: só toca com o Tranzitch rodando (antes ficava ligado no pause, no menu e em outros mapas)
+  { const eng=sim&&CUR==='tz'; if(!eng&&frame.engOn!==false){ frame.engOn=false; try{ Snd.busEngine&&Snd.busEngine(0,0); if(Snd._eng){ Snd._eng.g.gain.cancelScheduledValues(0); Snd._eng.g.gain.value=0; } }catch(e){} } else if(eng) frame.engOn=true; }
   if((KV.on||CP.full)&&!sim&&!lobbySim) return;
   if(LP.on&&G.state!=='lobby') closeLobbyPause(false);
   { let free=!locked&&!noLock&&!isTouch&&!PAD.active&&(G.state==='playing'||G.state==='lobby')&&!CHAT.open&&!G.cardsOpen&&!CON.open&&!(typeof PICK!=='undefined'&&PICK.on)&&!LP.on&&!(typeof X1!=='undefined'&&X1.buyOpen)&&$('#settings').hidden&&!(typeof letterOpen!=='undefined'&&letterOpen);
@@ -13452,7 +13503,7 @@ function frame(now){
     if(CUR==='tz'&&tzInBus(P.pos.x,P.pos.z,0)&&P.y>0.45){ P.y=0.45; P.vy=Math.min(P.vy,0); }
     if(flowDirty) computeFlow();
     updateWeapons(dt);
-    updateInteract(dt);
+    updateInteract(dt); try{ wdFrame(dt); }catch(e){}
     if(NET.mode==='client') updateGhosts(dt);
     else { for(const z of zombies.slice()) updateZombie(z,dt); separate(); if(!x1Live()) updateRounds(dt); }
     x1Frame(dt);

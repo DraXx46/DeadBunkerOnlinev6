@@ -8309,7 +8309,7 @@ function updateZombie(z,dt){
       if(z.t>4.5){ removeZombie(z); return; }
       break; }
   }
-  if(z.state==='approach'||z.state==='wait'||z.state==='toTear') collide(z.pos,0.3,solidOut,false);
+  if(z.state==='approach'||z.state==='wait'||z.state==='toTear') collide(z.pos,0.3,w&&w.bus?solidIn:solidOut,false);
   if(z.bossKi!=null) bossTick(z,dt);
   zKnock(z,dt);
   zAnimLod(z,dt);
@@ -8381,6 +8381,7 @@ function animateZombie(z,dt){ if(z.kind==='dog'){ dogAnim(z,dt); return; }
     if(z.attackT>0){ const a=Math.sin(Math.min(z.attackT/0.5,1)*Math.PI); aL.sh.rotation.x=-2.9+a; aR.sh.rotation.x=-2.9+a*0.8; }
   }
   else if(z.state==='rise'){ aL.sh.rotation.x=-2.8+Math.sin(z.t*9)*0.3; aR.sh.rotation.x=-2.8-Math.sin(z.t*9)*0.3; aL.el.rotation.x=-0.3; aR.el.rotation.x=-0.3; z.spine.rotation.x=0.3; }
+  else if(z.state==='roofUp'){ const a=Math.sin(z.t*13); aL.sh.rotation.x=-2.7+a*0.45; aR.sh.rotation.x=-2.7-a*0.45; aL.el.rotation.x=-0.25; aR.el.rotation.x=-0.25; z.spine.rotation.x=0.4; }   // escalando a traseira do ônibus
   else {
     z.hips.position.y=0.95-Math.abs(Math.cos(ph))*(z.moving?0.035:0);
     const A=run?0.9:brute?0.38:0.45, K=run?1.35:0.75;

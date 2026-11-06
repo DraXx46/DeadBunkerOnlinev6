@@ -12510,7 +12510,9 @@ function checkCoopOver(){
 /* ---- independent WebSocket multiplayer + safe map lobbies ---- */
 function lobbyMsg(t){ const el=$('#netmsg'); if(el) el.textContent=t; }
 let lobbyBusy=false, lobbySig='';
-const SERVER_WSS=()=>((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');
+// v8.4: os arquivos do jogo podem vir do Cloudflare (ou de qualquer lugar); o online continua no servidor do Render
+const GAME_SERVER_HOST='bunker-dos-mortos.onrender.com';
+const SERVER_WSS=()=>{ const h=location.host, same=/onrender\.com$|^localhost(:|$)|^127\.|^192\.168\./.test(h)||location.protocol==='file:'&&false; return same?((location.protocol==='https:'?'wss://':'ws://')+h+'/ws'):('wss://'+GAME_SERVER_HOST+'/ws'); };
 function netSendRaw(obj){ if(!NET.ws||NET.ws.readyState!==WebSocket.OPEN) return false; NET.ws.send(JSON.stringify(obj)); return true; }
 function netRequest(type,payload={}){
   return new Promise((resolve,reject)=>{

@@ -767,6 +767,12 @@ body.cinema #game{cursor:none}
 .padfocus{outline:3px solid #f4c03a!important;outline-offset:3px;box-shadow:0 0 18px rgba(244,192,58,.55)!important}
 body.padmode #game,body.padmode canvas{cursor:none}
 body.padmode #clickhint{display:none!important}
+body.padmode #touch{display:none!important}
+.pg{display:inline-flex;align-items:center;justify-content:center;width:1.45em;height:1.45em;border-radius:50%;border:2px solid currentColor;font-size:.82em;font-weight:800;line-height:1;vertical-align:-.18em;margin:0 .12em;background:rgba(0,0,0,.55);text-shadow:none;box-shadow:0 0 8px rgba(0,0,0,.6)}
+.pg.x{color:#8fb4ff}.pg.o{color:#ff7474}.pg.sq{color:#ff86d8}.pg.tri{color:#5ee6a8}
+body.padmode #ab-a .k,body.padmode #ab-u .k{font-size:0}
+body.padmode #ab-a .k::after{content:'L1';font-size:11px}
+body.padmode #ab-u .k::after{content:'△ segure';font-size:10px}
 .bxmulti{display:grid;grid-template-columns:repeat(var(--n,5),130px);gap:10px;justify-content:center;margin-top:auto;perspective:900px;z-index:2}
 .bxmulti .mt{all:unset;cursor:pointer;opacity:0;transform:rotateY(100deg) scale(.7);animation:mtin .5s cubic-bezier(.2,1.3,.4,1) var(--d) forwards}
 .bxmulti .mt .bt{transition:transform .15s}.bxmulti .mt:hover .bt{transform:translateY(-4px)}
@@ -1196,10 +1202,11 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
         <div><dt>R2 · L2</dt><dd>Atirar · mirar</dd></div>
         <div><dt>✕ · ○</dt><dd>Pular · agachar</dd></div>
         <div><dt>□</dt><dd>Usar/comprar (segure para reconstruir e levantar amigos) · sem nada por perto, recarrega</dd></div>
-        <div><dt>△</dt><dd>Trocar de arma</dd></div>
-        <div><dt>R1 · L1</dt><dd>Granada · lanterna</dd></div>
+        <div><dt>△</dt><dd>Trocar de arma · segure: ultimate</dd></div>
+        <div><dt>R1 · L1</dt><dd>Granada · habilidade</dd></div>
         <div><dt>R3 · L3</dt><dd>Faca · inspecionar</dd></div>
-        <div><dt>← → ↑</dt><dd>Arma 1 · arma 2 · faca</dd></div>
+        <div><dt>← → ↑ ↓</dt><dd>Arma 1 · arma 2 · faca · lanterna</dd></div>
+        <div><dt>Touchpad</dt><dd>Ultimate · no X1, menu de compra</dd></div>
         <div><dt>OPTIONS</dt><dd>Pausar</dd></div>
         <div><dt>Menus</dt><dd>Direcional navega · ✕ confirma · ○ volta · L1/R1 trocam de aba</dd></div>
       </dl>
@@ -5599,7 +5606,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v8.2';
+const GAME_VERSION='v8.3';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -5886,6 +5893,10 @@ addEventListener('pointerdown',wake); addEventListener('keydown',wake);
    Mapa (estilo CoD): L analógico anda · R analógico mira · R2 atira · L2 mira · ✕ pula · ○ agacha · □ usa/compra (sem nada
    por perto, recarrega) · △ troca de arma · R1 granada · L1 lanterna · R3 faca · L3/↓ inspeciona · ←→↑ armas 1/2/faca ·
    OPTIONS pausa. Nos menus: direcional/analógico navega, ✕ confirma, ○ volta, L1/R1 trocam de aba. */
+const PGL={X:'<span class="pg x">✕</span>',O:'<span class="pg o">○</span>',SQ:'<span class="pg sq">□</span>',TRI:'<span class="pg tri">△</span>'};
+const _pgMap={'✕':PGL.X,'○':PGL.O,'□':PGL.SQ,'△':PGL.TRI};
+function padGlyphs(t){ return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])).replace(/[✕○□△]/g,c=>_pgMap[c]); }
+function padTxt(t){ return String(t).replace(/\b(Pressione|pressione|Aperte|aperte|Segure|segure) [ER]\b/g,'$1 □').replace(/\b(Aperte|aperte) L\b/g,'$1 ↓'); }
 const PAD={idx:-1,active:false,id:'',prev:[],rx:0,ry:0,lx:0,ly:0,r2:0,l2:0,accT:0,ads0:0,snapT:0,env:[],m:[0,0],sent:'',hid:null,hidBT:false,seq:0,hidT:0,trig:['',''],light:'',heartT:0,
   nav:{el:null,rep:0,dir:'',held:0},sq:0,sqUsed:false,err:0,last:0,toasted:false};
 const PB={X:0,O:1,SQ:2,TRI:3,L1:4,R1:5,L2:6,R2:7,CREATE:8,OPT:9,L3:10,R3:11,UP:12,DOWN:13,LEFT:14,RIGHT:15,PS:16,TP:17};
@@ -5894,6 +5905,7 @@ function padGet(){ let gps=[]; try{ gps=navigator.getGamepads?navigator.getGamep
   for(const g of gps) if(g&&g.connected&&g.buttons.length>=16){ PAD.idx=g.index; PAD.id=g.id; return g; } PAD.idx=-1; return null; }
 addEventListener('gamepadconnected',e=>{ const g=e.gamepad; if(!g||g.buttons.length<16) return; PAD.idx=g.index; PAD.id=g.id; padStatus();
   if(!PAD.toasted){ PAD.toasted=true; try{ toast(`🎮 ${/dualsense|054c.*0ce6|0df2|wireless controller/i.test(g.id)?'DualSense':'Controle'} conectado · ajustes em Configurações › Controle`); }catch(err){} } });
+addEventListener('touchstart',()=>{ if(PAD.active) padIdle(); },{passive:true,capture:true});
 addEventListener('gamepaddisconnected',e=>{ if(e.gamepad&&e.gamepad.index===PAD.idx){ PAD.idx=-1; padSetActive(false); padStatus(); } });
 function padSetActive(v){ if(PAD.active===v) return; PAD.active=v; document.body.classList.toggle('padmode',v);
   PRESS=v?'Aperte □':isTouch?'Toque em USAR':'Pressione E'; HOLD=v?'Segure □':isTouch?'Segure USAR':'Segure E';
@@ -5924,8 +5936,11 @@ function padFrame(dt){
     if(edge(PB.SQ)){ PAD.sqUsed=!!curInteract||G.state==='lobby'; if(PAD.sqUsed){ press('use'); IN.use=true; } else press('reload'); }
     if(down(PB.SQ)){ if(!PAD.sqUsed&&curInteract){ PAD.sqUsed=true; press('use'); } if(PAD.sqUsed) IN.use=true; } else if(was[PB.SQ]>0.5){ IN.use=false; PAD.sqUsed=false; }
     if(G.state==='playing'){
-      if(edge(PB.TRI)) press('swap'); if(edge(PB.R1)) press('nade'); if(edge(PB.L1)) toggleFlash();
-      if(edge(PB.R3)) press('knife'); if(edge(PB.L3)||edge(PB.DOWN)) press(Wp.knifeOut?'inspect':'knife');
+      // △: toque troca de arma, segurado solta a ultimate
+      if(edge(PB.TRI)){ PAD.triT=0; PAD.triUlt=false; } if(down(PB.TRI)){ PAD.triT+=dt; if(PAD.triT>0.38&&!PAD.triUlt){ PAD.triUlt=true; AB.wantU=true; } } else if(was[PB.TRI]>0.5&&!PAD.triUlt) press('swap');
+      if(edge(PB.R1)) press('nade'); if(edge(PB.L1)) AB.wantA=true;
+      if(edge(PB.TP)){ if(typeof X1!=='undefined'&&X1.ph==='buy'&&x1Live&&NET.mode){ if(X1.buyOpen) x1CloseBuy(true); else x1OpenBuy(); } else AB.wantU=true; }
+      if(edge(PB.R3)) press('knife'); if(edge(PB.L3)) press(Wp.knifeOut?'inspect':'knife'); if(edge(PB.DOWN)) toggleFlash();
       if(edge(PB.LEFT)) press('slot0'); if(edge(PB.RIGHT)) press('slot1'); if(edge(PB.UP)) press('slot2');
       if(edge(PB.OPT)) pauseGame();
     } else if(G.state==='lobby'){ if(edge(PB.OPT)) openLobbyPause(); }
@@ -6016,7 +6031,13 @@ function trigWeapon(st,en,str){ const z=(1<<st)|(1<<en); return [0x25,z&0xff,(z>
 function trigVibe(pos,amp,freq){ const a=(amp-1)&7; let az=0, act=0; for(let i=pos;i<10;i++){ az|=a<<(3*i); act|=1<<i; } return [0x26,act&0xff,(act>>8)&0xff,az&0xff,(az>>>8)&0xff,(az>>>16)&0xff,(az>>>24)&0xff,0,0,freq&0xff,0]; }
 function padTriggers(){
   if(!CFG.padTriggers||!PAD.active) return [trigOff(),trigOff()];
+  // caixas do menu girando: os dois gatilhos trepidam junto com a roleta
+  if(typeof BX!=='undefined'&&BX.busy&&!$('#boxer').hidden){ const v=trigVibe(1,3,22); return [v,v]; }
+  if(G.state==='lobby'&&padGameplay()) return [trigFeedback(4,2),trigOff()];
   if(!(G.state==='playing'&&padGameplay())||P.down) return [trigOff(),trigOff()];
+  // caixa misteriosa girando perto: trepida leve
+  if(typeof BOX!=='undefined'&&BOX.state==='spin'&&BOX.group&&Math.hypot(BOX.group.position.x-P.pos.x,BOX.group.position.z-P.pos.z)<6){ const v=trigVibe(2,2,16); return [v,v]; }
+  if(Wp.knifeOut) return [trigWeapon(2,5,6),trigOff()];
   const L2=Wp.knifeOut?trigOff():trigFeedback(2,Wp.scoped||P.ads>0.5&&curSlot()&&wstat(curSlot()).scope?4:2);
   const s=curSlot(); if(!s||Wp.knifeOut||Wp.reloading||Wp.swapT>0||s.mag<=0) return [trigOff(),L2];   // sem munição: gatilho solto
   const d=wstat(s), firing=IN.fire&&G.t-Wp.lastShot<0.2;
@@ -6042,6 +6063,37 @@ function padHidTick(dt){
   let id=0x02, data=c;
   if(PAD.hidBT){ id=0x31; data=new Uint8Array(77); data[0]=(PAD.seq<<4)&0xf0; PAD.seq=(PAD.seq+1)&15; data[1]=0x10; data.set(c,2); const crc=crc32(new Uint8Array([0xA2,0x31,...data.subarray(0,73)])); data[73]=crc&0xff; data[74]=(crc>>>8)&0xff; data[75]=(crc>>>16)&0xff; data[76]=(crc>>>24)&0xff; }
   PAD.busy=true; d.sendReport(id,data).catch(e=>{ if(!PAD.err2){ PAD.err2=1; console.warn('[Bunker] DualSense envio',e); } }).finally(()=>{ PAD.busy=false; }); }
+/* ---- vibração em tudo: cada som importante do jogo ganha um "toque" no controle (só quando o controle está em uso).
+   Sons com posição (x,z) só vibram se acontecerem perto de você. ---- */
+const HAP_NEAR=(x,z,r)=>x==null||!P||Math.hypot(x-P.pos.x,z-P.pos.z)<(r||6);
+const HAP_BOX=()=>!(typeof BOX!=='undefined'&&BOX.group&&G.state!=='menu')||HAP_NEAR(BOX.group.position.x,BOX.group.position.z,7)||!$('#boxer').hidden;
+const HR=(s,w,ms,d)=>{ if(d) setTimeout(()=>padRumble(s,w,ms),d); else padRumble(s,w,ms); };
+const HAPS={
+  rl:(k,v)=>{ k=String(k||''); if(/^(magIn|magSeat|mag)$/.test(k)) HR(0.35,0.65,70); else if(/^(magOut|magDrop|magRel|eject|cylOut)$/.test(k)) HR(0.12,0.4,45);
+    else if(/^(charge|slide|slideBack|slideFwd|slideRel|bolt|pump|boltBack|boltFwd|boltUp|boltDown|pumpBack|pumpFwd)/.test(k)) HR(0.5,0.75,75);
+    else if(/^(cellIn|roundsIn|load|speedIn|speedTwist|cylIn|tap|tA)$/.test(k)) HR(0.22,0.5,45);
+    else if(k==='lever') HR(0.55,0.3,140); else if(k==='win'){ HR(0.7,0.9,250); HR(0.5,0.8,250,300); } else if(k==='kick') HR(0.6,0.4,90); else if(k==='can') HR(0.3,0.55,60);
+    else if(k==='coin') HR(0.05,0.45,35); else if(k==='bell') HR(0.3,0.75,180); else if(k==='reel') HR(0.1,0.4,400); else HR(0.1,0.35,40); },
+  abil:(k,x,z)=>{ if(x!=null&&!HAP_NEAR(x,z,8)) return; switch(k){
+    case 'ult': HR(1,0.9,450); HR(0.6,1,350,480); break; case 'ready': HR(0.2,0.6,60); HR(0.2,0.6,60,130); break;
+    case 'deny': HR(0.25,0.15,50); HR(0.25,0.15,50,90); break; case 'heal': HR(0.15,0.55,380); break;
+    case 'emp': case 'pulse': case 'shove': case 'napalm': case 'holy': case 'tesla': case 'rico': HR(0.75,0.6,260); break;
+    case 'ocOn': HR(0.4,0.8,300); break; case 'end': case 'ocOff': case 'reload': HR(0.15,0.4,80); break; default: HR(0.35,0.55,140); } },
+  reveal:(r)=>{ r=clamp(r|0,0,4); HR(0.25+r*0.18,0.45+r*0.12,130+r*90); if(r>=3) HR(0.9,1,260,220); },
+  reelTick:()=>HR(0.04,0.32,22), boxTick:()=>{ if(HAP_BOX()) HR(0.08,0.4,28); }, cardFlip:()=>HR(0.04,0.35,28),
+  boxReveal:(rare)=>{ if(!HAP_BOX()) return; HR(rare?1:0.55,0.75,rare?420:220); if(rare) HR(0.6,1,300,450); },
+  boxOpen:()=>{ if(HAP_BOX()) HR(0.55,0.3,320); }, place:()=>HR(0.35,0.25,90),
+  puGet:()=>{ HR(0.55,0.85,180); HR(0.35,0.9,160,220); }, buy:()=>HR(0.3,0.6,90), deny:()=>{ HR(0.18,0.12,45); HR(0.18,0.12,45,80); },
+  power:()=>{ HR(0.9,0.5,500); HR(0.5,0.8,400,550); }, door:()=>HR(0.6,0.35,380), ammoBox:()=>HR(0.45,0.6,160),
+  gulp:()=>{ HR(0.18,0.4,90); HR(0.18,0.4,90,330); HR(0.18,0.4,90,660); HR(0.6,0.8,250,1300); },
+  levelUp:()=>{ HR(0.3,0.7,120); HR(0.45,0.85,180,160); }, roundStart:()=>HR(0.85,0.4,700), roundEnd:()=>HR(0.5,0.55,450),
+  cardPick:()=>HR(0.35,0.65,130), flesh:(x,z)=>{ if(HAP_NEAR(x,z,60)) HR(0,0.22,22); }, head:()=>HR(0.15,0.55,45), killConfirm:()=>HR(0.35,0.7,90),
+  stab:()=>HR(0.75,0.55,120), swing:()=>HR(0.08,0.3,55), dry:()=>HR(0.04,0.25,30), scope:()=>HR(0.08,0.3,40), flashSwitch:()=>HR(0.03,0.3,22),
+  nadeThrow:()=>HR(0.25,0.45,90), repair:(k,x,z)=>{ if(HAP_NEAR(x,z,5)) HR(k==='nail'?0.45:0.2,0.5,k==='nail'?75:50); }, board:(x,z)=>{ if(HAP_NEAR(x,z,5)) HR(0.5,0.35,120); },
+  zap:(x,z)=>{ if(HAP_NEAR(x,z,6)) HR(0.6,0.85,220); }, grind:()=>HR(0.45,0.45,1200), kdraw:()=>HR(0.1,0.45,60), puSpawn:()=>HR(0.1,0.5,80),
+  ui:(k)=>{ if(k==='hover') HR(0,0.12,16); else if(k==='deny') HR(0.2,0.12,50); else HR(0.1,0.35,40); },
+};
+for(const k in HAPS){ const f=Snd[k]; if(typeof f!=='function') continue; Snd[k]=function(...a){ if(PAD.active) try{ HAPS[k](...a); }catch(e){} return f.apply(this,a); }; }
 function padStatus(){ const el=$('#pad-status'); if(!el) return; const g=padGet(); const ds=g&&/dualsense|054c|wireless controller/i.test(g.id);
   el.textContent=!g?'Nenhum controle detectado. Ligue o controle (USB ou Bluetooth) e aperte qualquer botão.':`${ds?'DualSense':'Controle'} conectado${PAD.hid?` · gatilhos adaptativos e luz ativos (${PAD.hidBT?'Bluetooth':'USB'})`:navigator.hid?' · para gatilhos adaptativos e luz, clique em Ativar abaixo':''}`;
   const hb=$('#pad-hid'); if(hb){ hb.hidden=!navigator.hid; hb.textContent=PAD.hid?'DualSense ativo ✓':'Ativar gatilhos adaptativos e luz (DualSense)'; hb.disabled=!!PAD.hid; } }
@@ -8389,7 +8441,7 @@ function updateViewmodel(dt){
 
 /* ================= INTERACTION ================= */
 let curInteract=null, promptDeny=0;
-function setPrompt(txt){ const el=$('#prompt'); if(el.textContent!==txt) el.textContent=txt||''; }
+function setPrompt(txt){ const el=$('#prompt'); txt=txt||''; const k=(PAD.active?'p':'k')+txt; if(el._k===k) return; el._k=k; if(PAD.active&&/[✕○□△]/.test(txt)) el.innerHTML=padGlyphs(txt); else el.textContent=txt; }
 function updateInteract(dt){
   const el=$('#prompt'); promptDeny-=dt; el.classList.toggle('deny',promptDeny>0);
   for(const w of windows) if(!IN.use||IN.fire||P.down||busy()||(curInteract&&curInteract.win!==w)) w.repT=0;
@@ -11552,7 +11604,7 @@ function addPoints(n,raw){
 function spend(cost){ const c=price(cost); if(G.points<c){ Snd.deny(); flashPrompt(); return false; } G.points-=c; $('#ptsv').textContent=G.points; popPoints('-'+c,true); Snd.buy(); return true; }
 let popCount=0;
 function popPoints(t,neg){ if(popCount>12) return; popCount++; const e=document.createElement('div'); e.className='pop'+(neg?' neg':''); e.textContent=t; e.style.setProperty('--dx',`${rand(20,70)}px`); e.style.setProperty('--dy',`${rand(-40,-10)}px`); $('#pts').appendChild(e); setTimeout(()=>{ e.remove(); popCount--; },900); }
-function hudAmmo(){ const s=curSlot(); if(!s) return; if(Wp.knifeOut){ const it=equippedItem(); $('#wname').textContent=itemName(it); $('#wname').className='kn'; $('#wname').style.color=itemRar(it).col; $('#mag').textContent='—'; $('#res').textContent=''; $('#ammo').classList.remove('low'); $('#lowammo').hidden=true; return; } $('#wname').style.color=''; const d=wstat(s); const L=s.lvl|0; $('#wname').textContent=d.name; $('#wname').className=L?'up t'+lvTier(L):''; $('#mag').textContent=s.mag; $('#res').textContent='/ '+s.reserve; $('#ammo').classList.toggle('low',s.mag<=Math.ceil(d.mag*0.25)); const la=$('#lowammo'); if(P.down){ la.hidden=true; return; } if(s.mag===0&&s.reserve===0){ la.hidden=false; la.textContent='Sem munição'; } else if(s.mag<=Math.ceil(d.mag*0.25)&&s.reserve>0&&!Wp.reloading&&!d.sprite){ la.hidden=false; la.textContent=isTouch?'Toque em RECARREGAR':'Pressione R para recarregar'; } else la.hidden=true; }
+function hudAmmo(){ const s=curSlot(); if(!s) return; if(Wp.knifeOut){ const it=equippedItem(); $('#wname').textContent=itemName(it); $('#wname').className='kn'; $('#wname').style.color=itemRar(it).col; $('#mag').textContent='—'; $('#res').textContent=''; $('#ammo').classList.remove('low'); $('#lowammo').hidden=true; return; } $('#wname').style.color=''; const d=wstat(s); const L=s.lvl|0; $('#wname').textContent=d.name; $('#wname').className=L?'up t'+lvTier(L):''; $('#mag').textContent=s.mag; $('#res').textContent='/ '+s.reserve; $('#ammo').classList.toggle('low',s.mag<=Math.ceil(d.mag*0.25)); const la=$('#lowammo'); if(P.down){ la.hidden=true; return; } if(s.mag===0&&s.reserve===0){ la.hidden=false; la.textContent='Sem munição'; } else if(s.mag<=Math.ceil(d.mag*0.25)&&s.reserve>0&&!Wp.reloading&&!d.sprite){ la.hidden=false; la.textContent=PAD.active?'Aperte □ para recarregar':isTouch?'Toque em RECARREGAR':'Pressione R para recarregar'; } else la.hidden=true; }
 function hudNades(){ $('#nades').innerHTML='<i></i>'.repeat(Math.max(0,G.nades)); }
 function hudPerks(){ $('#perks').innerHTML=PERKS.filter(p=>G.perks[p.key]).map(p=>`<div class="perk" style="--c:${p.css}" title="${p.name}">${p.letter}</div>`).join(''); }
 let puHudSig='';
@@ -11566,7 +11618,7 @@ function hudTeam(){
   for(const [n,pts,dn] of rows){ const r=document.createElement('div'); r.className='tm'+(dn?' dn':''); const a=document.createElement('span'); a.textContent=n+(dn===1?' · caído':dn===2?' · morto':''); const b=document.createElement('b'); b.textContent=pts; r.append(a,b); el.appendChild(r); }
 }
 function hudDown(){ const el=$('#downmsg'); if(!P.down){ if(!el.hidden) el.hidden=true; return; } el.hidden=false; el.textContent=P.down===1?`Caído · ${Math.ceil(P.bleed)} s`:'Morto · espere a próxima rodada'; }
-function banner(t,sub,cls){ const b=$('#banner'); b.className=''; b.innerHTML=''; b.appendChild(document.createTextNode(t)); if(sub){ const s=document.createElement('small'); s.textContent=sub; b.appendChild(s); } void b.offsetWidth; b.className='show'+(cls?' '+cls:''); }
+function banner(t,sub,cls){ if(sub&&PAD.active) sub=padTxt(sub); const b=$('#banner'); b.className=''; b.innerHTML=''; b.appendChild(document.createTextNode(t)); if(sub){ const s=document.createElement('small'); if(PAD.active&&/[✕○□△]/.test(sub)) s.innerHTML=padGlyphs(sub); else s.textContent=sub; b.appendChild(s); } void b.offsetWidth; b.className='show'+(cls?' '+cls:''); }
 /* número de dano ao lado da retícula: pequeno, sobe e some rápido; tiros de espingarda no mesmo instante somam num número só */
 const DN={crit:false,el:null,last:null,lastT:0,slot:0};
 const DN_SLOTS=[[16,-26],[30,-12],[12,-42],[34,-34],[22,2]];
@@ -11989,7 +12041,7 @@ function buildLobbyEnvironment(map){
 function updateLobbyInteract(dt){ dt=Math.min(0.05,dt||0.016);
   let near=null,dist=99; for(const q of lobbyInteractables){const d=Math.hypot(P.pos.x-q.x,P.pos.z-q.z);if(d<dist){dist=d;near=q;}}
   const hint=$('#lobbyInteraction');
-  if(near&&dist<3.1){hint.innerHTML='<b> E · '+near.label.toUpperCase()+'</b> — Interagir';}else hint.innerHTML='<b>LOBBY SEGURO</b> · Caminhe pela área. WASD para andar, mouse para olhar; pressione E perto dos objetos.';
+  if(near&&dist<3.1){hint.innerHTML='<b> '+(PAD.active?PGL.SQ:'E')+' · '+near.label.toUpperCase()+'</b> — Interagir';}else hint.innerHTML=PAD.active?'<b>LOBBY SEGURO</b> · Analógico esquerdo anda, direito olha; aperte '+PGL.SQ+' perto dos objetos.':'<b>LOBBY SEGURO</b> · Caminhe pela área. WASD para andar, mouse para olhar; pressione E perto dos objetos.';
   const fun=lfFrame(near,dist,hint,dt);
   if(!fun&&IN.edges.has('use')&&near&&dist<3.1){ if(typeof near.interaction==='function') near.interaction(); else banner(near.label,near.interaction,'gold'); }
   lobbyPropT+=0.016;
@@ -12080,7 +12132,7 @@ function lfStrength(x,z){ const g=new THREE.Group(), y=floorAt(x,z); g.position.
 function lfStrHit(){ const S=LF.str; if(!S) return; if(S.st==='idle'){ S.st='aim'; S.ph=0; try{ Snd.rl('grab'); }catch(e){} return; }
   if(S.st==='aim'){ S.st='swing'; S.t=0; S.pw=S.cur; } }
 function lfStrFrame(dt,hint,near){ const S=LF.str; if(!S) return; const top=3.38;
-  if(S.st==='aim'){ S.ph+=dt*2.4; S.cur=Math.abs(Math.sin(S.ph)); S.ham.rotation.z=0.2-S.cur*1.6; if(near){ const n=Math.round(S.cur*16); hint.innerHTML='<b>TESTE DE FORÇA</b> · '+'█'.repeat(n)+'░'.repeat(16-n)+' — aperte E no máximo'; } }
+  if(S.st==='aim'){ S.ph+=dt*2.4; S.cur=Math.abs(Math.sin(S.ph)); S.ham.rotation.z=0.2-S.cur*1.6; if(near){ const n=Math.round(S.cur*16); hint.innerHTML='<b>TESTE DE FORÇA</b> · '+'█'.repeat(n)+'░'.repeat(16-n)+' — aperte '+(PAD.active?PGL.SQ:'E')+' no máximo'; } }
   else if(S.st==='swing'){ S.t+=dt; S.ham.rotation.z=lerp(0.2-S.pw*1.6,0.35,Math.min(1,S.t/0.09)); if(S.t>=0.09){ S.st='fly'; const p=Math.pow(S.pw,1.6)*(0.96+Math.random()*0.08); S.v=Math.sqrt(2*9.8*(top-0.4)*1.04)*p; try{ Snd.rl('kick'); }catch(e){} } }
   else if(S.st==='fly'){ S.v-=9.8*dt; S.h+=S.v*dt; if(S.h>=top){ S.h=top; S.v=-Math.abs(S.v)*0.3; if(!S.rang){ S.rang=1; S.ring=1.5; try{ Snd.rl('bell'); }catch(e){} banner('DING!','Força bruta. Os zumbis vão sentir.','gold'); } } if(S.h<=0.4){ S.h=0.4; S.st='idle'; const pct=Math.round(S.peak/top*100); if(!S.rang) banner('Teste de força',pct+'% — '+(pct>80?'quase lá!':pct>50?'dá pra melhorar':'isso foi um carinho?'),''); S.rang=0; S.peak=0; S.ham.rotation.z=0.2; } S.peak=Math.max(S.peak||0,S.h); }
   S.puck.position.y=S.h; if(S.ring>0){ S.ring-=dt; S.bell.rotation.z=Math.sin(LF.t*40)*0.12*S.ring; } }

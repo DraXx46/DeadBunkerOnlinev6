@@ -764,6 +764,9 @@ body.cinema #game{cursor:none}
 .bigbrief{width:180px;height:120px;margin:10px auto;animation:bfopen 1.4s ease both}
 @keyframes bfopen{0%{transform:scale(.3) rotate(-10deg);filter:brightness(3)}50%{transform:scale(1.15) rotate(3deg)}100%{transform:none}}
 .bxbtns{justify-content:center}
+.padfocus{outline:3px solid #f4c03a!important;outline-offset:3px;box-shadow:0 0 18px rgba(244,192,58,.55)!important}
+body.padmode #game,body.padmode canvas{cursor:none}
+body.padmode #clickhint{display:none!important}
 .bxmulti{display:grid;grid-template-columns:repeat(var(--n,5),130px);gap:10px;justify-content:center;margin-top:auto;perspective:900px;z-index:2}
 .bxmulti .mt{all:unset;cursor:pointer;opacity:0;transform:rotateY(100deg) scale(.7);animation:mtin .5s cubic-bezier(.2,1.3,.4,1) var(--d) forwards}
 .bxmulti .mt .bt{transition:transform .15s}.bxmulti .mt:hover .bt{transform:translateY(-4px)}
@@ -1166,13 +1169,40 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
 <section id="settings" class="screen" hidden>
   <div class="setwrap">
     <header class="sethead"><div><p class="file">Salvo neste navegador</p><h2>Configurações</h2></div><div class="row"><button id="set-reset" class="ghost" type="button">Restaurar padrões</button><button id="set-back" class="cta small" type="button" data-snd="back">Voltar</button></div></header>
-    <nav class="tabs" id="settabs"><button type="button" data-st="audio" class="on">Áudio</button><button type="button" data-st="ctrl">Controles</button><button type="button" data-st="xh">Retícula</button><button type="button" data-st="video">Vídeo</button><button type="button" data-st="info">Como jogar</button></nav>
+    <nav class="tabs" id="settabs"><button type="button" data-st="audio" class="on">Áudio</button><button type="button" data-st="ctrl">Controles</button><button type="button" data-st="pad">Controle</button><button type="button" data-st="xh">Retícula</button><button type="button" data-st="video">Vídeo</button><button type="button" data-st="info">Como jogar</button></nav>
     <div class="setp" data-st="audio">
       <label class="sl"><span>Volume geral</span><input type="range" data-k="vol" data-fmt="pct" min="0" max="1" step="0.05"><output></output></label>
       <label class="sl"><span>Música do menu</span><input type="range" data-k="music" data-fmt="pct" min="0" max="1" step="0.05"><output></output></label>
       <label class="sl"><span>Tiros e efeitos</span><input type="range" data-k="sfx" data-fmt="pct" min="0" max="1.5" step="0.05"><output></output></label>
       <label class="sl"><span>Vozes dos personagens e rádio</span><input type="range" data-k="voice" data-fmt="pct" min="0" max="1.5" step="0.05"><output></output></label>
       <label class="sl"><span>Sons do menu</span><input type="range" data-k="ui" data-fmt="pct" min="0" max="1.5" step="0.05"><output></output></label>
+    </div>
+    <div class="setp" data-st="pad" hidden>
+      <p class="rec" id="pad-status">Nenhum controle detectado.</p>
+      <div class="row"><button type="button" class="cta small" id="pad-hid">Ativar gatilhos adaptativos e luz (DualSense)</button><button type="button" class="ghost small" id="pad-test">Testar vibração</button></div>
+      <label class="sl"><span>Sensibilidade horizontal</span><input type="range" data-k="padSensX" data-fmt="x" min="0.2" max="3" step="0.05"><output></output></label>
+      <label class="sl"><span>Sensibilidade vertical</span><input type="range" data-k="padSensY" data-fmt="x" min="0.2" max="3" step="0.05"><output></output></label>
+      <label class="sl"><span>Sensibilidade mirando (L2)</span><input type="range" data-k="padAdsSens" data-fmt="pct" min="0.3" max="1.5" step="0.05"><output></output></label>
+      <label class="sl"><span>Zona morta dos analógicos</span><input type="range" data-k="padDead" data-fmt="pct" min="0.02" max="0.3" step="0.01"><output></output></label>
+      <label class="sl"><span>Curva de resposta (1 = linear, maior = mais precisa no centro)</span><input type="range" data-k="padCurve" data-fmt="x" min="1" max="3" step="0.1"><output></output></label>
+      <label class="sl"><span>Assistência de mira</span><input type="range" data-k="padAssist" data-fmt="pct" min="0" max="1" step="0.05"><output></output></label>
+      <label class="sl"><span>Intensidade da vibração</span><input type="range" data-k="padRumble" data-fmt="pct" min="0" max="1.5" step="0.05"><output></output></label>
+      <button type="button" class="sw" role="switch" data-k="padAccel"><span>Aceleração ao virar com o analógico no talo</span><i></i></button>
+      <button type="button" class="sw" role="switch" data-k="padInvY"><span>Inverter o eixo vertical (controle)</span><i></i></button>
+      <button type="button" class="sw" role="switch" data-k="padTriggers"><span>Gatilhos adaptativos (resistência diferente para cada arma)</span><i></i></button>
+      <button type="button" class="sw" role="switch" data-k="padLight"><span>Luz do controle mostra a sua vida</span><i></i></button>
+      <dl class="keys">
+        <div><dt>L · R analógico</dt><dd>Andar · olhar</dd></div>
+        <div><dt>R2 · L2</dt><dd>Atirar · mirar</dd></div>
+        <div><dt>✕ · ○</dt><dd>Pular · agachar</dd></div>
+        <div><dt>□</dt><dd>Usar/comprar (segure para reconstruir e levantar amigos) · sem nada por perto, recarrega</dd></div>
+        <div><dt>△</dt><dd>Trocar de arma</dd></div>
+        <div><dt>R1 · L1</dt><dd>Granada · lanterna</dd></div>
+        <div><dt>R3 · L3</dt><dd>Faca · inspecionar</dd></div>
+        <div><dt>← → ↑</dt><dd>Arma 1 · arma 2 · faca</dd></div>
+        <div><dt>OPTIONS</dt><dd>Pausar</dd></div>
+        <div><dt>Menus</dt><dd>Direcional navega · ✕ confirma · ○ volta · L1/R1 trocam de aba</dd></div>
+      </dl>
     </div>
     <div class="setp" data-st="ctrl" hidden>
       <label class="sl"><span>Sensibilidade</span><input type="range" data-k="sens" data-fmt="x" min="0.1" max="4" step="0.05"><output></output></label>
@@ -5395,8 +5425,8 @@ function startMapSurge(map){
 }
 
 const curSlot=()=>Wp.inv[Wp.cur];
-const PRESS=isTouch?'Toque em USAR':'Pressione E';
-const HOLD=isTouch?'Segure USAR':'Segure E';
+let PRESS=isTouch?'Toque em USAR':'Pressione E';
+let HOLD=isTouch?'Segure USAR':'Segure E';
 const NET={mode:null,room:null,user:null,gr:null,code:null,me:null,hostPeer:null,hostSeen:0,leaving:false,actSeq:0,acts:[],evSeq:0,evs:[],lastEv:-1,lastActSeq:{},players:new Map(),ghosts:new Map(),sendT:0,lobbyT:0,lastHostPres:null,gen:0,hostGen:null,gapSeen:0,fs:0,revT:0,offPeers:null,ws:null,connected:false,displayName:'',peerCache:[],roomMeta:null,pending:new Map(),reqSeq:0,ready:false,phase:'menu',pingTimer:null};
 const r100=v=>Math.round(v*100), r10=v=>Math.round(v*10);
 function netAct(a){ if(NET.mode!=='client') return; NET.acts.push([++NET.actSeq].concat(a)); if(NET.acts.length>24) NET.acts.shift(); }
@@ -5569,7 +5599,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v8.1';
+const GAME_VERSION='v8.2';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -5781,6 +5811,7 @@ const keys={}; const IN={fire:false,ads:false,use:false,mx:0,my:0,lookX:0,lookY:
 const press=a=>IN.edges.add(a);
 let locked=false, noLock=isTouch||!(canvas&&canvas.requestPointerLock), lockEverWorked=false;
 addEventListener('keydown',e=>{
+  if(e.isTrusted&&PAD.active) padIdle();
   if(CHAT.open) return;
   if(e.code==='KeyY'&&!e.repeat&&!CON.open&&chatAllowed()&&!(G.state==='lobby'&&(LP.on||!$('#settings').hidden))){ e.preventDefault(); openChat(); return; }
   if(G.state==='playing'&&(e.ctrlKey||e.code==='ControlLeft'||e.code==='ControlRight')&&e.code!=='KeyW') e.preventDefault();
@@ -5806,7 +5837,9 @@ addEventListener('keydown',e=>{
 addEventListener('keyup',e=>{ keys[e.code]=false; if(e.code==='KeyE') IN.use=false; });
 addEventListener('blur',()=>{ MLOOK.lockT=performance.now(); IN.lookX=0; IN.lookY=0; for(const k in keys) keys[k]=false; IN.fire=false; IN.ads=false; IN.use=false; if(G.state==='playing'&&!isTouch&&!CON.open&&!CHAT.open) pauseGame(); });
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('mousemove',e=>{ if(PAD.active&&!locked&&Math.abs(e.movementX||0)+Math.abs(e.movementY||0)>8) padIdle(); });
 canvas.addEventListener('mousedown',e=>{
+  if(PAD.active) padIdle();
   if((G.state!=='playing'&&G.state!=='lobby')||CON.open) return;
   if(G.state==='lobby'&&LP.on){ closeLobbyPause(true); return; }
   if(PICK.on) return;
@@ -5820,7 +5853,7 @@ addEventListener('mouseup',e=>{ if(e.button===0) IN.fire=false; if(e.button===2)
    ignorados e um pico isolado (muito maior que o movimento recente e sem continuidade) é descartado. */
 const MLOOK={ema:6,last:0,lockT:0,drop:0,pend:null};
 addEventListener('mousemove',e=>{ if(!((G.state==='playing'||G.state==='lobby')&&(locked||noLock))) return;
-  const now=performance.now(); let dx=e.movementX||0, dy=e.movementY||0; if(now-MLOOK.lockT<110) return;
+  const now=performance.now(); let dx=e.movementX||0, dy=e.movementY||0; if(PAD.active&&Math.abs(dx)+Math.abs(dy)>6) padIdle(); if(now-MLOOK.lockT<110) return;
   // sem filtro de "picos": com mouse de DPI alto o navegador junta vários movimentos num evento só e um giro rápido passava do limite;
   // como a média só subia com eventos aceitos, todos os eventos seguintes eram descartados e a mira ficava parada até o mouse desacelerar
   const m=Math.hypot(dx,dy);
@@ -5830,9 +5863,9 @@ addEventListener('wheel',e=>{ if(G.state==='playing'&&Math.abs(e.deltaY)>2) pres
 document.addEventListener('pointerlockchange',()=>{ locked=document.pointerLockElement===canvas; if(locked) lockEverWorked=true; MLOOK.lockT=performance.now(); MLOOK.ax=0; MLOOK.ay=0; IN.lookX=0; IN.lookY=0;
   // um pedido de mira que chegou depois das cartas abrirem (ex.: ao fechar o console) não pode prender o mouse; só um clique fora das cartas faz isso
   if(locked&&G.cardsOpen&&G.state==='playing'&&!G.cardsRelock&&!isTouch&&!(typeof x1Live==='function'&&x1Live())){ G.cardsFreed=true; document.exitPointerLock(); return; }
-  if(G.state==='lobby'&&typeof LP!=='undefined'){ if(locked) closeLobbyPause(false); else if(!noLock&&!CON.open&&!CHAT.open&&!PICK.on&&$('#settings').hidden&&!lobbyBusy) openLobbyPause(); } if(!locked&&G.state==='playing'&&!noLock&&!CON.open&&!G.cardsOpen&&!(typeof AD!=='undefined'&&AD.open)&&!CHAT.open&&!(typeof letterOpen!=='undefined'&&letterOpen)&&!(typeof X1!=='undefined'&&x1Live())) pauseGame(); });
+  if(G.state==='lobby'&&typeof LP!=='undefined'){ if(locked) closeLobbyPause(false); else if(!noLock&&!CON.open&&!CHAT.open&&!PICK.on&&$('#settings').hidden&&!lobbyBusy) openLobbyPause(); } if(!locked&&G.state==='playing'&&!noLock&&!CON.open&&!G.cardsOpen&&!(typeof AD!=='undefined'&&AD.open)&&!CHAT.open&&!(typeof letterOpen!=='undefined'&&letterOpen)&&!(typeof X1!=='undefined'&&x1Live())&&!PAD.active) pauseGame(); });
 function requestLock(){
-  if(isTouch||noLock) return Promise.resolve(false);
+  if(isTouch||noLock||(typeof PAD!=='undefined'&&PAD.active)) return Promise.resolve(false);
   return new Promise(res=>{ let done=false;
     const fin=v=>{ if(done) return; done=true; document.removeEventListener('pointerlockchange',onC); document.removeEventListener('pointerlockerror',onE); res(v); };
     const onC=()=>{ if(document.pointerLockElement===canvas) fin(true); }; const onE=()=>fin(false);
@@ -5846,6 +5879,172 @@ function requestLock(){
 // first interaction anywhere switches the sound on (menu music)
 const wake=()=>{ Snd.init(); $('#soundhint').style.visibility='hidden'; if(G.state==='menu'||G.state==='over') Snd.startMusic(); removeEventListener('pointerdown',wake); removeEventListener('keydown',wake); };
 addEventListener('pointerdown',wake); addEventListener('keydown',wake);
+
+/* ================= CONTROLE (DualSense / PS5, e qualquer controle "padrão") =================
+   Gamepad API para botões e analógicos (USB ou Bluetooth, sem instalar nada). Vibração pelo próprio navegador; e, se o jogador
+   autorizar (botão nas Configurações), o DualSense é aberto por WebHID para gatilhos adaptativos, vibração direta e a luz.
+   Mapa (estilo CoD): L analógico anda · R analógico mira · R2 atira · L2 mira · ✕ pula · ○ agacha · □ usa/compra (sem nada
+   por perto, recarrega) · △ troca de arma · R1 granada · L1 lanterna · R3 faca · L3/↓ inspeciona · ←→↑ armas 1/2/faca ·
+   OPTIONS pausa. Nos menus: direcional/analógico navega, ✕ confirma, ○ volta, L1/R1 trocam de aba. */
+const PAD={idx:-1,active:false,id:'',prev:[],rx:0,ry:0,lx:0,ly:0,r2:0,l2:0,accT:0,ads0:0,snapT:0,env:[],m:[0,0],sent:'',hid:null,hidBT:false,seq:0,hidT:0,trig:['',''],light:'',heartT:0,
+  nav:{el:null,rep:0,dir:'',held:0},sq:0,sqUsed:false,err:0,last:0,toasted:false};
+const PB={X:0,O:1,SQ:2,TRI:3,L1:4,R1:5,L2:6,R2:7,CREATE:8,OPT:9,L3:10,R3:11,UP:12,DOWN:13,LEFT:14,RIGHT:15,PS:16,TP:17};
+function padGet(){ let gps=[]; try{ gps=navigator.getGamepads?navigator.getGamepads():[]; }catch(e){ return null; }
+  if(PAD.idx>=0&&gps[PAD.idx]&&gps[PAD.idx].connected) return gps[PAD.idx];
+  for(const g of gps) if(g&&g.connected&&g.buttons.length>=16){ PAD.idx=g.index; PAD.id=g.id; return g; } PAD.idx=-1; return null; }
+addEventListener('gamepadconnected',e=>{ const g=e.gamepad; if(!g||g.buttons.length<16) return; PAD.idx=g.index; PAD.id=g.id; padStatus();
+  if(!PAD.toasted){ PAD.toasted=true; try{ toast(`🎮 ${/dualsense|054c.*0ce6|0df2|wireless controller/i.test(g.id)?'DualSense':'Controle'} conectado · ajustes em Configurações › Controle`); }catch(err){} } });
+addEventListener('gamepaddisconnected',e=>{ if(e.gamepad&&e.gamepad.index===PAD.idx){ PAD.idx=-1; padSetActive(false); padStatus(); } });
+function padSetActive(v){ if(PAD.active===v) return; PAD.active=v; document.body.classList.toggle('padmode',v);
+  PRESS=v?'Aperte □':isTouch?'Toque em USAR':'Pressione E'; HOLD=v?'Segure □':isTouch?'Segure USAR':'Segure E';
+  if(!v){ IN.mx=0; IN.my=0; if(PAD.nav.el) PAD.nav.el.classList.remove('padfocus'); PAD.nav.el=null; } }
+function padIdle(){ if(PAD.active) padSetActive(false); }
+function padGameplay(){
+  if(G.state==='playing') return !G.cardsOpen&&!CON.open&&!CHAT.open&&$('#settings').hidden&&!(typeof X1!=='undefined'&&X1.buyOpen)&&!(typeof letterOpen!=='undefined'&&letterOpen)&&!(typeof AD!=='undefined'&&AD.open);
+  if(G.state==='lobby') return !LP.on&&!PICK.on&&!CON.open&&!CHAT.open&&$('#settings').hidden;
+  return false; }
+const padDZ=(x,y,dz)=>{ const m=Math.hypot(x,y); if(m<dz) return [0,0,0]; const k=Math.min(1,(m-dz)/(1-dz-0.03)); return [x/m*k,y/m*k,k]; };
+function padFrame(dt){
+  const g=padGet(); if(!g){ padHidTick(dt); return; }
+  const b=g.buttons.map(x=>x.value), ax=g.axes; const was=PAD.prev; const down=i=>(b[i]||0)>0.5, edge=i=>down(i)&&!((was[i]||0)>0.5);
+  const any=b.some((v,i)=>v>0.5&&i!==PB.PS)||ax.some(a=>Math.abs(a)>0.35);
+  if(any&&!PAD.active) padSetActive(true);
+  PAD.prev=b; if(!PAD.active){ padHidTick(dt); return; }
+  PAD.r2=b[PB.R2]||0; PAD.l2=b[PB.L2]||0;
+  const L=padDZ(ax[0]||0,ax[1]||0,CFG.padDead), R=padDZ(ax[2]||0,ax[3]||0,CFG.padDead);
+  if(padGameplay()){
+    if(PAD.nav.el){ PAD.nav.el.classList.remove('padfocus'); PAD.nav.el=null; }
+    IN.mx=L[0]; IN.my=L[1]; PAD.rx=R[0]; PAD.ry=R[1]; PAD.rm=R[2];
+    const fire=PAD.r2>0.35, ads=PAD.l2>0.3;
+    if(fire&&!PAD.fire0){ IN.fire=true; press('fire'); } else if(!fire&&PAD.fire0) IN.fire=false; PAD.fire0=fire;
+    if(ads&&!PAD.ads0){ IN.ads=true; press('alt'); PAD.snapT=0.22; } else if(!ads&&PAD.ads0) IN.ads=false; PAD.ads0=ads;
+    if(edge(PB.X)) press('jump');
+    if(edge(PB.O)){ IN.crouchT=!IN.crouchT; }
+    // □: com algo para usar por perto, usa (e segura para reconstruir/levantar); senão recarrega
+    if(edge(PB.SQ)){ PAD.sqUsed=!!curInteract||G.state==='lobby'; if(PAD.sqUsed){ press('use'); IN.use=true; } else press('reload'); }
+    if(down(PB.SQ)){ if(!PAD.sqUsed&&curInteract){ PAD.sqUsed=true; press('use'); } if(PAD.sqUsed) IN.use=true; } else if(was[PB.SQ]>0.5){ IN.use=false; PAD.sqUsed=false; }
+    if(G.state==='playing'){
+      if(edge(PB.TRI)) press('swap'); if(edge(PB.R1)) press('nade'); if(edge(PB.L1)) toggleFlash();
+      if(edge(PB.R3)) press('knife'); if(edge(PB.L3)||edge(PB.DOWN)) press(Wp.knifeOut?'inspect':'knife');
+      if(edge(PB.LEFT)) press('slot0'); if(edge(PB.RIGHT)) press('slot1'); if(edge(PB.UP)) press('slot2');
+      if(edge(PB.OPT)) pauseGame();
+    } else if(G.state==='lobby'){ if(edge(PB.OPT)) openLobbyPause(); }
+  } else {
+    if(PAD.fire0||PAD.ads0||IN.use){ IN.fire=false; IN.ads=false; IN.use=false; PAD.fire0=PAD.ads0=false; }
+    IN.mx=0; IN.my=0; PAD.rx=PAD.ry=0;
+    if(G.state==='playing'&&G.cardsOpen){ if(edge(PB.LEFT)||edge(PB.SQ)) pickCard(0); else if(edge(PB.UP)||edge(PB.TRI)) pickCard(1); else if(edge(PB.RIGHT)||edge(PB.O)) pickCard(2); }
+    else padMenus(b,was,L,R,dt);
+  }
+  padHaptics(dt,g); padHidTick(dt);
+}
+/* mira no analógico: zona morta radial, curva, aceleração no giro rápido e assistência (fricção + leve puxada + "trava" ao mirar) */
+const _paV=new THREE.Vector3();
+function padLook(dt){
+  if(!PAD.active||!padGameplay()) return;
+  let x=PAD.rx, y=PAD.ry, m=PAD.rm||0; const c=Math.pow(m,CFG.padCurve); if(m>0){ x=x/m*c; y=y/m*c; }
+  if(m>0.93&&CFG.padAccel) PAD.accT+=dt; else PAD.accT=0; const boost=1+Math.min(1,Math.max(0,PAD.accT-0.18)/0.4)*0.75;
+  const ads=lerp(1,CFG.padAdsSens,P.ads), fovK=camera.fov/72;
+  let slow=1, tgt=null;
+  if(CFG.padAssist>0&&G.state==='playing'&&!(typeof x1Live==='function'&&x1Live())){ tgt=padTarget(); if(tgt) slow=1-CFG.padAssist*0.5*(1-tgt.ang/tgt.r); }
+  P.yaw-=x*3.3*CFG.padSensX*boost*ads*fovK*slow*dt;
+  P.pitch=clamp(P.pitch-y*2.5*CFG.padSensY*boost*ads*fovK*slow*dt*(CFG.padInvY?-1:1),-1.45,1.45);
+  if(tgt){ const moving=m>0.1||Math.hypot(IN.mx,IN.my)>0.2; PAD.snapT=Math.max(0,PAD.snapT-dt);
+    const pull=(PAD.snapT>0&&P.ads<0.9?9:moving?(1.2+P.ads*1.8):0)*CFG.padAssist;
+    if(pull>0){ let dy=tgt.yaw-P.yaw; while(dy>Math.PI) dy-=Math.PI*2; while(dy<-Math.PI) dy+=Math.PI*2; const k=Math.min(1,pull*dt); P.yaw+=dy*k; P.pitch+=(tgt.pitch-P.pitch)*k*0.6; } }
+  else PAD.snapT=0;
+}
+function padTarget(){ const e=camera.position; let best=null; const fy=P.yaw, fp=P.pitch;
+  for(const z of zlist()){ if(z.dead||z.predDead||z.state==='rise'||z.state==='dying') continue; const tx=z.pos.x, tz=z.pos.z, ty=zy(z)+(z.kind==='dog'?0.55:z.crawl?0.4:1.3)*((z.g&&z.g.scale.y)||1);
+    const dx=tx-e.x, dy=ty-e.y, dz=tz-e.z, d=Math.hypot(dx,dz); if(d>38||d<0.6) continue;
+    const yaw=Math.atan2(-dx,-dz), pitch=Math.atan2(dy,d); let a=yaw-fy; while(a>Math.PI) a-=Math.PI*2; while(a<-Math.PI) a+=Math.PI*2;
+    const ang=Math.hypot(a,pitch-fp), r=Math.max(0.05,Math.min(0.2,0.75/d))*(1+P.ads*0.5); if(ang>r) continue;
+    if(best&&ang/r>=best.ang/best.r) continue; try{ if(!losClear({x:e.x,z:e.z},{x:tx,z:tz})) continue; }catch(err){}
+    best={yaw,pitch,ang,r,z}; }
+  return best; }
+/* menus: foco espacial nos botões visíveis */
+function padVisible(e){ if(!e||e.disabled) return false; const r=e.getBoundingClientRect(); if(r.width<4||r.height<4||r.bottom<2||r.top>innerHeight-2||r.right<2||r.left>innerWidth-2) return false;
+  const h=document.elementFromPoint(clamp(r.left+r.width/2,1,innerWidth-1),clamp(r.top+r.height/2,1,innerHeight-1)); return !!h&&(h===e||e.contains(h)||h.contains(e)&&h.tagName==='LABEL'); }
+function padFocusables(){ return [...document.querySelectorAll('button,[role=switch],input[type=range],input[type=checkbox],a[href],select,.kcard,[data-case],[data-box]')].filter(padVisible); }
+function padFocus(el){ if(PAD.nav.el===el) return; if(PAD.nav.el) PAD.nav.el.classList.remove('padfocus'); PAD.nav.el=el; if(!el) return; el.classList.add('padfocus'); try{ el.focus({preventScroll:true}); }catch(e){} try{ el.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(e){} try{ Snd.ui('hover'); }catch(e){} }
+function padDefault(list){ const area=e=>{ const r=e.getBoundingClientRect(); return r.width*r.height; }; for(const id of ['play','resume','bx-open','bx-again','set-back']){ const e=list.find(x=>x.id===id); if(e) return e; } const ctas=list.filter(e=>e.classList.contains('cta')).sort((a,b)=>area(b)-area(a)); return ctas[0]||list[0]||null; }
+function padMove(dir){ const list=padFocusables(); let cur=PAD.nav.el; if(!cur||!list.includes(cur)){ padFocus(padDefault(list)); return; }
+  const a=cur.getBoundingClientRect(), ax=a.left+a.width/2, ay=a.top+a.height/2; const vx=dir==='left'?-1:dir==='right'?1:0, vy=dir==='up'?-1:dir==='down'?1:0; let best=null, bs=1e9;
+  for(const e of list){ if(e===cur) continue; const r=e.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2; const dx=cx-ax, dy=cy-ay; const along=dx*vx+dy*vy; if(along<=4) continue; const across=Math.abs(dx*vy-dy*vx); const sc=along+across*2.2; if(sc<bs){ bs=sc; best=e; } }
+  if(best){ padFocus(best); return; }
+  // nada naquela direção: rola a lista (lojas, inventário)
+  let p=cur.parentElement; while(p&&p!==document.body){ const st=getComputedStyle(p); if(/(auto|scroll)/.test(st.overflowY+st.overflowX)&&(p.scrollHeight>p.clientHeight+4||p.scrollWidth>p.clientWidth+4)){ p.scrollBy({top:vy*220,left:vx*220,behavior:'smooth'}); break; } p=p.parentElement; } }
+function padBack(){ for(const s of ['#bx-close','#set-back','#ars-close','#resume','#kv-close','[data-snd="back"]','[id$="-close"]','[id$="-back"]','.close']) for(const e of document.querySelectorAll(s)) if(padVisible(e)){ e.click(); return; }
+  for(const t of ['keydown','keyup']) dispatchEvent(new KeyboardEvent(t,{key:'Escape',code:'Escape',bubbles:true})); }
+function padTab(d){ const tabs=[...document.querySelectorAll('.tabs')].find(t=>padVisible(t.querySelector('button'))); if(!tabs) return; const bs=[...tabs.querySelectorAll('button')].filter(e=>!e.disabled); let i=bs.findIndex(e=>e.classList.contains('on')); i=(i+d+bs.length)%bs.length; bs[i].click(); setTimeout(()=>padFocus(bs[i]),30); }
+function padMenus(b,was,L,R,dt){ const edge=i=>(b[i]||0)>0.5&&!((was[i]||0)>0.5); const N=PAD.nav;
+  let dir=''; if(b[PB.UP]>0.5||L[1]<-0.55) dir='up'; else if(b[PB.DOWN]>0.5||L[1]>0.55) dir='down'; else if(b[PB.LEFT]>0.5||L[0]<-0.55) dir='left'; else if(b[PB.RIGHT]>0.5||L[0]>0.55) dir='right';
+  if(dir){ if(dir!==N.dir){ N.dir=dir; N.rep=0.38; padNav(dir); } else { N.rep-=dt; if(N.rep<=0){ N.rep=0.11; padNav(dir); } } } else N.dir='';
+  if(N.el&&(!document.contains(N.el)||!padVisible(N.el))){ N.el.classList.remove('padfocus'); N.el=null; }
+  N.chk=(N.chk||0)-dt; if(!N.el&&N.chk<=0){ N.chk=0.25; const d=padDefault(padFocusables()); if(d){ PAD.nav.el=d; d.classList.add('padfocus'); try{ d.focus({preventScroll:true}); }catch(e){} } }
+  if(edge(PB.X)){ const e=N.el&&padVisible(N.el)?N.el:null; if(e){ if(e.type==='range') {} else e.click(); } else padMove('down'); }
+  if(edge(PB.O)) padBack();
+  if(edge(PB.OPT)){ if(G.state==='paused') resumeGame(); else if(G.state==='lobby'&&LP.on) closeLobbyPause(false); else padBack(); }
+  if(edge(PB.R1)) padTab(1); if(edge(PB.L1)) padTab(-1);
+  if(Math.abs(R[1])>0.2&&N.el){ let p=N.el.parentElement; while(p&&p!==document.body){ if(p.scrollHeight>p.clientHeight+4&&/(auto|scroll)/.test(getComputedStyle(p).overflowY)){ p.scrollTop+=R[1]*900*dt; break; } p=p.parentElement; } } }
+function padNav(dir){ const e=PAD.nav.el; if(e&&e.type==='range'&&(dir==='left'||dir==='right')&&padVisible(e)){ const st=parseFloat(e.step)||0.01; const v=clamp(parseFloat(e.value)+(dir==='left'?-st:st),parseFloat(e.min),parseFloat(e.max)); e.value=v; e.dispatchEvent(new Event('input',{bubbles:true})); return; } padMove(dir); }
+/* ---- vibração ---- */
+function padRumble(strong,weak,ms){ if(!PAD.active) return; const k=CFG.padRumble; if(!(k>0)) return; strong=clamp(strong*k,0,1); weak=clamp(weak*k,0,1);
+  PAD.env.push({s:strong,w:weak,t:0,d:ms/1000});
+  if(!PAD.hid){ const g=padGet(); const va=g&&g.vibrationActuator; if(va&&va.playEffect){ try{ va.playEffect(va.type||'dual-rumble',{startDelay:0,duration:ms,strongMagnitude:strong,weakMagnitude:weak}).catch(()=>{}); }catch(e){} } } }
+function padShot(d){ if(!PAD.active) return; const s=d.snd;
+  if(s==='shotgun') padRumble(0.85,0.55,120); else if(s==='sniper') padRumble(1,0.5,150); else if(s==='ray') padRumble(0.35,0.85,110);
+  else if(d.auto) padRumble(d.rpm>650?0.28:0.4,0.55,55); else if(s==='pistol') padRumble(0.22,0.55,60); else padRumble(0.5,0.6,85); }
+function padHaptics(dt){
+  const live=G.state==='playing'&&PAD.active;
+  if(live&&!P.down&&P.maxHp&&P.hp/P.maxHp<0.3){ PAD.heartT-=dt; if(PAD.heartT<=0){ PAD.heartT=0.95; padRumble(0.45,0,70); setTimeout(()=>padRumble(0.3,0,60),170); } } }
+/* ---- DualSense por WebHID: gatilhos adaptativos, motores e luz ---- */
+const DS_FILTERS=[{vendorId:0x054c,productId:0x0ce6},{vendorId:0x054c,productId:0x0df2}];
+async function padHidConnect(ask){ if(!navigator.hid){ if(ask) toast('Este navegador não deixa acessar o controle direto (use Chrome ou Edge).',{bad:true}); return false; }
+  try{ let devs=await navigator.hid.getDevices(); devs=devs.filter(d=>DS_FILTERS.some(f=>f.vendorId===d.vendorId&&f.productId===d.productId));
+    if(!devs.length&&ask) devs=await navigator.hid.requestDevice({filters:DS_FILTERS}); const d=devs[0]; if(!d) return false;
+    if(!d.opened) await d.open(); PAD.hid=d; PAD.hidBT=!(d.collections||[]).some(c=>(c.outputReports||[]).some(r=>r.reportId===0x02));
+    if(PAD.hidBT){ try{ await d.receiveFeatureReport(0x05); }catch(e){} }
+    PAD.sent=''; PAD.trig=['','']; PAD.light=''; PAD.setup=true; padStatus(); if(ask) toast('DualSense conectado: gatilhos adaptativos e luz ativos.'); return true;
+  }catch(e){ console.warn('[Bunker] DualSense HID',e); if(ask) toast('Não foi possível abrir o controle. Feche outros programas que usam o DualSense (Steam, DS4Windows) e tente de novo.',{bad:true}); return false; } }
+if(navigator.hid){ navigator.hid.addEventListener('disconnect',e=>{ if(e.device===PAD.hid){ PAD.hid=null; padStatus(); } }); setTimeout(()=>padHidConnect(false),1500); }
+const CRC_T=(()=>{ const t=new Uint32Array(256); for(let i=0;i<256;i++){ let c=i; for(let k=0;k<8;k++) c=c&1?0xEDB88320^(c>>>1):c>>>1; t[i]=c>>>0; } return t; })();
+function crc32(bytes){ let c=0xFFFFFFFF; for(const x of bytes) c=CRC_T[(c^x)&0xff]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+// efeitos de gatilho no formato oficial (zonas 0–9 do curso do gatilho)
+function trigOff(){ return [0x05,0,0,0,0,0,0,0,0,0,0]; }
+function trigFeedback(pos,str){ const f=(str-1)&7; let fz=0, az=0; for(let i=pos;i<10;i++){ fz|=f<<(3*i); az|=1<<i; } return [0x21,az&0xff,(az>>8)&0xff,fz&0xff,(fz>>>8)&0xff,(fz>>>16)&0xff,(fz>>>24)&0xff,0,0,0,0]; }
+function trigWeapon(st,en,str){ const z=(1<<st)|(1<<en); return [0x25,z&0xff,(z>>8)&0xff,(str-1)&7,0,0,0,0,0,0,0]; }
+function trigVibe(pos,amp,freq){ const a=(amp-1)&7; let az=0, act=0; for(let i=pos;i<10;i++){ az|=a<<(3*i); act|=1<<i; } return [0x26,act&0xff,(act>>8)&0xff,az&0xff,(az>>>8)&0xff,(az>>>16)&0xff,(az>>>24)&0xff,0,0,freq&0xff,0]; }
+function padTriggers(){
+  if(!CFG.padTriggers||!PAD.active) return [trigOff(),trigOff()];
+  if(!(G.state==='playing'&&padGameplay())||P.down) return [trigOff(),trigOff()];
+  const L2=Wp.knifeOut?trigOff():trigFeedback(2,Wp.scoped||P.ads>0.5&&curSlot()&&wstat(curSlot()).scope?4:2);
+  const s=curSlot(); if(!s||Wp.knifeOut||Wp.reloading||Wp.swapT>0||s.mag<=0) return [trigOff(),L2];   // sem munição: gatilho solto
+  const d=wstat(s), firing=IN.fire&&G.t-Wp.lastShot<0.2;
+  let R2; if(d.snd==='ray') R2=firing?trigVibe(2,4,30):trigFeedback(2,2);
+  else if(d.auto) R2=firing?trigVibe(3,d.snd==='lmg'?7:5,clamp(Math.round(d.rpm/60),6,40)):trigFeedback(3,3);
+  else if(d.snd==='shotgun') R2=trigWeapon(3,6,8); else if(d.snd==='sniper') R2=trigWeapon(4,6,7); else if(d.snd==='pistol') R2=trigWeapon(3,5,4); else R2=trigWeapon(3,5,6);
+  return [R2,L2]; }
+function padLightColor(){ if(!CFG.padLight) return [0,0,40];
+  if(G.state==='playing'||G.state==='paused'){ if(P.down){ const p=(Math.sin(performance.now()/180)+1)/2; return [Math.round(60+195*p),0,0]; }
+    if((G.insta||0)>0) return [255,255,255]; const k=P.maxHp?clamp(P.hp/P.maxHp,0,1):1; return k>0.5?[Math.round(255*(1-k)*2),220,30]:[255,Math.round(220*k*2),20]; }
+  return [180,110,20]; }
+function padHidTick(dt){
+  // motores: o maior envelope ativo
+  let s=0,w=0; for(let i=PAD.env.length-1;i>=0;i--){ const e=PAD.env[i]; e.t+=dt; if(e.t>=e.d){ PAD.env.splice(i,1); continue; } const f=1-e.t/e.d*0.5; s=Math.max(s,e.s*f); w=Math.max(w,e.w*f); }
+  const d=PAD.hid; if(!d||!d.opened) return; PAD.hidT-=dt;
+  const [R2,L2]=padTriggers(), rgb=padLightColor(); const ms=Math.round(s*255), mw=Math.round(w*255);
+  const key=ms+','+mw+'|'+R2.join(',')+'|'+L2.join(',')+'|'+rgb.join(',');
+  if(key===PAD.sent&&PAD.hidT>0||PAD.busy) return; PAD.sent=key; PAD.hidT=1;
+  const c=new Uint8Array(47);
+  c[0]=0x01|0x02|0x04|0x08; c[1]=0x04|0x10; c[2]=mw; c[3]=ms;
+  c.set(R2,10); c.set(L2,21);
+  c[38]=0x04|(PAD.setup?0x02:0); if(PAD.setup){ c[41]=0x02; PAD.setup=false; } c[42]=0x00; c[43]=0x04; c[44]=rgb[0]; c[45]=rgb[1]; c[46]=rgb[2];
+  let id=0x02, data=c;
+  if(PAD.hidBT){ id=0x31; data=new Uint8Array(77); data[0]=(PAD.seq<<4)&0xf0; PAD.seq=(PAD.seq+1)&15; data[1]=0x10; data.set(c,2); const crc=crc32(new Uint8Array([0xA2,0x31,...data.subarray(0,73)])); data[73]=crc&0xff; data[74]=(crc>>>8)&0xff; data[75]=(crc>>>16)&0xff; data[76]=(crc>>>24)&0xff; }
+  PAD.busy=true; d.sendReport(id,data).catch(e=>{ if(!PAD.err2){ PAD.err2=1; console.warn('[Bunker] DualSense envio',e); } }).finally(()=>{ PAD.busy=false; }); }
+function padStatus(){ const el=$('#pad-status'); if(!el) return; const g=padGet(); const ds=g&&/dualsense|054c|wireless controller/i.test(g.id);
+  el.textContent=!g?'Nenhum controle detectado. Ligue o controle (USB ou Bluetooth) e aperte qualquer botão.':`${ds?'DualSense':'Controle'} conectado${PAD.hid?` · gatilhos adaptativos e luz ativos (${PAD.hidBT?'Bluetooth':'USB'})`:navigator.hid?' · para gatilhos adaptativos e luz, clique em Ativar abaixo':''}`;
+  const hb=$('#pad-hid'); if(hb){ hb.hidden=!navigator.hid; hb.textContent=PAD.hid?'DualSense ativo ✓':'Ativar gatilhos adaptativos e luz (DualSense)'; hb.disabled=!!PAD.hid; } }
 
 /* ---- touch ---- */
 function setupTouch(){
@@ -6788,7 +6987,7 @@ function tracer(a,b,color,thick){ const t=tracers[trI]; trI=(trI+1)%tracers.leng
   t.len=Math.min(t.d,Math.max(1.2,t.d*0.35)); t.dur=Math.min(0.09,0.025+t.d/900); t.m.position.copy(a); t.m.lookAt(b); t.m.scale.set(thick||1,thick||1,t.len); t.m.material.color.setHex(color||0xffe6a8); t.m.material.opacity=0.8; t.t=0; }
 function updateTracers(dt){ for(const t of tracers){ if(!t.m.visible) continue; t.t+=dt; const k=Math.min(1,t.t/t.dur); const head=k*t.d, tail=Math.max(0,head-t.len);
   t.m.position.copy(t.a).addScaledVector(t.dir,tail); t.m.scale.z=Math.max(0.01,head-tail); t.m.material.opacity=0.8*(1-k*0.6); if(t.t>t.dur+0.02) t.m.visible=false; } }
-function shake(a){ G.shakeA=Math.max(G.shakeA,a*1.25); }
+function shake(a){ G.shakeA=Math.max(G.shakeA,a*1.25); try{ if(a>0.15) padRumble(Math.min(1,a*0.8),Math.min(1,a*0.6),Math.min(450,120+a*320)); }catch(e){} }
 /* indicador de vida (todos os modos): barra segmentada, rastro vermelho do dano, escudo do X1, alerta de vida baixa */
 /* espectador: morto no cooperativo online, você assiste da visão dos colegas vivos (clique ou Espaço troca) */
 const SPEC={peer:null,on:false,pitch:0};
@@ -7895,6 +8094,7 @@ function fire(){
   const s=curSlot(), d=wstat(s); const tier=lvTier(s.lvl|0);
   if(CHEAT.ammo!==1&&!abFreeAmmo()) s.mag--; NET.fs++; Wp.fireCd=60/(d.rpm*(G.perks.rof?1.33:1)); Wp.lastShot=G.t; Wp.heat=Math.min(1.6,Wp.heat+(d.pellets?0.35:d.auto?0.09:0.2));
   if(d.sprite){ if(CHEAT.ammo!==1) s.mag=0; doomFire(s); }
+  try{ padShot(d); }catch(e){}
   Snd.shot(d.snd,tier); if(!d.proj&&!d.sprite) Snd.casing(isOutside(P.pos.x,P.pos.z)); if(d.ping&&s.mag===0) setTimeout(()=>Snd.ping(),60);
   if(!RL_CYCLE[s.id]||!RIG.ok){ if(s.id==='kar98k'&&s.mag>0) setTimeout(()=>{ if(curSlot()===s&&!Wp.knifeOut) Snd.bolt(); },380); if(s.id==='trench'&&s.mag>0) setTimeout(()=>{ if(curSlot()===s&&!Wp.knifeOut) Snd.pump(); },300); }
   try{ vmShot(s); }catch(e){ console.warn(e); }
@@ -7977,6 +8177,7 @@ function hurtPlayer(amt,z){
   if(x1Live()) return;
   const live=G.state==='playing'||(G.state==='paused'&&NET.mode);
   if(!live||P.down||CHEAT.god) return;
+  try{ padRumble(Math.min(1,0.45+amt/70),0.6,Math.min(380,160+amt*3)); }catch(e){}
   amt*=Mod.taken*threatDmg()*abTaken();
   if(CHEAT.buddha) amt=Math.min(amt,Math.max(0,P.hp-1));
   P.hp-=amt; P.lastHit=G.t; Snd.hurt(); shake(0.38); shotShake(0.5);
@@ -8016,11 +8217,12 @@ function updatePlayer(dt){
   const tau=CFG.mouseSmooth===0?0:(CFG.mouseSmooth||0.010); MLOOK.ax=(MLOOK.ax||0)+IN.lookX; MLOOK.ay=(MLOOK.ay||0)+IN.lookY; IN.lookX=0; IN.lookY=0;
   const kk=tau>0?1-Math.exp(-dt/tau):1, lx=MLOOK.ax*kk, ly=MLOOK.ay*kk; MLOOK.ax-=lx; MLOOK.ay-=ly; if(Math.abs(MLOOK.ax)<0.01) MLOOK.ax=0; if(Math.abs(MLOOK.ay)<0.01) MLOOK.ay=0;
   P.yaw-=lx*sensK; P.pitch=clamp(P.pitch-ly*sensK*(CFG.invY?-1:1),-1.45,1.45);
+  padLook(dt);
   if(x1Frozen()&&!P.down){ P.vx=P.vz=0; P.moveAmt=0; P.sprinting=false; return; }   // X1: congelado na compra
   if(P.down){
     P.vx=P.vz=0; P.y=lerp(P.y,-1.05,dt*4); P.moveAmt=0; P.sprinting=false; P.crouch=0;
     if(P.down===1&&NET.mode&&!x1Live()&&G.state==='playing') crawl(dt);
-    if(P.down===1){ P.bleed-=dt; heartT-=dt; if(heartT<=0){ heartT=1.1; Snd.heart(); } if(P.bleed<=0){ P.down=2; banner('Você morreu','Volta na próxima rodada se seu parceiro aguentar','red'); actLog('{n} morreu',true); } }
+    if(P.down===1){ P.bleed-=dt; heartT-=dt; if(heartT<=0){ heartT=1.1; Snd.heart(); try{ padRumble(0.55,0,80); setTimeout(()=>padRumble(0.35,0,70),180); }catch(e){} } if(P.bleed<=0){ P.down=2; banner('Você morreu','Volta na próxima rodada se seu parceiro aguentar','red'); actLog('{n} morreu',true); } }
     return;
   }
   const wantCrouch=!CHEAT.noclip&&!!(keys.KeyC||keys.ControlLeft||keys.ControlRight||IN.crouchT);
@@ -9407,7 +9609,7 @@ function drawDoom(rawDt){
 }
 
 /* ================= SETTINGS ================= */
-const CFG_DEF={vol:0.7,music:0.6,sfx:1,voice:1,ui:0.8,sens:1,adsSens:0.85,invY:false,fov:72,quality:1,bright:1,bob:true,shake:true,shakeAmt:1,fps:false,hitm:true,dmgNum:true,autoRes:false,potato:false,
+const CFG_DEF={vol:0.7,music:0.6,sfx:1,voice:1,ui:0.8,sens:1,adsSens:0.85,invY:false,fov:72,quality:1,bright:1,bob:true,shake:true,shakeAmt:1,fps:false,hitm:true,dmgNum:true,autoRes:false,potato:false,padSensX:1,padSensY:0.85,padAdsSens:0.75,padDead:0.08,padCurve:1.6,padAccel:true,padInvY:false,padAssist:0.5,padRumble:1,padTriggers:true,padLight:true,
   xs:{style:'cruz',col:'#f0ece0',size:9,thick:2,gap:0,alpha:0.9,outline:true,dot:false,dyn:true}};
 const CFG=JSON.parse(JSON.stringify(CFG_DEF));
 (function loadCfg(){
@@ -9474,7 +9676,9 @@ function syncSettings(){
   for(const b of document.querySelectorAll('#settings [data-xs-col]')) b.classList.toggle('on',CFG.xs.col.toLowerCase()===b.dataset.xsCol);
   const ci=$('#xs-color'); if(ci&&document.activeElement!==ci) ci.value=CFG.xs.col;
 }
-function openSettings(from){ setFrom=from||'#menu'; show('#settings'); setSetTab(setTab); syncSettings(); }
+function openSettings(from){ setFrom=from||'#menu'; show('#settings'); setSetTab(setTab); syncSettings(); try{ padStatus(); }catch(e){} }
+$('#pad-hid').addEventListener('click',()=>padHidConnect(true));
+$('#pad-test').addEventListener('click',()=>{ const was=PAD.active; PAD.active=true; padRumble(0.9,0.4,180); setTimeout(()=>padRumble(0.3,0.9,160),260); setTimeout(()=>{ PAD.active=was||PAD.active; },500); });
 function setSetTab(t){ setTab=t; for(const b of document.querySelectorAll('#settabs button')) b.classList.toggle('on',b.dataset.st===t); for(const p of document.querySelectorAll('#settings .setp')) p.hidden=p.dataset.st!==t; }
 for(const inp of document.querySelectorAll('#settings input[type=range][data-k]')){ let lt=0; inp.addEventListener('input',()=>{ cfgSet(inp.dataset.k,parseFloat(inp.value)); const n=performance.now(); if(n-lt>45){ lt=n; Snd.ui('slide'); } }); }
 for(const b of document.querySelectorAll('#settings .sw[data-k]')) b.addEventListener('click',()=>cfgSet(b.dataset.k,!cfgGet(b.dataset.k)));
@@ -12300,7 +12504,7 @@ function renderEvo(){
 function resumeGame(){
   Snd.init();
   if(G.state!=='paused') return;
-  if(isTouch||noLock){ G.state='playing'; show(null); return; }
+  if(isTouch||noLock||PAD.active){ G.state='playing'; show(null); return; }
   requestLock().then(ok=>{ if(G.state!=='paused') return; if(ok){ G.state='playing'; show(null); } else { G.state='playing'; show(null); } });
 }
 function gameOver(){
@@ -12554,12 +12758,13 @@ function frame(now){
   requestAnimationFrame(frame); const tF0=performance.now(); renderer.info.reset();
   _zfm.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse); ZFR.setFromProjectionMatrix(_zfm);
   const rawDt=Math.min((now-last)/1000,0.05); last=now; const dt=rawDt*CHEAT.ts;
+  try{ padFrame(rawDt); }catch(e){ if(!PAD.err){ PAD.err=1; console.warn('[Bunker] controle',e); } }
   if(!world) return;
   if(NET.mode) netFrame(dt);
   const sim=G.state==='playing'||(G.state==='paused'&&!!NET.mode), lobbySim=G.state==='lobby';
   if((KV.on||CP.full)&&!sim&&!lobbySim) return;
   if(LP.on&&G.state!=='lobby') closeLobbyPause(false);
-  { let free=!locked&&!noLock&&!isTouch&&(G.state==='playing'||G.state==='lobby')&&!CHAT.open&&!G.cardsOpen&&!CON.open&&!(typeof PICK!=='undefined'&&PICK.on)&&!LP.on&&!(typeof X1!=='undefined'&&X1.buyOpen)&&$('#settings').hidden&&!(typeof letterOpen!=='undefined'&&letterOpen);
+  { let free=!locked&&!noLock&&!isTouch&&!PAD.active&&(G.state==='playing'||G.state==='lobby')&&!CHAT.open&&!G.cardsOpen&&!CON.open&&!(typeof PICK!=='undefined'&&PICK.on)&&!LP.on&&!(typeof X1!=='undefined'&&X1.buyOpen)&&$('#settings').hidden&&!(typeof letterOpen!=='undefined'&&letterOpen);
     if(free&&x1Live()) free=false; if(free!==frame.freeHint){ frame.freeHint=free; $('#clickhint').hidden=!free; } }
   { const ca=chatAllowed(); if(ca!==frame.chatVis){ frame.chatVis=ca; $('#chat').hidden=!ca; if(!ca) closeChat(); } }
   if(lobbySim){ G.t+=dt; if(CUR==='x1') x1ThumbStep(); if(!LP.on&&!PICK.on){ updatePlayer(dt); updateLobbyInteract(dt); } else { IN.lookX=0; IN.lookY=0; } IN.edges.clear(); if(flowDirty) computeFlow(); }

@@ -1205,6 +1205,7 @@ body.cine #over{background:linear-gradient(90deg,rgba(6,7,5,.9) 0%,rgba(6,7,5,.6
       <label class="sl"><span>Campo de visão</span><input type="range" data-k="fov" data-fmt="deg" min="60" max="110" step="1"><output></output></label>
       <label class="sl"><span>Resolução</span><input type="range" data-k="quality" data-fmt="pct" min="0.5" max="1" step="0.05"><output></output></label>
       <label class="sl"><span>Brilho</span><input type="range" data-k="bright" data-fmt="pct" min="0.7" max="1.6" step="0.05"><output></output></label>
+      <button type="button" class="sw" role="switch" data-k="potato"><span>Modo PC fraco (batata) — menos luzes, partículas e pixels, mesma cara do jogo</span><i></i></button>
       <button type="button" class="sw" role="switch" data-k="autoRes"><span>Resolução automática (baixa um pouco quando o jogo pesa)</span><i></i></button>
       <button type="button" class="sw" role="switch" data-k="bob"><span>Balanço da câmera ao andar</span><i></i></button>
       <label class="sl"><span>Tremor de tela</span><input type="range" data-k="shakeAmt" data-fmt="pct" min="0" max="2" step="0.05"><output></output></label>
@@ -1350,7 +1351,8 @@ let musicVol=parseFloat(store.get('bdm_mvol',0.6)); if(isNaN(musicVol)) musicVol
 /* ================= RENDERER ================= */
 const canvas=$('#game');
 let renderer;
-try{ renderer=new THREE.WebGLRenderer({canvas,antialias:!isTouch,powerPreference:'high-performance'}); }
+const POTATO0=(()=>{ try{ return !!JSON.parse(store.get('bdm_cfg','{}')).potato; }catch(e){ return false; } })();   // o antisserrilhado só muda ao abrir o jogo
+try{ renderer=new THREE.WebGLRenderer({canvas,antialias:!isTouch&&!POTATO0,powerPreference:'high-performance'}); }
 catch(e){ fail('Seu navegador não liberou WebGL. Tente outro navegador ou ative a aceleração de hardware.'); return; }
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, isTouch?1.3:1.75));
 renderer.autoClear=false;
@@ -2467,6 +2469,7 @@ function buildWorld(){
   buildStaticLighting();
   buildSandboxExtras();
   try{ const r=buildCellBoxes(); console.log('[Bunker] colisão dos objetos ajustada',r); }catch(e){ console.warn('[Bunker] colisão',e); }
+  try{ const r=autoMerge(); console.log('[Bunker] cenário agrupado',r); }catch(e){ console.warn('[Bunker] agrupar cenário',e); }
   world=true;
   setMap('bunker');
 }
@@ -2482,6 +2485,7 @@ function setMap(k){
   if(hemi){ if(k==='farm'){ hemi.color.setHex(0x8a98b4); hemi.groundColor.setHex(0x1c1a12); } else if(k==='hosp'){ hemi.color.setHex(0x8aa094); hemi.groundColor.setHex(0x1a1c14); } else { hemi.color.setHex(0x8e97ad); hemi.groundColor.setHex(0x2a2016); } }
   if(typeof resetDecals==='function') resetDecals();
   Snd.setMap(k);
+  try{ if(typeof lbudScan==='function') lbudScan(true); }catch(e){}
   try{ if(world) renderer.compile(scene,camera); }catch(e){}   // compila os materiais do mapa de uma vez (evita travadinha na primeira vez que algo aparece na tela)
 }
 
@@ -2726,8 +2730,8 @@ function mkBench(x,z,ry){ const g=G3(x,0,z,ry); for(let i=0;i<3;i++) bx(g,1.8,0.
 /* ---- fires and lights ---- */
 const fires=[], lamps=[];
 let hemi;
-const worldFlash=new THREE.PointLight(0xffb060,0,9,2);
-const boomLight=new THREE.PointLight(0xff8a3a,0,16,2);
+const worldFlash=new THREE.PointLight(0xffb060,0,9,2); worldFlash.userData.noBud=true;
+const boomLight=new THREE.PointLight(0xff8a3a,0,16,2); boomLight.userData.noBud=true;
 let flameTexC=null;
 function flameTex(){ if(flameTexC) return flameTexC; flameTexC=tex(64,128,(c,w,h)=>{ const grd=c.createRadialGradient(32,96,2,32,80,60); grd.addColorStop(0,'rgba(255,240,180,1)'); grd.addColorStop(.3,'rgba(255,150,40,.9)'); grd.addColorStop(.7,'rgba(200,50,10,.4)'); grd.addColorStop(1,'rgba(80,10,0,0)'); c.fillStyle=grd; c.beginPath(); c.moveTo(32,0); c.quadraticCurveTo(60,70,52,110); c.quadraticCurveTo(32,128,12,110); c.quadraticCurveTo(4,70,32,0); c.fill(); }); return flameTexC; }
 function fireBarrel(x,z,map){ const b=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,0.95,14),M.rust); b.position.set(x,0.475,z); ROOT.add(b);
@@ -5553,7 +5557,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v7.9.6';
+const GAME_VERSION='v8.0';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -6178,7 +6182,7 @@ let GRIP_BAKE={};
 const GRIPF={};   // cache: id -> {R:{p,q,c},L:{...}|null}
 function gunMeshes(){ const a=[]; if(gunModel) gunModel.traverse(m=>{ if(m.isMesh&&!m.userData.glowShell&&m.visible&&!(m.material&&m.material.blending===THREE.AdditiveBlending)) a.push(m); }); return a; }
 /* todas as superfícies cruzadas por uma reta (espaço do gunHolder) -> valores ordenados ao longo do eixo */
-const _gray=new THREE.Raycaster();
+const _gray=new THREE.Raycaster(); _gray.layers.enable(5); _gray.layers.enable(7);
 function lineHits(meshes,o,d){ const W=gunHolder.matrixWorld; const ow=V3(o).applyMatrix4(W), dw=V3(d).transformDirection(W);
   _gray.set(ow.addScaledVector(dw,-1),dw); _gray.far=2; const hs=_gray.intersectObjects(meshes,false); const out=[]; for(const h of hs){ const v=h.distance-1; if(!out.length||Math.abs(out[out.length-1]-v)>0.0006) out.push(v); } return out; }
 /* intervalos sólidos (pares entrada/saída) ao longo da reta */
@@ -6220,7 +6224,7 @@ function gripAuto(id){
   return out; }
 /* fecha cada dedo até ele encostar na arma (raios ao longo das falanges) */
 function fingerSegs(chain,tipLen){ const pts=chain.map(b=>b.getWorldPosition(new THREE.Vector3())); const last=chain[chain.length-1]; const q=last.getWorldQuaternion(new THREE.Quaternion()); pts.push(pts[pts.length-1].clone().add(new THREE.Vector3(0,1,0).applyQuaternion(q).multiplyScalar(tipLen))); return pts; }
-const _fray=new THREE.Raycaster();
+const _fray=new THREE.Raycaster(); _fray.layers.enable(5); _fray.layers.enable(7);
 function segsHit(pts,meshes){ for(let i=0;i+1<pts.length;i++){ const d=pts[i+1].clone().sub(pts[i]); const L=d.length(); if(L<1e-5) continue; _fray.set(pts[i],d.multiplyScalar(1/L)); _fray.far=L; if(_fray.intersectObjects(meshes,false).length) return true; } return false; }
 function gripSolveHand(sd,frame,shape,meshes,trig,thumb){
   const gh=gunHolder.matrixWorld; const res={};
@@ -6720,13 +6724,22 @@ function nextCell(p,arr){
 /* ================= PARTICLES / FX ================= */
 const partGeo=new THREE.BoxGeometry(0.05,0.05,0.05);
 const PM={elec:new THREE.MeshBasicMaterial({color:0xaee8ff,fog:false}),blood:new THREE.MeshBasicMaterial({color:0x5e0703}),spark:new THREE.MeshBasicMaterial({color:0xffd27a,fog:false}),dust:new THREE.MeshBasicMaterial({color:0x6b6455}),green:new THREE.MeshBasicMaterial({color:0x7dffc0,fog:false}),fire:new THREE.MeshBasicMaterial({color:0xff9a3a,fog:false}),wood:new THREE.MeshBasicMaterial({color:0x5a3a1e}),gore:new THREE.MeshLambertMaterial({color:0x4a0a06}),dirt:new THREE.MeshBasicMaterial({color:0x2a2418}),chip:new THREE.MeshLambertMaterial({color:0x6a665c})};
-const parts=[]; for(let i=0;i<320;i++){ const m=new THREE.Mesh(partGeo,PM.dust); m.visible=false; scene.add(m); parts.push({m,v:new THREE.Vector3(),life:0,g:0}); }
+/* DESEMPENHO: as 320 partículas (sangue, poeira, faísca...) eram 320 objetos, cada um um desenho. Agora são 3 malhas instanciadas
+   (com névoa, sem névoa e com luz), cada partícula com sua cor: 3 desenhos no total, mesmo visual. */
+const PIM=[0,1,2].map(k=>{ const mt=k===2?new THREE.MeshLambertMaterial({color:0xffffff}):new THREE.MeshBasicMaterial({color:0xffffff,fog:k===0}); const im=new THREE.InstancedMesh(partGeo,mt,320);
+  im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); im.setColorAt(0,new THREE.Color()); im.instanceColor.setUsage(THREE.DynamicDrawUsage); im.count=0; im.frustumCulled=false; scene.add(im); return im; });
+const PMK={}; for(const k in PM) PMK[k]=PM[k].isMeshLambertMaterial?2:PM[k].fog===false?1:0;
+const parts=[]; for(let i=0;i<320;i++){ const m=new THREE.Object3D(); m.visible=false; parts.push({m,v:new THREE.Vector3(),life:0,g:0,k:0,c:PM.dust.color}); }
 let partI=0;
 function emit(type,x,y,z,n,spd,life,grav){
-  for(let i=0;i<n;i++){ const p=parts[partI]; partI=(partI+1)%parts.length; p.m.material=PM[type]||PM.dust; p.m.visible=true; p.m.position.set(x,y,z);
+  if(CFG.potato&&n>2) n=Math.ceil(n*0.55);
+  for(let i=0;i<n;i++){ const p=parts[partI]; partI=(partI+1)%parts.length; const pm=PM[type]||PM.dust; p.k=PMK[type]||0; p.c=pm.color; p.m.visible=true; p.m.position.set(x,y,z);
     p.v.set(rand(-1,1),rand(-0.4,1),rand(-1,1)).normalize().multiplyScalar(spd*rand(0.3,1)); p.life=life*rand(0.6,1); p.g=grav===undefined?9:grav; const s=rand(0.6,1.6)*(type==='dust'?2.2:type==='gore'?2.4:type==='chip'?0.3:type==='elec'?0.45:1); p.m.scale.setScalar(s); p.m.rotation.set(rand(0,3),rand(0,3),0); }
 }
-function updateParts(dt){ for(const p of parts){ if(!p.m.visible) continue; p.life-=dt; if(p.life<=0){ p.m.visible=false; continue; } p.v.y-=p.g*dt; p.m.position.addScaledVector(p.v,dt); const fl=FLOORS?floorAt(p.m.position.x,p.m.position.z)+0.02:0.02; if(p.m.position.y<fl){ p.m.position.y=fl; p.v.set(p.v.x*0.3,0,p.v.z*0.3); } } }
+function updateParts(dt){ const cnt=[0,0,0];
+  for(const p of parts){ if(!p.m.visible) continue; p.life-=dt; if(p.life<=0){ p.m.visible=false; continue; } p.v.y-=p.g*dt; p.m.position.addScaledVector(p.v,dt); const fl=FLOORS?floorAt(p.m.position.x,p.m.position.z)+0.02:0.02; if(p.m.position.y<fl){ p.m.position.y=fl; p.v.set(p.v.x*0.3,0,p.v.z*0.3); }
+    p.m.updateMatrix(); const im=PIM[p.k], i=cnt[p.k]++; im.setMatrixAt(i,p.m.matrix); im.setColorAt(i,p.c); }
+  for(let k=0;k<3;k++){ const im=PIM[k]; if(im.count===0&&cnt[k]===0) continue; im.count=cnt[k]; im.instanceMatrix.needsUpdate=true; im.instanceColor.needsUpdate=true; } }
 let glowTex;
 const fireballs=[];
 /* muzzle smoke curling off the barrel (viewmodel space) */
@@ -6988,7 +7001,7 @@ function zombieDetails(z,rng,o){
 function zombieBody(z){
   buildZTex();
   const rng=mulberry(z.seed); const rpick=a=>a[Math.floor(rng()*a.length)];
-  if(z.kind==='dog'){ dogBody(z,rng); return; }
+  if(z.kind==='dog'){ dogBody(z,rng); zSkin(z); return; }
   const brute=z.kind==='brute';
   const hosp=CUR==='hosp', farm=CUR==='farm', sandbox=CUR==='sandbox';
   const sandboxOutfits=['soldier','soldier2','officer','civil','civil2','doctor','worker','patient','patient2','nurse','butcher'];
@@ -7046,11 +7059,55 @@ function zombieBody(z){
   z.hit=[headM,torsoM,chestM,hipM,...armL.meshes,...armR.meshes,...legL.meshes,...legR.meshes];
   z.headM=headM;
   try{ zombieDetails(z,rng,{hat:hatOn,eyes,brute}); }catch(e){}
-  const root=new THREE.Group(); root.add(g); z.root=root; scene.add(root);
+  const root=new THREE.Group(); root.add(g); z.root=root; scene.add(root); zSkin(z);
 }
 /* half a zombie: legs fall off, it keeps crawling */
 /* Object3D.clone() deep-copies userData through JSON — the hit meshes point back at their zombie, so that recursed until the stack blew (the grenade freeze). Clone with userData stripped. */
-function cloneBare(o){ const saved=[]; o.traverse(n=>{ saved.push([n,n.userData]); n.userData={}; }); const c=o.clone(true); for(const [n,u] of saved) n.userData=u; return c; }
+function cloneBare(o){ const saved=[]; o.traverse(n=>{ saved.push([n,n.userData]); n.userData={}; }); const c=o.clone(true); for(const [n,u] of saved) n.userData=u;
+  c.traverse(n=>{ if(n.isMesh&&n.layers.mask===ZSKIN_LAYER_MASK){ n.layers.set(0); n.material=zPlainMat(n.material); } }); return c; }
+/* DESEMPENHO: cada zumbi tem ~40 peças (cabelo, dedos, costelas...), e cada peça era um desenho na placa de vídeo — 40 zumbis davam
+   1.700 desenhos por quadro. Agora as peças viram "ossos" de uma única malha com esqueleto: 1 desenho por material (~6 por zumbi).
+   As peças originais continuam no lugar (animação, tiro e hitbox iguais), só não são mais desenhadas (camada 5). Peça escondida
+   pelo jogo (cabeça que estoura, pernas que caem) some da malha também. */
+const ZSKIN={on:true,shared:new Map(),plain:new WeakMap()}; const ZSKIN_LAYER=5, ZSKIN_LAYER_MASK=1<<5;
+const _zsA=new THREE.Matrix4(), _zsB=new THREE.Matrix4(), _zsN=new THREE.Matrix3(), _zsV=new THREE.Vector3();
+function zSkinMat(m,own){ if(own){ if(!m.skinning){ m.skinning=true; m.needsUpdate=true; } return m; } let c=ZSKIN.shared.get(m); if(!c){ c=m.clone(); c.skinning=true; ZSKIN.shared.set(m,c); } return c; }
+function zPlainMat(m){ if(!m||!m.skinning) return m; let c=ZSKIN.plain.get(m); if(!c){ c=m.clone(); c.skinning=false; ZSKIN.plain.set(m,c); } return c; }
+function zSkin(z){
+  if(!ZSKIN.on||!z.g||!z.root||z.skin) return;
+  try{
+  const g=z.g; z.root.updateMatrixWorld(true); const gInv=_zsB.copy(g.matrixWorld).invert();
+  const vis=o=>{ for(let p=o;p&&p!==g;p=p.parent) if(!p.visible) return false; return true; };
+  const groups=new Map(), bones=[], invs=[];
+  g.traverse(o=>{ if(!o.isMesh||o.isSkinnedMesh||o.isInstancedMesh||Array.isArray(o.material)||!o.material||!o.geometry||!o.geometry.attributes.position) return;
+    const m=o.material; if(m.transparent||m.isShaderMaterial||m.isMeshBasicMaterial&&m.blending!==THREE.NormalBlending||!vis(o)) return;
+    const bi=bones.length; bones.push(o); invs.push(new THREE.Matrix4().copy(o.matrixWorld).invert());
+    let gr=groups.get(m); if(!gr){ gr={m,parts:[],nv:0,ni:0}; groups.set(m,gr); } const ge=o.geometry, n=ge.attributes.position.count;
+    gr.parts.push({o,bi,ge}); gr.nv+=n; gr.ni+=ge.index?ge.index.count:n; });
+  if(bones.length<4) return;
+  const skel=new THREE.Skeleton(bones,invs); const own=new Set(z.mats||[]); const out=[];
+  for(const gr of groups.values()){
+    const pos=new Float32Array(gr.nv*3), nor=new Float32Array(gr.nv*3), uv=new Float32Array(gr.nv*2), si=new Uint16Array(gr.nv*4), sw=new Float32Array(gr.nv*4), idx=new Uint32Array(gr.ni);
+    let v0=0, i0=0;
+    for(const pt of gr.parts){ const ge=pt.ge, P=ge.attributes.position, Nn=ge.attributes.normal, U=ge.attributes.uv, n=P.count;
+      const M=_zsA.multiplyMatrices(gInv,pt.o.matrixWorld); _zsN.getNormalMatrix(M); const flip=M.determinant()<0;
+      for(let k=0;k<n;k++){ _zsV.fromBufferAttribute(P,k).applyMatrix4(M); pos[(v0+k)*3]=_zsV.x; pos[(v0+k)*3+1]=_zsV.y; pos[(v0+k)*3+2]=_zsV.z;
+        if(Nn){ _zsV.fromBufferAttribute(Nn,k).applyMatrix3(_zsN).normalize(); nor[(v0+k)*3]=_zsV.x; nor[(v0+k)*3+1]=_zsV.y; nor[(v0+k)*3+2]=_zsV.z; }
+        if(U){ uv[(v0+k)*2]=U.getX(k); uv[(v0+k)*2+1]=U.getY(k); }
+        si[(v0+k)*4]=pt.bi; sw[(v0+k)*4]=1; }
+      const I=ge.index; const cnt=I?I.count:n;
+      for(let k=0;k<cnt;k+=3){ const a=I?I.getX(k):k, b=I?I.getX(k+1):k+1, c=I?I.getX(k+2):k+2; idx[i0+k]=v0+a; idx[i0+k+1]=v0+(flip?c:b); idx[i0+k+2]=v0+(flip?b:c); }
+      v0+=n; i0+=cnt; }
+    const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(pos,3)); geo.setAttribute('normal',new THREE.BufferAttribute(nor,3)); geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));
+    geo.setAttribute('skinIndex',new THREE.BufferAttribute(si,4)); geo.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4)); geo.setIndex(new THREE.BufferAttribute(gr.nv>65535?idx:new Uint16Array(idx),1));
+    geo.computeBoundingSphere(); geo.boundingSphere.radius+=0.9;   // braços/queda saem um pouco da pose original
+    const sm=new THREE.SkinnedMesh(geo,zSkinMat(gr.m,own.has(gr.m))); sm.bind(skel,g.matrixWorld.clone()); g.add(sm); out.push(sm); }
+  const up=skel.update; skel.update=function(){ up.call(this); const bm=this.boneMatrices, b=this.bones; for(let i=0;i<b.length;i++) if(!vis(b[i])) bm.fill(0,i*16,i*16+16); };
+  for(const o of bones) o.layers.set(ZSKIN_LAYER);
+  z.skin={meshes:out,skel};
+  }catch(e){ console.warn('[Bunker] zumbi sem malha única',e); }
+}
+function zUnskin(z){ if(!z.skin) return; for(const sm of z.skin.meshes){ if(sm.parent) sm.parent.remove(sm); sm.geometry.dispose(); } try{ z.skin.skel.dispose(); }catch(e){} for(const o of z.skin.skel.bones){ o.layers.set(0); o.material=zPlainMat(o.material); } z.skin=null; }
 function crawlerize(z,fx){
   if(z.crawl||z.kind==='dog') return; z.crawl=true;
   z.legL.th.visible=false; z.legR.th.visible=false;
@@ -7105,7 +7162,7 @@ function makeZombie(spawn){
 }
 function zy(z){ return (z.root?z.root.position.y:0)+z.g.position.y; }
 function zFloor(z){ if(z.root) z.root.position.y=FLOORS?floorAt(z.pos.x,z.pos.z):0; }
-function disposeZ(z){ scene.remove(z.root||z.g); z.mats.forEach(m=>m.dispose()); }
+function disposeZ(z){ scene.remove(z.root||z.g); if(z.skin){ for(const sm of z.skin.meshes) sm.geometry.dispose(); try{ z.skin.skel.dispose(); }catch(e){} } z.mats.forEach(m=>m.dispose()); }
 function removeZombie(z){ if(G.boss===z) G.boss=null; disposeZ(z); const i=zombies.indexOf(z); if(i>=0) zombies.splice(i,1); }
 function removeGhost(z){ disposeZ(z); NET.ghosts.delete(z.id); }
 function angLerp(a,b,t){ let d=b-a; while(d>Math.PI) d-=Math.PI*2; while(d<-Math.PI) d+=Math.PI*2; return a+d*clamp(t,0,1); }
@@ -7458,7 +7515,7 @@ function zDeathPose(z,dt){
 const ZFR=new THREE.Frustum(), _zfm=new THREE.Matrix4(), _zsp=new THREE.Sphere(new THREE.Vector3(),1.4);
 function zAnimLod(z,dt){ if(!PERF.lod){ animateZombie(z,dt); return; } z.aAcc=(z.aAcc||0)+dt; z.aN=(z.aN||0)+1;
   _zsp.center.set(z.pos.x,(z.g?z.g.position.y:0)+1,z.pos.z); const seen=ZFR.intersectsSphere(_zsp); const d=Math.hypot(z.pos.x-camera.position.x,z.pos.z-camera.position.z);
-  const every=!seen?6:d>34?3:d>20?2:1; if(z.state==='dying'||z.bossKi!=null) { animateZombie(z,z.aAcc); z.aAcc=0; return; }
+  const every=CFG.potato?(!seen?8:d>24?3:d>12?2:1):(!seen?6:d>34?3:d>20?2:1); if(z.state==='dying'||z.bossKi!=null) { animateZombie(z,z.aAcc); z.aAcc=0; return; }
   if(every>1&&(z.aN%every)&&z.aAcc<0.2){ PERF.lodSkip++; return; } animateZombie(z,z.aAcc); z.aAcc=0; }
 function animateZombie(z,dt){ if(z.kind==='dog'){ dogAnim(z,dt); return; }
   const run=z.runner&&z.moving&&!z.crawl, brute=z.kind==='brute';
@@ -7794,7 +7851,7 @@ function startReload(){ if(Wp.knifeOut) return; const s=curSlot(); const st=wsta
   if(A){ if(A.full) Wp.reloadT*=A.len/A.full; vmaStart('reload',A,Wp.reloadT,{empty:s.mag<=0}); } else Snd.reload(Wp.reloadT,st.snd); }
 function startDrink(p){ Wp.drinkT=1.7; Wp.drinkPerk=p; Wp.reloading=false; Wp.kAct=null; bottle.material.color.setHex(p.color); Snd.gulp(); }
 const _o=new THREE.Vector3(), _d=new THREE.Vector3(), _r=new THREE.Vector3(), _u=new THREE.Vector3(), _tmp=new THREE.Vector3(), _mz=new THREE.Vector3();
-const raycaster=new THREE.Raycaster();
+const raycaster=new THREE.Raycaster(); raycaster.layers.enable(5); raycaster.layers.enable(7);
 /* what a bullet hits: the surface decides the sound, the debris and whether a hole stays */
 function surfaceAt(p,c,kind){
   const out=isOutside(p.x-RH.nx*0.05,p.z-RH.nz*0.05)&&isOutside(p.x+RH.nx*0.3,p.z+RH.nz*0.3);
@@ -9276,7 +9333,7 @@ function drawDoom(rawDt){
 }
 
 /* ================= SETTINGS ================= */
-const CFG_DEF={vol:0.7,music:0.6,sfx:1,voice:1,ui:0.8,sens:1,adsSens:0.85,invY:false,fov:72,quality:1,bright:1,bob:true,shake:true,shakeAmt:1,fps:false,hitm:true,dmgNum:true,autoRes:false,
+const CFG_DEF={vol:0.7,music:0.6,sfx:1,voice:1,ui:0.8,sens:1,adsSens:0.85,invY:false,fov:72,quality:1,bright:1,bob:true,shake:true,shakeAmt:1,fps:false,hitm:true,dmgNum:true,autoRes:false,potato:false,
   xs:{style:'cruz',col:'#f0ece0',size:9,thick:2,gap:0,alpha:0.9,outline:true,dot:false,dyn:true}};
 const CFG=JSON.parse(JSON.stringify(CFG_DEF));
 (function loadCfg(){
@@ -9287,6 +9344,8 @@ const CFG=JSON.parse(JSON.stringify(CFG_DEF));
   if(d&&d.shake===false&&typeof d.shakeAmt!=='number') CFG.shakeAmt=0;
 })();
 const BASE_PR=Math.min(window.devicePixelRatio||1,isTouch?1.3:1.75);
+/* resolução alvo: no modo PC fraco nunca passa de 0,8 do pixel da tela (o que mais pesa em placa de vídeo fraca é a quantidade de pixels) */
+function prTarget(){ const q=BASE_PR*CFG.quality; return CFG.potato?Math.min(q,0.8):q; }
 function cfgGet(path){ const p=path.split('.'); let o=CFG; for(const k of p) o=o[k]; return o; }
 function cfgPut(path,v){ const p=path.split('.'); let o=CFG; for(let i=0;i<p.length-1;i++) o=o[p[i]]; o[p[p.length-1]]=v; }
 function saveCfg(){ store.set('bdm_cfg',JSON.stringify(CFG)); }
@@ -9300,7 +9359,8 @@ function applyCfg(path){
   if(all||path==='voice') Snd.setBus('voice',CFG.voice);
   if(all||path==='ui') Snd.setBus('ui',CFG.ui);
   if(all||path==='fov'){ CHEAT.fov=CFG.fov; if(G.state!=='playing'||P.ads<0.05){ camera.fov=CFG.fov; camera.updateProjectionMatrix(); } }
-  if(all||path==='quality'){ renderer.setPixelRatio(BASE_PR*CFG.quality); resize(); }
+  if(all||path==='quality'||path==='potato'){ renderer.setPixelRatio(prTarget()); resize(); }
+  if(path==='potato') applyPotato();
   if(all||path==='bright') canvas.style.filter=Math.abs(CFG.bright-1)>0.01?`brightness(${CFG.bright})`:'';
   if(all||path==='fps'){ CHEAT.showFps=CFG.fps; $('#fpsbox').hidden=!CFG.fps; }
   if(all||path==='hitm') document.body.classList.toggle('nohitm',!CFG.hitm);
@@ -10027,12 +10087,12 @@ addEventListener('keydown',e=>{ if(e.key!=='Escape'||CON.open||KV.on||G.state===
   if(!$('#extras').hidden){ e.preventDefault(); $('#extras').hidden=true; return; } if(!$('#social').hidden){ e.preventDefault(); closeSocial(); return; } const map={'#settings':'#set-back','#chars':'#ch-back','#online':'#on-back','#mappick':'#mp-back'}; for(const s in map) if(!$(s).hidden){ e.preventDefault(); $(map[s]).click(); return; } });
 
 /* ================= FLASHLIGHT ================= */
-const LPOOL=[0,1].map(()=>{ const L=new THREE.PointLight(0xffffff,0,7,1.8); L.userData.free=true; scene.add(L); return L; });
+const LPOOL=[0,1].map(()=>{ const L=new THREE.PointLight(0xffffff,0,7,1.8); L.userData.free=true; L.userData.noBud=true; scene.add(L); return L; });
 function lightTake(col,I,dist,decay){ const L=LPOOL.find(q=>q.userData.free); if(!L) return null; L.userData.free=false; L.color.setHex(col); L.intensity=I; L.distance=dist; L.decay=decay; return L; }
 function lightGive(L){ if(!L||!LPOOL.includes(L)) return; L.intensity=0; L.userData.free=true; }
 const FL={on:false,bat:1,flick:0,warned:false,k:0,q:null,pos:null,failT:rand(8,16),warm:0};
-const flashL=new THREE.SpotLight(0xfff0d4,0,30,0.46,0.55,1.25); scene.add(flashL); scene.add(flashL.target);
-const flashHot=new THREE.SpotLight(0xfff6e4,0,24,0.17,0.6,1.35); scene.add(flashHot); scene.add(flashHot.target);   // miolo mais forte do facho, como uma lanterna de verdade
+const flashL=new THREE.SpotLight(0xfff0d4,0,30,0.46,0.55,1.25); flashL.userData.noBud=true; scene.add(flashL); scene.add(flashL.target);
+const flashHot=new THREE.SpotLight(0xfff6e4,0,24,0.17,0.6,1.35); flashHot.userData.noBud=true; scene.add(flashHot); scene.add(flashHot.target);   // miolo mais forte do facho, como uma lanterna de verdade
 const flashVm=new THREE.PointLight(0xfff0d4,0,1.6,2); flashVm.position.set(0.08,0.06,-0.15); vmScene.add(flashVm);
 const _fv=new THREE.Vector3(), _fd=new THREE.Vector3();
 function toggleFlash(force){
@@ -10233,7 +10293,7 @@ function chainZap(z0,dmg,from){
 }
 
 /* ================= BLOOD ON THE VIEWMODEL: point-blank hits paint the gloves and the gun, then it dries and fades ================= */
-const VB={list:[],mats:[],last:-9,ray:new THREE.Raycaster()};
+const VB={list:[],mats:[],last:-9,ray:new THREE.Raycaster()}; VB.ray.layers.enable(5); VB.ray.layers.enable(7);
 function vbTex(i){ return tex(96,96,(g,w,h)=>{ g.clearRect(0,0,w,h); const c=w/2;
   const R=mulberry(i*77+5); const rr=(a,b)=>a+R()*(b-a);
   g.fillStyle='rgba(122,10,5,.95)'; g.beginPath(); g.ellipse(c,c,rr(14,22),rr(10,18),rr(0,3),0,Math.PI*2); g.fill();
@@ -12203,13 +12263,71 @@ async function playChoice(k){
 const CINEMA={on:false,noVm:false};
 function setCinema(v){ CINEMA.on=v>0; CINEMA.noVm=v===2; document.body.classList.toggle('cinema',CINEMA.on); }
 addEventListener('keydown',e=>{ if(e.code==='F8'&&!e.repeat){ e.preventDefault(); setCinema(CINEMA.on?0:(CINEMA.noVm?2:1)); } },true);
+/* DESEMPENHO — orçamento de luzes. Toda luz acesa custa em cada pixel de cada superfície (os mapas tinham 25–35 ao mesmo tempo,
+   e a placa de vídeo calculava todas, mesmo as do outro lado do mapa). Agora as luzes do mapa viram só "fontes" (camada 6, não
+   desenhadas) e um conjunto FIXO de luzes reais recebe, a cada quadro, as mais importantes para o que a câmera vê: perto, na tela,
+   em sala alcançável. Número fixo = nenhum shader recompila no meio do jogo. A troca é com fade curto, então nada pisca.
+   Tudo que o jogo faz com as luzes (piscar, ligar a energia, fogueira) continua igual: a cópia lê a fonte a cada quadro. */
+const LBUD={on:true,pt:[],sp:[],src:[],scanT:0,selT:0,map:null,want:[0,0],snap:true,used:0};
+const _lbP=new THREE.Vector3(), _lbT=new THREE.Vector3(), _lbS=new THREE.Sphere(), _lbM=new THREE.Matrix4(), _lbF=new THREE.Frustum();
+function lbudCaps(){ return CFG.potato?[4,3]:[10,9]; }
+function lbudVis(o){ for(let p=o;p;p=p.parent){ if(!p.visible) return false; if(p===scene) return true; } return false; }
+function lbudScan(force){
+  if(!LBUD.on) return; const src=[]; let np=0, ns=0;
+  scene.traverse(o=>{ if(!(o.isPointLight||o.isSpotLight)||o.userData.lbud||o.userData.noBud) return; src.push(o); if(o.layers.mask!==1<<6) o.layers.set(6); if(o.isSpotLight) ns++; else np++; });
+  LBUD.src=src; const cap=lbudCaps(); const want=[Math.min(cap[0],np),Math.min(cap[1],ns)];
+  // tamanho do conjunto só muda na troca de mapa / modo (é quando recompila, junto com o resto do mapa)
+  if(force||want[0]>LBUD.pt.length||want[1]>LBUD.sp.length||LBUD.map!==CUR){ lbudPool(want[0],want[1]); LBUD.map=CUR; LBUD.snap=true; }
+}
+function lbudPool(np,ns){
+  for(const sl of LBUD.pt) scene.remove(sl.L); for(const sl of LBUD.sp){ scene.remove(sl.L); scene.remove(sl.L.target); }
+  LBUD.pt=[]; LBUD.sp=[]; for(const o of LBUD.src) o.userData.lbSlot=null;
+  for(let i=0;i<np;i++){ const L=new THREE.PointLight(0xffffff,0,10,2); L.userData.lbud=true; scene.add(L); LBUD.pt.push({L,src:null,w:0}); }
+  for(let i=0;i<ns;i++){ const L=new THREE.SpotLight(0xffffff,0,10,1,0.5,2); L.userData.lbud=true; scene.add(L); scene.add(L.target); LBUD.sp.push({L,src:null,w:0}); }
+}
+function lbudOff(){ LBUD.on=false; for(const o of LBUD.src) o.layers.set(0); for(const sl of LBUD.pt) scene.remove(sl.L); for(const sl of LBUD.sp){ scene.remove(sl.L); scene.remove(sl.L.target); } LBUD.pt=[]; LBUD.sp=[]; LBUD.src=[]; }
+/* modo PC fraco: menos luzes ao mesmo tempo (as mais próximas continuam iguais), menos partículas, resolução até 80%,
+   animação dos zumbis longe/fora da tela mais espaçada, sem antisserrilhado (ao reabrir) e resolução automática sempre ligada */
+function applyPotato(){ try{ if(LBUD.on){ LBUD.map=null; lbudScan(true); renderer.compile(scene,camera); } }catch(e){} PERF.dyn=1; renderer.setPixelRatio(prTarget());
+  try{ toast(CFG.potato?'Modo PC fraco ligado — o antisserrilhado desliga quando reabrir o jogo':'Modo PC fraco desligado'); }catch(e){} }
+function lbudOn(){ LBUD.on=true; LBUD.map=null; lbudScan(true); try{ renderer.compile(scene,camera); }catch(e){} }
+function lbudSelect(){
+  const eye=camera.position, cand=[[],[]], RM=ZC.reachMap;
+  camera.updateMatrixWorld(); _lbM.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse); _lbF.setFromProjectionMatrix(_lbM);   // câmera deste quadro (a do começo do quadro pode estar desatualizada)
+  if(!LBUD.eye) LBUD.eye=eye.clone(); else if(LBUD.eye.distanceToSquared(eye)>16) LBUD.snap=true; LBUD.eye.copy(eye);   // teleporte/começo de partida: troca na hora, sem fade
+  for(const o of LBUD.src){ if(!(o.intensity>0.01)||!lbudVis(o)) continue; o.getWorldPosition(_lbP); const R=o.distance>0?o.distance:30, d=_lbP.distanceTo(eye);
+    if(d>R+40) continue; _lbS.center.copy(_lbP); _lbS.radius=R; const onScr=_lbF.intersectsSphere(_lbS);
+    let reach=1; if(RM){ const gx=Math.floor(_lbP.x/S), gz=Math.floor(_lbP.z/S); if(inB(gx,gz)&&!RM[gz*MW+gx]) reach=0.3; }
+    const cur=o.userData.lbSlot?1.35:1;   // quem já está aceso tem preferência (evita troca-troca)
+    const sc=o.intensity*Math.sqrt(R)*(onScr?1:0.22)*reach*cur/(1+(d/R)*(d/R)*4);
+    cand[o.isSpotLight?1:0].push({o,sc}); }
+  for(let k=0;k<2;k++){ const pool=k?LBUD.sp:LBUD.pt; const list=cand[k].sort((a,b)=>b.sc-a.sc).slice(0,pool.length).map(c=>c.o); const want=new Set(list);
+    for(const sl of pool) if(sl.src&&!want.has(sl.src)){ sl.leaving=true; if(LBUD.snap){ sl.src.userData.lbSlot=null; sl.src=null; sl.w=0; sl.leaving=false; } } else if(sl.src){ sl.leaving=false; if(LBUD.snap) sl.w=1; }
+    for(const o of list){ if(o.userData.lbSlot&&o.userData.lbSlot.src===o) continue; const free=pool.find(sl=>!sl.src)||(LBUD.snap?pool.find(sl=>sl.leaving):null);
+      if(!free) continue; if(free.src) free.src.userData.lbSlot=null; free.src=o; free.w=LBUD.snap?1:0; free.leaving=false; o.userData.lbSlot=free; } }
+  LBUD.snap=false;
+}
+function lbudFrame(dt){
+  if(!LBUD.on||!world) return;
+  LBUD.scanT-=dt; if(LBUD.scanT<=0||LBUD.map!==CUR){ LBUD.scanT=1.2; lbudScan(false); }
+  LBUD.selT-=dt; if(LBUD.selT<=0){ LBUD.selT=CFG.potato?0.16:0.1; lbudSelect(); }
+  const fade=Math.min(1,dt*7); let used=0;
+  for(const pool of [LBUD.pt,LBUD.sp]) for(const sl of pool){ const L=sl.L, o=sl.src;
+    if(!o){ L.intensity=0; continue; }
+    sl.w=sl.leaving?Math.max(0,sl.w-fade):Math.min(1,sl.w+fade);
+    if(sl.leaving&&sl.w<=0){ o.userData.lbSlot=null; sl.src=null; sl.leaving=false; L.intensity=0; continue; }
+    const on=lbudVis(o); L.intensity=on?o.intensity*sl.w:0; if(L.intensity>0) used++;
+    L.color.copy(o.color); L.distance=o.distance; L.decay=o.decay; o.getWorldPosition(L.position);
+    if(o.isSpotLight){ L.angle=o.angle; L.penumbra=o.penumbra; o.target.getWorldPosition(L.target.position); L.target.updateMatrixWorld(); } }
+  LBUD.used=used;
+}
 /* braços e arma iluminados pelo ambiente: as luzes acesas mais fortes perto do jogador (lâmpadas, fogueiras, a caixa, geradores),
    com visada pela grade, viram a luz principal e a de contorno do viewmodel; o ambiente acompanha o escuro do mapa. Tudo suavizado. */
 const VML={key:new THREE.Color(0xfff0d8),rim:new THREE.Color(0x9ab0ff),kd:new THREE.Vector3(-1,2,1),rd:new THREE.Vector3(1.5,0.5,-1),ki:0.8,ri:0.35,ai:0.5,t:0,list:[]};
 const _vlA=new THREE.Vector3(), _vlB=new THREE.Vector3(), _vlQ=new THREE.Quaternion();
 function vmLightFrame(dt){ dt=Math.min(dt||0.016,0.05); VML.t-=dt;
   const eye=camera.position;
-  if(VML.t<=0){ VML.t=0.12; const cand=[];
+  if(VML.t<=0){ VML.t=CFG.potato?0.3:0.12; const cand=[];
     const consider=(L,base)=>{ if(!L||!(L.intensity>0.02)) return; L.getWorldPosition(_vlA); const d=_vlA.distanceTo(eye), R=L.distance||14; if(d>R) return; const f=Math.pow(1-d/R,2)*L.intensity*(base||1); if(f>0.03) cand.push({L,f,p:_vlA.clone(),c:L.color}); };
     for(const l of lamps) if(l.map===CUR) consider(l.L,1); for(const f of fires) if(f.map===CUR) consider(f.L,1.2); if(BOX.light&&BOX.group.visible) consider(BOX.light,1.5);
     for(const it of (MAP_OBJECTIVE_RUNTIME[CUR]||[])) if(it.gen) consider(it.gen.L,1);
@@ -12271,34 +12389,92 @@ let last=performance.now(), hudT=0;
    A sala visível é descoberta andando pela grade a partir da câmera; portas fechadas bloqueiam, janelas e passagens não.
    Objetos a até 1 célula da área visível continuam aparecendo (portas, quadros na parede), então nada some na frente do jogador. */
 const PERF={avg:0,lodSkipS:0,on:false,lod:true,lodSkip:0,el:null,acc:0,n:0,max:0,sim:0,ren:0,calls:0,tris:0,fps:0,t:0,dyn:1,dynAcc:0,dynN:0,dynHold:0};
+/* DESEMPENHO — cenário agrupado. Os mapas tinham centenas de peças pequenas soltas (placas, tábuas, canos, lixo, quadros...),
+   cada uma um desenho (o hospício passava de 900 por quadro). Aqui, depois de montar o mundo, as peças paradas com o mesmo
+   material e no mesmo pedaço de 16 m viram uma malha só. As originais ficam no lugar (invisíveis, camada 7) para colisão e tiro.
+   Segurança: um vigia confere todo quadro se alguma peça agrupada (ou o pai dela) mexeu, sumiu ou trocou de material —
+   se sim, aquele grupo se desfaz na hora e as peças voltam a ser desenhadas sozinhas, então nada fica "congelado" errado. */
+const AMG={chunks:[],byMap:{},on:true};
+const _amA=new THREE.Matrix4(), _amN=new THREE.Matrix3(), _amV=new THREE.Vector3(), _amS=new THREE.Sphere();
+function amgVis(o,root){ for(let p=o;p&&p!==root;p=p.parent) if(!p.visible) return false; return true; }
+function amgSnap(o){ const q=o.quaternion, p=o.position, s=o.scale; return [p.x,p.y,p.z,q.x,q.y,q.z,q.w,s.x,s.y,s.z,o.visible?1:0]; }
+function amgSame(o,a){ const q=o.quaternion, p=o.position, s=o.scale; return p.x===a[0]&&p.y===a[1]&&p.z===a[2]&&q.x===a[3]&&q.y===a[4]&&q.z===a[5]&&q.w===a[6]&&s.x===a[7]&&s.y===a[8]&&s.z===a[9]&&(o.visible?1:0)===a[10]; }
+function amgMatSig(m){ const c=x=>x?x.getHexString():'-'; return [m.type,c(m.color),c(m.emissive),c(m.specular),m.shininess,m.emissiveIntensity,m.map?m.map.uuid:'',m.normalMap?m.normalMap.uuid:'',m.emissiveMap?m.emissiveMap.uuid:'',m.bumpMap?m.bumpMap.uuid:'',m.side,m.fog,m.flatShading,m.opacity,m.alphaTest,m.depthWrite,m.depthTest,m.polygonOffset,m.polygonOffsetFactor,m.polygonOffsetUnits,m.wireframe,m.toneMapped,m.roughness,m.metalness,m.visible,m.colorWrite,m.blending].join('|'); }
+function amgMatSnap(m){ const c=m.color, e=m.emissive; return [c?c.r:0,c?c.g:0,c?c.b:0,e?e.r:0,e?e.g:0,e?e.b:0,m.opacity,m.visible?1:0,m.map,m.emissiveIntensity]; }
+function amgMatSame(m,a){ const c=m.color, e=m.emissive; return (c?c.r:0)===a[0]&&(c?c.g:0)===a[1]&&(c?c.b:0)===a[2]&&(e?e.r:0)===a[3]&&(e?e.g:0)===a[4]&&(e?e.b:0)===a[5]&&m.opacity===a[6]&&(m.visible?1:0)===a[7]&&m.map===a[8]&&m.emissiveIntensity===a[9]; }
+function autoMerge(){
+  const res={}; const OBR=THREE.Object3D.prototype.onBeforeRender;
+  for(const map of ['bunker','hosp','farm']){ const root=MAPG[map]; if(!root) continue; root.updateMatrixWorld(true); const rootInv=new THREE.Matrix4().copy(root.matrixWorld).invert();
+    const groups=new Map();
+    root.traverse(o=>{ if(!o.isMesh||o.isSkinnedMesh||o.isInstancedMesh||o.children.length||o.userData.noMerge) return; const m=o.material, ge=o.geometry;
+      if(!m||Array.isArray(m)||m.transparent||m.isShaderMaterial||m.vertexColors||m.skinning||m.morphTargets||o.renderOrder!==0||o.onBeforeRender!==OBR||!o.frustumCulled) return;
+      if(!(m.isMeshBasicMaterial||m.isMeshLambertMaterial||m.isMeshPhongMaterial||m.isMeshStandardMaterial)) return;
+      if(!ge||!ge.isBufferGeometry||!ge.attributes.position||ge.morphAttributes&&Object.keys(ge.morphAttributes).length) return; const n=ge.attributes.position.count; if(n>4000||!ge.attributes.normal&&!m.isMeshBasicMaterial) return;
+      if(m.map&&!ge.attributes.uv) return; if(o.layers.mask!==1||!amgVis(o,root)) return;
+      for(const k in ge.attributes) if(k!=='position'&&k!=='normal'&&k!=='uv') return;
+      if(!ge.boundingSphere) ge.computeBoundingSphere(); _amS.copy(ge.boundingSphere).applyMatrix4(o.matrixWorld); if(_amS.radius>12) return;
+      const gx=Math.floor(_amS.center.x/S), gz=Math.floor(_amS.center.z/S); const room=inB(gx,gz)?(roomOf[gz][gx]||'')+(FH?'@'+Math.round((FH[gz*MW+gx]||0)*2):''):'';   // mesma sala = o corte de salas continua funcionando
+      const key=amgMatSig(m)+'|'+room+'|'+Math.floor(_amS.center.x/16)+','+Math.floor(_amS.center.z/16)+'|'+(ge.index?1:0)+(ge.attributes.uv?1:0)+(ge.attributes.normal?1:0);
+      let g=groups.get(key); if(!g){ g={m,list:[],nv:0,ni:0}; groups.set(key,g); } g.list.push(o); g.nv+=n; g.ni+=ge.index?ge.index.count:n; });
+    let made=0, pieces=0; AMG.byMap[map]=AMG.byMap[map]||[];
+    for(const g of groups.values()){ if(g.list.length<3) continue;
+      const hasUv=!!g.list[0].geometry.attributes.uv, hasN=!!g.list[0].geometry.attributes.normal;
+      const pos=new Float32Array(g.nv*3), nor=hasN?new Float32Array(g.nv*3):null, uv=hasUv?new Float32Array(g.nv*2):null, idx=new Uint32Array(g.ni); let v0=0, i0=0;
+      for(const o of g.list){ const ge=o.geometry, P=ge.attributes.position, N=ge.attributes.normal, U=ge.attributes.uv, n=P.count; const M=_amA.multiplyMatrices(rootInv,o.matrixWorld); _amN.getNormalMatrix(M); const flip=M.determinant()<0;
+        for(let k=0;k<n;k++){ _amV.fromBufferAttribute(P,k).applyMatrix4(M); pos[(v0+k)*3]=_amV.x; pos[(v0+k)*3+1]=_amV.y; pos[(v0+k)*3+2]=_amV.z;
+          if(nor){ _amV.fromBufferAttribute(N,k).applyMatrix3(_amN).normalize(); nor[(v0+k)*3]=_amV.x; nor[(v0+k)*3+1]=_amV.y; nor[(v0+k)*3+2]=_amV.z; }
+          if(uv){ uv[(v0+k)*2]=U.getX(k); uv[(v0+k)*2+1]=U.getY(k); } }
+        const I=ge.index, cnt=I?I.count:n; for(let k=0;k+2<cnt;k+=3){ const a=I?I.getX(k):k, b=I?I.getX(k+1):k+1, c=I?I.getX(k+2):k+2; idx[i0+k]=v0+a; idx[i0+k+1]=v0+(flip?c:b); idx[i0+k+2]=v0+(flip?b:c); }
+        v0+=n; i0+=cnt; }
+      const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(pos,3)); if(nor) geo.setAttribute('normal',new THREE.BufferAttribute(nor,3)); if(uv) geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));
+      geo.setIndex(new THREE.BufferAttribute(g.nv>65535?idx:new Uint16Array(idx),1)); geo.computeBoundingSphere();
+      const mesh=new THREE.Mesh(geo,g.m); mesh.userData.amgMesh=true; mesh.matrixAutoUpdate=false; root.add(mesh); mesh.updateMatrixWorld(true);
+      // o que vigiar: cada peça e todos os pais até o mapa (sem repetir)
+      const watch=new Map(); for(const o of g.list) for(let p=o;p&&p!==root;p=p.parent) if(!watch.has(p)) watch.set(p,amgSnap(p));
+      const mats=[...new Set(g.list.map(o=>o.material))];
+      const ch={map,mesh,list:g.list,mat:g.list.map(o=>o.material),geo:g.list.map(o=>o.geometry),watch:[...watch.entries()],mw:mats.map(m=>[m,amgMatSnap(m)]),alive:true};
+      for(const o of g.list){ o.userData.amg=ch; o.layers.set(7); }
+      AMG.chunks.push(ch); AMG.byMap[map].push(ch); made++; pieces+=g.list.length; }
+    res[map]=pieces+' peças → '+made+' malhas'; }
+  return res;
+}
+function amgSplit(ch){ if(!ch.alive) return; ch.alive=false; if(ch.mesh.parent) ch.mesh.parent.remove(ch.mesh); ch.mesh.geometry.dispose();
+  for(const o of ch.list){ if(o.userData.amg===ch) o.userData.amg=null; o.layers.set(0); } if(typeof ZC!=='undefined') ZC.map=null; AMG.split=(AMG.split||0)+1; }
+function amgWatch(){ const L=AMG.byMap[CUR]; if(!L||!L.length) return; let dead=false;
+  for(const ch of L){ if(!ch.alive){ dead=true; continue; } let bad=false;
+    for(const [o,a] of ch.watch) if(!amgSame(o,a)||!o.parent){ bad=true; break; }
+    if(!bad) for(const [m,a] of ch.mw) if(!amgMatSame(m,a)){ bad=true; break; }
+    if(!bad) for(let i=0;i<ch.list.length;i++){ const o=ch.list[i]; if(o.material!==ch.mat[i]||o.geometry!==ch.geo[i]||o.layers.mask!==1<<7){ bad=true; break; } }
+    if(bad){ amgSplit(ch); dead=true; } }
+  if(dead) AMG.byMap[CUR]=L.filter(c=>c.alive); }
 const ZC={on:true,map:null,items:[],sig:'',hidden:0,reach:null};
 function zcBuild(){ ZC.map=CUR; ZC.items=[]; ZC.sig=''; const root=MAPG[CUR]; if(!root) return; root.updateMatrixWorld(true); const box=new THREE.Box3();
   for(const c of root.children){ let bad=false; const rs=[]; c.traverse(o=>{ if(o.isInstancedMesh||o.frustumCulled===false||o.isLight) bad=true; if(o.isMesh||o.isPoints||o.isSprite||o.isLine) rs.push(o); }); if(bad||!rs.length) continue;
     box.setFromObject(c); if(box.isEmpty()) continue; const x0=Math.floor((box.min.x-0.05)/S), x1=Math.floor((box.max.x+0.05)/S), z0=Math.floor((box.min.z-0.05)/S), z1=Math.floor((box.max.z+0.05)/S);
     if(x1-x0>10||z1-z0>10||!inB(x0,z0)||!inB(x1,z1)) continue; const cells=[]; for(let z=z0;z<=z1;z++) for(let x=x0;x<=x1;x++) cells.push(z*MW+x);
     ZC.items.push({rs,cells,vis:true}); } }
-function zcSet(it,v){ if(it.vis===v) return; it.vis=v; for(const o of it.rs) o.layers.mask=v?1:2; }
+function zcSet(it,v){ if(it.vis===v) return; it.vis=v; for(const o of it.rs) if(!o.userData.amg) o.layers.mask=v?1:2; }
 function zcFrame(){
-  if(!ZC.on||!MAPG[CUR]||CUR==='x1'||CUR==='sandbox'){ if(ZC.items.length){ for(const it of ZC.items) zcSet(it,true); ZC.items=[]; ZC.map=null; } ZC.hidden=0; return; }
+  if(!ZC.on||!MAPG[CUR]||CUR==='x1'||CUR==='sandbox'){ ZC.reachMap=null; if(ZC.items.length){ for(const it of ZC.items) zcSet(it,true); ZC.items=[]; ZC.map=null; } ZC.hidden=0; return; }
   if(ZC.map!==CUR) zcBuild();
   const cxp=Math.floor(camera.position.x/S), czp=Math.floor(camera.position.z/S);
   let ds=''; for(const d of doors) ds+=d.open?1:0; const sig=cxp+','+czp+'|'+ds; if(sig===ZC.sig) return; ZC.sig=sig;
-  if(!inB(cxp,czp)||at(cxp,czp)==='#'){ for(const it of ZC.items) zcSet(it,true); ZC.hidden=0; return; }
+  if(!inB(cxp,czp)||at(cxp,czp)==='#'){ for(const it of ZC.items) zcSet(it,true); ZC.hidden=0; ZC.reachMap=null; return; }
   const block=new Uint8Array(MW*MH); for(const d of doors) if(!d.open&&d.cells) for(const [x,z] of d.cells) if(inB(x,z)) block[z*MW+x]=1;
   const seen=new Uint8Array(MW*MH), q=[czp*MW+cxp]; seen[q[0]]=1;
   while(q.length){ const i=q.pop(), x=i%MW, z=(i/MW)|0; for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx=x+dx, nz=z+dz; if(!inB(nx,nz)) continue; const j=nz*MW+nx; if(seen[j]||block[j]||grid[nz][nx]==='#') continue; seen[j]=1; q.push(j); } }
-  const near=new Uint8Array(MW*MH); for(let i=0;i<seen.length;i++) if(seen[i]){ const x=i%MW, z=(i/MW)|0; for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++){ const nx=x+dx, nz=z+dz; if(inB(nx,nz)) near[nz*MW+nx]=1; } }
+  const near=new Uint8Array(MW*MH); ZC.reachMap=near; for(let i=0;i<seen.length;i++) if(seen[i]){ const x=i%MW, z=(i/MW)|0; for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++){ const nx=x+dx, nz=z+dz; if(inB(nx,nz)) near[nz*MW+nx]=1; } }
   let h=0; for(const it of ZC.items){ let v=false; for(const c of it.cells) if(near[c]){ v=true; break; } zcSet(it,v); if(!v) h++; } ZC.hidden=h; }
 function perfHud(){ if(!PERF.el){ PERF.el=document.createElement('div'); PERF.el.id='perfhud'; document.body.appendChild(PERF.el); } PERF.el.hidden=!PERF.on; if(!PERF.on) return;
-  let lights=0; scene.traverseVisible(o=>{ if(o.isLight&&o.intensity>0) lights++; }); const I=renderer.info;
+  let lights=0; scene.traverseVisible(o=>{ if(o.isLight&&o.intensity>0&&o.layers.test(camera.layers)) lights++; }); const I=renderer.info;
   PERF.el.innerHTML=`<b>${PERF.fps} fps</b> · quadro ${PERF.avg.toFixed(1)} ms (pior ${PERF.max.toFixed(1)})<br>lógica ${PERF.sim.toFixed(1)} ms · desenho ${PERF.ren.toFixed(1)} ms<br>desenhos ${PERF.calls} · triângulos ${(PERF.tris/1000).toFixed(0)}k<br>luzes acesas ${lights} · shaders ${I.programs.length} · geometrias ${I.memory.geometries} · texturas ${I.memory.textures}<br>zumbis ${zlist().length} · animações poupadas ${PERF.lodSkipS} /s<br>objetos escondidos ${ZC.hidden} de ${ZC.items.length}${ZC.on?'':' (desligado)'} · resolução ${Math.round(renderer.getPixelRatio()/BASE_PR*100)}%`; }
 function perfFrame(rawDt,tSim,tRen){ PERF.acc+=rawDt; PERF.n++; PERF.max=Math.max(PERF.max,rawDt*1000); PERF.simA=(PERF.simA||0)+tSim; PERF.renA=(PERF.renA||0)+tRen; PERF.calls=renderer.info.render.calls; PERF.tris=renderer.info.render.triangles;
-  if(PERF.acc>=1){ PERF.fps=Math.round(PERF.n/PERF.acc); PERF.avg=PERF.acc/PERF.n*1000; PERF.sim=PERF.simA/PERF.n; PERF.ren=PERF.renA/PERF.n; PERF.lodSkipS=PERF.lodSkip; PERF.lodSkip=0; perfHud(); PERF.acc=0; PERF.n=0; PERF.max=0; PERF.simA=0; PERF.renA=0; }
+  if(PERF.acc>=1){ PERF.fps=Math.round(PERF.n/PERF.acc); PERF.avg=PERF.acc/PERF.n*1000; PERF.sim=PERF.simA/PERF.n; PERF.ren=PERF.renA/PERF.n; PERF.lodSkipS=PERF.lodSkip; PERF.lodSkip=0; perfHud(); if(G.state==='playing'&&!CFG.potato&&!PERF.hinted){ PERF.slowN=PERF.fps<28?(PERF.slowN||0)+1:0; if(PERF.slowN>=8){ PERF.hinted=true; try{ toast('O jogo está pesado neste PC: experimente o Modo PC fraco em Configurações › Vídeo'); }catch(e){} } } PERF.acc=0; PERF.n=0; PERF.max=0; PERF.simA=0; PERF.renA=0; }
   // resolução automática: só age se ligada nas configurações; nunca passa da resolução escolhida
-  if(CFG.autoRes&&G.state==='playing'){ PERF.dynAcc+=rawDt; PERF.dynN++; if(PERF.dynAcc>=1.5){ const avg=PERF.dynAcc/PERF.dynN; PERF.dynAcc=0; PERF.dynN=0; let d=PERF.dyn;
+  if((CFG.autoRes||CFG.potato)&&G.state==='playing'){ PERF.dynAcc+=rawDt; PERF.dynN++; if(PERF.dynAcc>=1.5){ const avg=PERF.dynAcc/PERF.dynN; PERF.dynAcc=0; PERF.dynN=0; let d=PERF.dyn;
       if(avg>1/48) d=Math.max(0.55,d-0.08); else if(avg<1/57){ PERF.dynHold++; if(PERF.dynHold>=2){ d=Math.min(1,d+0.05); PERF.dynHold=0; } } else PERF.dynHold=0;
-      if(d!==PERF.dyn){ PERF.dyn=d; renderer.setPixelRatio(BASE_PR*CFG.quality*d); resize(); } } }
-  else if(PERF.dyn!==1){ PERF.dyn=1; renderer.setPixelRatio(BASE_PR*CFG.quality); resize(); } }
+      if(d!==PERF.dyn){ PERF.dyn=d; renderer.setPixelRatio(prTarget()*d); resize(); } } }
+  else if(PERF.dyn!==1){ PERF.dyn=1; renderer.setPixelRatio(prTarget()); resize(); } }
 renderer.info.autoReset=false;
 function frame(now){
   requestAnimationFrame(frame); const tF0=performance.now(); renderer.info.reset();
@@ -12365,6 +12541,8 @@ function frame(now){
   if(showVm) updateViewmodel(dt);
   const menuScene=G.state==='menu'&&CP.mode==='squad'&&!$('#menu').hidden;
   try{ zcFrame(); }catch(e){ ZC.on=false; console.warn('[Bunker] corte de salas desligado',e); }
+  try{ amgWatch(); }catch(e){ console.warn('[Bunker] vigia do cenário agrupado',e); AMG.chunks.forEach(amgSplit); }
+  try{ lbudFrame(rawDt); }catch(e){ console.warn('[Bunker] orçamento de luzes desligado',e); lbudOff(); }
   const tR0=performance.now();
   renderer.clear(); if(!menuScene) renderer.render(scene,camera);
   if(showVm&&!CINEMA.noVm){ try{ vmLightFrame(dt); }catch(e){} renderer.clearDepth(); renderer.render(vmScene,vmCam); }

@@ -2763,6 +2763,11 @@ function tzStopVila(k){ const M3=TZG.M, s=tzSec(k);
   for(const r of [2,8,14,20]) tzLamp(cx(19),cx(s+r),0xffe0b0);
   for(const r of [5,17]) tzLamp(cx(27),cx(s+r),0xffe0b0);
 }
+function tzDeadTree(M3){ const o=new THREE.Group(); const bark=TZG.barkM||(TZG.barkM=new THREE.MeshLambertMaterial({color:0x3a3028}));
+  const h=rand(5,8), r0=rand(0.18,0.28); const tr=new THREE.Mesh(new THREE.CylinderGeometry(r0*0.45,r0,h,7),bark); tr.position.y=h/2; tr.rotation.z=rand(-0.06,0.06); o.add(tr);
+  const n=3+Math.floor(Math.random()*3); for(let i=0;i<n;i++){ const bl=rand(1.2,2.6), y=h*rand(0.45,0.92), a=rand(0,6.28), tilt=rand(0.5,1.0);
+    const br=new THREE.Mesh(new THREE.CylinderGeometry(0.03,r0*0.35,bl,5),bark); br.geometry.translate(0,bl/2,0); br.position.set(0,y,0); br.rotation.set(0,a,0); br.rotateZ(tilt); o.add(br); }
+  return o; }
 function buildTz(){
   tzBuildMats(); const root=MAPG.tz;
   const fns=[tzStopPosto,tzStopLanch,tzStopFarm,tzStopUsina,tzStopVila];
@@ -2786,7 +2791,10 @@ function buildTz(){
   TZG.carousel=[]; const span=len+40, z0=zc-span/2;
   const add=(o,x,zz)=>{ o.position.set(x,0,zz); rg.add(o); TZG.carousel.push(o); };
   for(let i=0;i<26;i++){ const side=i%2?1:-1; const t=Math.random(); let o;
-    if(t<0.55&&PH.models.dead_tree_trunk){ o=new THREE.Group(); const p=phPlace('dead_tree_trunk',0,0,0,rand(0,6),1,{parent:o}); const Mo=PH.models.dead_tree_trunk; const sc=rand(4,7)/(Mo.max[1]-Mo.min[1]); p.scale.setScalar(sc); p.position.y=-Mo.min[1]*sc; }
+    // v8.4.2: o modelo dead_tree_trunk é um tronco CAÍDO (3 m × 0,3 m); escalado pela altura virava uma tora de 50–70 m que atravessava o ônibus.
+    // Agora: árvores secas em pé feitas aqui mesmo, e a tora no tamanho real, deitada no acostamento.
+    if(t<0.45){ o=tzDeadTree(M3); }
+    else if(t<0.55&&PH.models.dead_tree_trunk){ o=new THREE.Group(); const Mo=PH.models.dead_tree_trunk; const sc=rand(3,4.5)/Math.max(Mo.max[0]-Mo.min[0],Mo.max[2]-Mo.min[2]); const p=phPlace('dead_tree_trunk',0,0,0,rand(0,6),sc,{parent:o}); p.position.y=-Mo.min[1]*sc; }
     else if(t<0.75){ o=new THREE.Group(); for(let j=0;j<4;j++){ tzBx(o,0.12,1.3,0.12,M3.wood,0,0.65,j*2); tzBx(o,0.06,0.1,2,M3.wood,0,1.0,j*2+1); } }
     else if(t<0.88&&PH.models.covered_car){ o=new THREE.Group(); const p=phPlace('covered_car',0,0,0,rand(0,6),1,{parent:o}); const Mo=PH.models.covered_car; const sc=4.2/Math.max(Mo.max[0]-Mo.min[0],Mo.max[2]-Mo.min[2]); p.scale.setScalar(sc); p.position.y=-Mo.min[1]*sc; }
     else { o=new THREE.Group(); tzBx(o,0.1,2.6,0.1,M3.trim,0,1.3,0); tzBx(o,0.05,0.8,1.2,M3.sStop,0,2.4,0); }
@@ -2801,20 +2809,22 @@ function buildTz(){
    Referencial local do ônibus: frente para -z, portas do lado +x, piso a 0,73 m. Nunca gira — só anda no eixo z —, então
    "local → mundo" é só somar a posição. As paredes são caixas de colisão (as mesmas dos móveis) que andam junto; quem está
    dentro anda junto. Na estrada o ônibus fica parado e o mundo corre para trás (esteira). */
-const TZ_FLOOR=0.73, TZ_HW=1.3, TZ_ZF=-4.0, TZ_ZR=5.05, TZ_RUN=30, TZ_ROAD_T=42, TZ_RS=15, TZ_TM=3.2;
+// v8.4.2: ônibus 22% maior (antes o teto ficava quase na cabeça); o modelo é escalado e todas as medidas locais abaixo também
+const TZK=1.22;
+const TZ_FLOOR=0.73*TZK, TZ_HW=1.3*TZK, TZ_ZF=-4.0*TZK, TZ_ZR=5.05*TZK, TZ_ROOF=2.97*TZK, TZ_RUN=30, TZ_ROAD_T=42, TZ_RS=15, TZ_TM=3.2;
 const TZB={ph:'off',stop:0,t:0,dur:0,rounds:0,pos:new THREE.Vector3(0,0,-999),present:false,doorK:0,speed:0,g:null,boxes:[],wins:[],hatch:null,doorSlots:[],wheels:[],doors:[],
   driver:null,lights:[],warn:{},jokeT:25,lastZ:0,seenStop:new Set(),riders:0,sayT:0,hitCd:0,net:null,assignT:0,hudT:0,first:true};
-const TZ_WALLS=[[-1.48,-1.30,-5.2,5.2],[1.30,1.48,-5.2,-3.40],[1.30,1.48,-2.52,1.82],[1.30,1.48,2.68,5.2],[1.30,1.48,-3.40,-2.52,0],[1.30,1.48,1.82,2.68,1],[-1.48,1.48,-5.25,-4.0],[-1.48,1.48,5.05,5.25],[-1.30,-0.25,-4.0,-2.45]];
-const TZ_DOORZ=[[-3.40,-2.52],[1.82,2.68]];
+const TZ_WALLS=[[-1.48,-1.30,-5.2,5.2],[1.30,1.48,-5.2,-3.40],[1.30,1.48,-2.52,1.82],[1.30,1.48,2.68,5.2],[1.30,1.48,-3.40,-2.52,0],[1.30,1.48,1.82,2.68,1],[-1.48,1.48,-5.25,-4.0],[-1.48,1.48,5.05,5.25],[-1.30,-0.25,-4.0,-2.45]].map(w=>w.map((v,i)=>i<4?v*TZK:v));
+const TZ_DOORZ=[[-3.40,-2.52],[1.82,2.68]].map(([a,b])=>[a*TZK,b*TZK]);
 const TZ_SLOTS=[[1.42,-1.5,-1,0],[1.42,0.4,-1,0],[1.42,3.9,-1,0],[-1.42,-2.3,1,0],[-1.42,-0.5,1,0],[-1.42,1.4,1,0],[-1.42,3.4,1,0],[0,5.15,0,-1]];
-const TZ_HATCHZ=-1.42;
+const TZ_HATCHZ0=-1.42, TZ_HATCHZ=TZ_HATCHZ0*TZK;
 function tzInBus(x,z,pad){ if(!TZB.present) return false; pad=pad||0; const lx=x-TZB.pos.x, lz=z-TZB.pos.z; return Math.abs(lx)<=TZ_HW+pad&&lz>=TZ_ZF-pad&&lz<=TZ_ZR+pad; }
 function tzFloor(x,z){ const lx=x-TZB.pos.x, lz=z-TZB.pos.z; if(lz<TZ_ZF||lz>TZ_ZR) return null;
   if(Math.abs(lx)<=TZ_HW) return TZ_FLOOR;
-  if(TZB.doorK>0.5&&lx>TZ_HW&&lx<TZ_HW+0.95) for(const [a,b] of TZ_DOORZ) if(lz>a&&lz<b) return TZ_FLOOR*(1-(lx-TZ_HW)/0.95);
+  if(TZB.doorK>0.5&&lx>TZ_HW&&lx<TZ_HW+0.95*TZK) for(const [a,b] of TZ_DOORZ) if(lz>a&&lz<b) return TZ_FLOOR*(1-(lx-TZ_HW)/(0.95*TZK));
   return null; }
 function tzBusInit(){
-  const root=MAPG.tz, g=new THREE.Group(); g.name='tzBus'; root.add(g); TZB.g=g; g.visible=false;
+  const root=MAPG.tz, g=new THREE.Group(); g.name='tzBus'; g.scale.setScalar(TZK); root.add(g); TZB.g=g; g.visible=false;
   const keep={keep:true,parent:g};
   if(PH.models.tz_bus) phPlace('tz_bus',0,0,0,0,1,keep); else tzBx(g,2.9,2.8,10.4,new THREE.MeshLambertMaterial({color:0xb08a2a}),0,1.5,0);
   if(PH.models.tz_driver){ TZB.driver=phPlace('tz_driver',0,0,0,0,1,keep); }
@@ -2835,9 +2845,9 @@ function tzBusInit(){
   // caixas de colisão
   for(const w of TZ_WALLS){ const b=addPropBox(0,0,0.1,0.1); b.on=false; b.tz=w; TZB.boxes.push(b); }
   // janelas com tábuas (entram na lista de janelas: reconstruir, sincronizar e a IA de "rasgar tábua" funcionam igual)
-  const mkWin=(lx,lz,ix,iz,hatch)=>{ const w={x:0,z:0,ix,iz,room:'BUS',boards:6,occupant:null,map:'tz',bus:true,lx,lz,hatch:!!hatch,repT:0,inPt:{x:0,z:0},tearPt:{x:0,z:0},outPt:{x:0,z:0},land:{x:0,z:0},wx:0,wz:0};
+  const mkWin=(lx,lz,ix,iz,hatch)=>{ const w={x:0,z:0,ix,iz,room:'BUS',boards:6,occupant:null,map:'tz',bus:true,lx:lx*TZK,lz:lz*TZK,hatch:!!hatch,repT:0,inPt:{x:0,z:0},tearPt:{x:0,z:0},outPt:{x:0,z:0},land:{x:0,z:0},wx:0,wz:0};
     const wg=new THREE.Group(); w.boardMeshes=[]; w.rest=[];
-    if(hatch){ wg.position.set(0,2.04,TZ_HATCHZ+0.88); wg.rotation.x=-Math.PI/2; wg.scale.setScalar(0.55); }
+    if(hatch){ wg.position.set(0,2.04,TZ_HATCHZ0+0.88); wg.rotation.x=-Math.PI/2; wg.scale.setScalar(0.55); }
     else { wg.position.set(lx-ix*0.55,0.92,lz-iz*0.55); wg.rotation.y=Math.atan2(ix,iz); wg.scale.set(0.62,0.62,0.62); }
     for(let i=0;i<6;i++){ const b=new THREE.Mesh(new THREE.BoxGeometry(1.8,0.17,0.05),M.board); const r={y:1.0+i*0.24,rz:rand(-0.3,0.3),z:1.06+(i%2)*0.04}; b.position.set(rand(-.06,.06),r.y,r.z); b.rotation.z=r.rz; wg.add(b); w.boardMeshes.push(b); w.rest.push(r);
       const nails=[]; for(const side of [-1,1]){ const n=new THREE.Mesh(new THREE.BoxGeometry(.028,.028,.012),M.iron); n.position.set(side*.68,0,.031); b.add(n); nails.push(n); } b.userData.nails=nails; }
@@ -2847,8 +2857,8 @@ function tzBusInit(){
       holdUse:(dt)=>{ w.repT+=dt; if(w.repT>=0.65){ w.repT=0; if(NET.mode==='client'){ if(w.boards<6){ w.localRepUntil=G.t+1.2; netAct(['rep',windows.indexOf(w)]); if(G.repairPts<200){ addPoints(5); G.repairPts+=5; } } } else addBoard(w,true); } }};
     interacts.push(it); w.it=it; return w; };
   for(const [lx,lz,ix,iz] of TZ_SLOTS) mkWin(lx,lz,ix,iz,false);
-  TZB.hatch=mkWin(0,TZ_HATCHZ,0,-1,true);
-  for(const [a,b] of TZ_DOORZ) TZB.doorSlots.push({x:0,z:0,ix:-1,iz:0,boards:0,occupant:null,map:'tz',bus:true,door:true,lx:1.42,lz:(a+b)/2,inPt:{x:0,z:0},tearPt:{x:0,z:0},outPt:{x:0,z:0},land:{x:0,z:0},rest:[],boardMeshes:[]});
+  TZB.hatch=mkWin(0,TZ_HATCHZ0,0,-1,true);
+  for(const [a,b] of TZ_DOORZ) TZB.doorSlots.push({x:0,z:0,ix:-1,iz:0,boards:0,occupant:null,map:'tz',bus:true,door:true,lx:1.42*TZK,lz:(a+b)/2,inPt:{x:0,z:0},tearPt:{x:0,z:0},outPt:{x:0,z:0},land:{x:0,z:0},rest:[],boardMeshes:[]});
   // comprar o revólver (no teto, no meio do ônibus)
   const rvIt={x:0,z:0,r:1.4,enabled:()=>TZB.present&&P.base>0.5,
     text:()=>{ const s=Wp.inv.find(s=>s.id==='python'); if(s){ if(s.reserve>=wstat(s).reserve) return null; return `${PRESS} para comprar munição do revólver [${price(ammoCost(s))}]`; } return `${PRESS} para pegar o revólver do teto [${price(1500)}]`; },
@@ -2898,24 +2908,24 @@ function tzBusTick(dt){
   const road=B.ph==='road';
   const wantOpen=(B.ph==='stop'||(B.ph==='leave'&&B.t<B.dur-1.6))?1:0;
   if(Math.abs(B.doorK-wantOpen)>0.001){ const prev=B.doorK; tzSetDoors(clamp(B.doorK+(wantOpen?1:-1)*dt*1.6,0,1)); if((prev===0&&wantOpen)||(prev===1&&!wantOpen)) try{ Snd.busDoor&&Snd.busDoor(wantOpen); }catch(e){} }
-  const spin=(road?TZ_RS:B.speed)*dt/0.51; for(const w of B.wheels) w.rotation.x-=spin;
+  const spin=(road?TZ_RS:B.speed)*dt/(0.51*TZK); for(const w of B.wheels) w.rotation.x-=spin;
   for(const b of B.boxes){ const [x0,x1,z0,z1,door]=b.tz; b.on=B.present&&!(door!=null&&B.doorK>0.5); b.x0=B.pos.x+x0; b.x1=B.pos.x+x1; b.z0=B.pos.z+z0; b.z1=B.pos.z+z1; }
   // janelas/escotilha/portas: pontos de mundo
   const upd=(w)=>{ const wx=B.pos.x+w.lx, wz=B.pos.z+w.lz; w.wx=wx; w.wz=wz; w.x=Math.floor(wx/S); w.z=Math.floor(wz/S);
-    if(w.hatch){ w.outPt.x=B.pos.x+0.6; w.outPt.z=B.pos.z+6.1; w.tearPt.x=B.pos.x; w.tearPt.z=B.pos.z+TZ_HATCHZ+0.95; w.inPt.x=wx; w.inPt.z=wz; w.land.x=wx; w.land.z=wz+0.2; }
+    if(w.hatch){ w.outPt.x=B.pos.x+0.6; w.outPt.z=B.pos.z+TZ_ZR+1.05; w.tearPt.x=B.pos.x; w.tearPt.z=B.pos.z+TZ_HATCHZ+0.95*TZK; w.inPt.x=wx; w.inPt.z=wz; w.land.x=wx; w.land.z=wz+0.2; }
     else { const o=w.door?1.5:1.05; w.outPt.x=wx-w.ix*o; w.outPt.z=wz-w.iz*o; w.tearPt.x=wx-w.ix*(w.door?0.9:0.42); w.tearPt.z=wz-w.iz*(w.door?0.9:0.42); w.inPt.x=wx+w.ix*0.8; w.inPt.z=wz+w.iz*0.8; w.land.x=wx+w.ix*0.75; w.land.z=wz+w.iz*0.75; }
     if(w.it){ w.it.x=w.inPt.x; w.it.z=w.inPt.z; } };
   for(const w of B.wins) upd(w); for(const w of B.doorSlots) upd(w);
-  if(B.rvIt){ B.rvIt.x=B.pos.x; B.rvIt.z=B.pos.z+0.6; }
+  if(B.rvIt){ B.rvIt.x=B.pos.x; B.rvIt.z=B.pos.z+0.6*TZK; }
   // esteira: estrada correndo e quem está no chão ficando para trás
   if(road){ for(const t of TZG.roadScroll) t.offset.y+=TZ_RS*dt*(t===TZG.roadGround.map||t===TZG.roadGround.normalMap?TZG.gScale:TZG.rScale);
     for(const o of TZG.carousel){ o.position.z+=TZ_RS*dt; if(o.position.z>TZG.z0+TZG.span) o.position.z-=TZG.span; }
     if(auth) for(const z of zombies.slice()){ if(z.dead&&z.state!=='dying') continue; if(tzInBus(z.pos.x,z.pos.z,0.25)) continue; const st=z.state; if(st==='toTear'||st==='tear'||st==='climb'||st==='wait'||st==='roofUp'||st==='roofWalk'||st==='roofDrop') continue;
       z.pos.z+=TZ_TM*dt; if(z.root) z.root.position.z=z.pos.z; if(z.pos.z>B.pos.z+44&&!z.dead){ removeZombie(z); G.toSpawn++; } } }
   // atropelamento quando anda dentro de uma parada
-  if(auth&&B.present&&!road&&B.speed>2){ B.hitCd-=dt; const fz=B.pos.z-5.3;
-    for(const z of zombies) if(!z.dead&&Math.abs(z.pos.x-B.pos.x)<1.7&&z.pos.z>fz-0.9&&z.pos.z<fz+1.2&&!tzInBus(z.pos.x,z.pos.z,0)){ damageZombie(z,1e6,'body','splash'); if(B.hitCd<=0){ B.hitCd=4; tzSay('hit'); } }
-    if(!tzInBus(P.pos.x,P.pos.z,0.3)&&Math.abs(P.pos.x-B.pos.x)<1.7&&P.pos.z>fz-0.9&&P.pos.z<fz+1.0&&!P.down){ P.pos.x+=P.pos.x>B.pos.x?1.4:-1.4; hurtPlayer(35,null); shake(0.6); } }
+  if(auth&&B.present&&!road&&B.speed>2){ B.hitCd-=dt; const fz=B.pos.z-5.3*TZK;
+    for(const z of zombies) if(!z.dead&&Math.abs(z.pos.x-B.pos.x)<1.7*TZK&&z.pos.z>fz-0.9&&z.pos.z<fz+1.2&&!tzInBus(z.pos.x,z.pos.z,0)){ damageZombie(z,1e6,'body','splash'); if(B.hitCd<=0){ B.hitCd=4; tzSay('hit'); } }
+    if(!tzInBus(P.pos.x,P.pos.z,0.3)&&Math.abs(P.pos.x-B.pos.x)<1.7*TZK&&P.pos.z>fz-0.9&&P.pos.z<fz+1.0&&!P.down){ P.pos.x+=P.pos.x>B.pos.x?1.4:-1.4; hurtPlayer(35,null); shake(0.6); } }
   // som do motor (mais alto perto), buzina e avisos
   const dd=B.present?Math.hypot(camera.position.x-B.pos.x,camera.position.z-B.pos.z):999; const lvl=B.present?clamp(1-dd/45,0,1):0;
   try{ Snd.busEngine&&Snd.busEngine(G.state==='playing'?lvl:0,road?0.9:clamp(B.speed/12,0.15,1)); }catch(e){}
@@ -2951,13 +2961,18 @@ function tzSteer(z,T){ // chamada no "inside": devolve um ponto para mirar, ou n
   if(zIn&&!tIn){ if(TZB.doorK>0.9){ let best=null,bd=1e9; for(const d of TZB.doorSlots){ const dd=Math.hypot(d.land.x-z.pos.x,d.land.z-z.pos.z); if(dd<bd){ bd=dd; best=d; } } if(best) return bd>0.5?{x:best.land.x,z:best.land.z}:{x:best.outPt.x,z:best.outPt.z}; } return {x:T.x,z:T.z}; }
   if(!zIn&&tIn&&Math.hypot(z.pos.x-TZB.pos.x,z.pos.z-TZB.pos.z)<16&&NET.mode!=='client'){ const w=tzEntry(z); if(w){ z.win=w; z.state='approach'; return {x:w.outPt.x,z:w.outPt.z}; } }
   return null; }
-function tzZombieSpawned(z){ if(CUR!=='tz') return; if(TZB.ph==='road'&&z.pos.z>TZR0*S){ z.baseSpd=z.speed; z.speed=Math.max(z.speed*1.35,TZ_TM+1.9); z.runner=true; } }
+function tzZombieSpawned(z){ if(CUR!=='tz') return;
+  if(z.win&&z.win.bus&&!z.win.door&&TZB.ph==='road'){ const w=z.win; w.occupant=z; z.t=0; z.tearT=0;
+    if(w.hatch){ z.pos.set(TZB.pos.x,0,TZB.pos.z+4.6*TZK); z.from={x:z.pos.x,z:z.pos.z}; z.state='roofWalk'; z.yaw=Math.PI; }
+    else { z.pos.set(w.tearPt.x,0,w.tearPt.z); z.state='tear'; z.yaw=Math.atan2(w.ix,w.iz); z.hangY=TZ_FLOOR*0.55; z.g.position.y=z.hangY; }
+    z.g.position.x=z.pos.x; z.g.position.z=z.pos.z; z.g.rotation.y=z.yaw; zFloor(z); zvoice(z,'attack',0.6); return; }
+  if(TZB.ph==='road'&&z.pos.z>TZR0*S){ z.baseSpd=z.speed; z.speed=Math.max(z.speed*1.35,TZ_TM+1.9); z.runner=true; } }
 /* ---- teto: sobe pela escada de trás, anda até a escotilha, rasga as tábuas e cai lá dentro ---- */
 function tzRoofState(z,dt,w){
-  if(z.state==='roofUp'){ const k=Math.min(z.t/0.8,1); const tx=TZB.pos.x, tz=TZB.pos.z+4.6; z.pos.x=lerp(z.from.x,tx,k); z.pos.z=lerp(z.from.z,tz,k);
-    const fl=floorAt(z.pos.x,z.pos.z); z.g.position.y=lerp(0,2.97,k)-fl+Math.sin(k*Math.PI)*0.4; z.moving=true; z.yaw=Math.PI; if(k>=1){ z.state='roofWalk'; z.t=0; } return; }
-  if(z.state==='roofWalk'){ z.g.position.y=2.97-TZ_FLOOR; const d=moveToward(z,w.tearPt.x,w.tearPt.z,dt,1.4); if(d<0.15){ z.state='tear'; z.tearT=0; } return; }
-  if(z.state==='roofDrop'){ const k=Math.min(z.t/0.55,1); z.pos.x=lerp(z.from.x,w.land.x,k); z.pos.z=lerp(z.from.z,w.land.z,k); z.g.position.y=(2.97-TZ_FLOOR)*(1-k*k); z.moving=true;
+  if(z.state==='roofUp'){ const k=Math.min(z.t/0.8,1); const tx=TZB.pos.x, tz=TZB.pos.z+4.6*TZK; z.pos.x=lerp(z.from.x,tx,k); z.pos.z=lerp(z.from.z,tz,k);
+    const fl=floorAt(z.pos.x,z.pos.z); z.g.position.y=lerp(0,TZ_ROOF,k)-fl+Math.sin(k*Math.PI)*0.4; z.moving=true; z.yaw=Math.PI; if(k>=1){ z.state='roofWalk'; z.t=0; } return; }
+  if(z.state==='roofWalk'){ z.g.position.y=TZ_ROOF-TZ_FLOOR; const d=moveToward(z,w.tearPt.x,w.tearPt.z,dt,1.4); if(d<0.15){ z.state='tear'; z.tearT=0; } return; }
+  if(z.state==='roofDrop'){ const k=Math.min(z.t/0.55,1); z.pos.x=lerp(z.from.x,w.land.x,k); z.pos.z=lerp(z.from.z,w.land.z,k); z.g.position.y=(TZ_ROOF-TZ_FLOOR)*(1-k*k); z.moving=true;
     if(k>=1){ z.state='inside'; z.g.position.y=0; if(w.occupant===z) w.occupant=null; } } }
 /* ================= missão do posto: 5 peças → bancada → manequim com ventilador → porta de aço ================= */
 const TZ_PARTS=[{n:'Cabeça do manequim',k:'head'},{n:'Tronco do manequim',k:'torso'},{n:'Braços do manequim',k:'arms'},{n:'Pernas do manequim',k:'legs'},{n:'Ventilador',k:'fan'}];
@@ -6188,7 +6203,7 @@ function hudCards(){ const el=$('#cardhud'); el.textContent=''; if(G.stacks) for
   for(const id of G.cards){ const c=CARD_BY[id]; if(!c) continue; const d=document.createElement('div'); const l=cardLv(id); d.className='chip'+(c.pact?' pact':'')+(l>1?' lv'+l:''); d.title=c.name+(c.lv?' '+ROM[l]:''); d.textContent=c.name[0]+(l>1?ROM[l]:''); el.appendChild(d); } }
 
 /* ================= CHAT (Y) e registro de ações ================= */
-const GAME_VERSION='v8.4.1';
+const GAME_VERSION='v8.4.2';
 const CHAT={open:false,peers:null};
 function chatAdd(kind,name,text){
   const box=$('#chatlog'); if(!box||!text) return;
@@ -7482,6 +7497,9 @@ function pushOutBox(p,r,x0,z0,x1,z1){
 }
 const solidIn=(x,z)=>at(x,z)!=='.'; const _noSolid=()=>false;
 const solidOut=(x,z)=>{ const c=at(x,z); return !(c==='o'||c==='W'); };
+// tranzitch: os prédios das paradas ficam em terreno aberto (sem o pátio entalhado que o solidOut espera),
+// então zumbis se aproximando de janelas de lá só esbarram em paredes de verdade; o chão aberto e a própria janela liberam passagem.
+const solidTzWin=(x,z)=>{ const c=at(x,z); return c!=='.'&&c!=='o'&&c!=='W'; };
 /* colisão dos objetos do cenário (caixas, carros, sacos, árvores...): em vez da célula inteira de 2 m, só a área que a malha
    realmente ocupa na altura do corpo. Calculado uma vez depois de montar o mundo, a partir dos triângulos de cada mapa. */
 const CELLBOX=new Map(); const PROP_CH=new Set(['c','t','x','s','r','k','g','q','u','b','h','S','M','w','C','f']);
@@ -8244,7 +8262,10 @@ function eventsVisual(dt){
   if(EVT.blk<0.995){ for(const l of lamps){ if(l.map!==CUR) continue; l.L.intensity*=EVT.blk; l.bulb.material.color.multiplyScalar(Math.max(0.05,EVT.blk)); } hemi.intensity*=(inv?0.6:0.35)+0.65*EVT.blk; }
   if(scene.fog&&scene.fog.density!=null){ if(EVT.base==null||EVT.baseMap!==CUR){ EVT.base=scene.fog.density; EVT.baseMap=CUR; } const want=EVT.k==='neblina'?EVT.base*2.8:inv?EVT.base*1.9:EVT.base; scene.fog.density=lerp(scene.fog.density,want,Math.min(1,dt*0.8)); }
 }
+/* tranzitch: quem está dentro do ônibus só apanha de zumbi que já entrou (nada de golpe pela parede, pela janela com tábua ou pelo teto) */
+function tzCanHit(z,T){ if(CUR!=='tz'||!T||!TZB.present||!tzInBus(T.x,T.z,0.15)) return true; return z.state==='inside'&&tzInBus(z.pos.x,z.pos.z,0); }
 function zombieAttack(z,dt,T,dist,reach){
+  if(!tzCanHit(z,T)){ z.attackT=0; z.hitDone=false; return; }
   if(z.attackT===0) zvoice(z,'attack',0.7);
   z.attackT+=dt;
   if(z.attackT>0.42&&!z.hitDone){ z.hitDone=true; if(T&&dist<reach){ if(z.bossKi!=null) bossHurt(T,85,z); else hurtTarget(T,z.zdmg!=null?z.zdmg:z.kind==='brute'?85:z.crawl?40:55,z); } }
@@ -8273,15 +8294,15 @@ function updateZombie(z,dt){
       z.yaw=angLerp(z.yaw,Math.atan2(w.ix,w.iz),dt*8);
       const T=nearestTarget(w.inPt.x,w.inPt.z); const nd=T?Math.hypot(T.x-w.inPt.x,T.z-w.inPt.z):99;
       if(w.boards>0){
-        if(nd<1.4) zombieAttack(z,dt,T,nd,1.5);
+        if(nd<1.4&&tzCanHit(z,T)) zombieAttack(z,dt,T,nd,1.5);
         else { z.attackT=0; z.hitDone=false; z.tearT+=dt; if(z.tearT>(z.runner?0.75:z.kind==='brute'?0.6:1.15)){ z.tearT=0; removeBoard(w); } }
       } else { z.state=w.hatch?'roofDrop':'climb'; z.t=0; z.from={x:z.pos.x,z:z.pos.z}; zvoice(z,'attack',0.5); }
       break; }
     case 'climb': {
       const dur=z.runner?0.85:1.3, k=Math.min(z.t/dur,1);
       z.pos.x=lerp(z.from.x,w.land.x,k); z.pos.z=lerp(z.from.z,w.land.z,k);
-      z.g.position.y=Math.sin(k*Math.PI)*1.0; z.moving=true;
-      if(k>=1){ z.state='inside'; z.g.position.y=0; if(w.occupant===z) w.occupant=null; }
+      z.g.position.y=Math.sin(k*Math.PI)*1.0+(z.hangY||0)*(1-k); z.moving=true;
+      if(k>=1){ z.state='inside'; z.g.position.y=0; z.hangY=0; if(w.occupant===z) w.occupant=null; }
       break; }
     case 'roofUp': case 'roofWalk': case 'roofDrop': { if(!w){ z.state='inside'; z.g.position.y=0; break; } tzRoofState(z,dt,w); break; }
     case 'inside': {
@@ -8291,7 +8312,7 @@ function updateZombie(z,dt){
       if(T){
         const dx=T.x-z.pos.x, dz=T.z-z.pos.z, d=Math.hypot(dx,dz);
         const reachIn=z.crawl?0.95:z.kind==='brute'?1.4:1.2;
-        if(d<reachIn||(z.attackT>0&&z.attackT<1.0&&d<reachIn+0.7)){ z.yaw=angLerp(z.yaw,Math.atan2(dx,dz),dt*10); zombieAttack(z,dt,T,d,reachIn+0.4); }
+        if((d<reachIn||(z.attackT>0&&z.attackT<1.0&&d<reachIn+0.7))&&tzCanHit(z,T)){ z.yaw=angLerp(z.yaw,Math.atan2(dx,dz),dt*10); zombieAttack(z,dt,T,d,reachIn+0.4); }
         else {
           z.attackT=0; z.hitDone=false;
           let tx=T.x, tz=T.z; const bo=CUR==='tz'?tzSteer(z,T):null;
@@ -8309,7 +8330,7 @@ function updateZombie(z,dt){
       if(z.t>4.5){ removeZombie(z); return; }
       break; }
   }
-  if(z.state==='approach'||z.state==='wait'||z.state==='toTear') collide(z.pos,0.3,w&&w.bus?solidIn:solidOut,false);
+  if(z.state==='approach'||z.state==='wait'||z.state==='toTear') collide(z.pos,0.3,w&&w.bus?solidIn:w&&w.map==='tz'?solidTzWin:solidOut,false);
   if(z.bossKi!=null) bossTick(z,dt);
   zKnock(z,dt);
   zAnimLod(z,dt);
@@ -12249,6 +12270,9 @@ function roundEndLocal(){ G.inGap=true; addDrax(3+G.round);
 function endRound(){ G.roundGap=10; roundEndLocal(); try{ tzRoundEnd(); }catch(e){} }
 function spawnPoints(){
   const out=[];
+  if(CUR==='tz'&&TZB.ph==='road'&&TZB.present&&tzAnyRider()){ // ônibus andando: os zumbis já aparecem pendurados numa janela livre (ou no teto, na escotilha); ninguém nasce lá fora
+    for(const w of TZB.wins) if(!w.occupant||w.occupant.dead) out.push({win:w,x:w.wx,z:w.wz,busHang:true});
+    return out; }
   if(CUR==='tz'){ const secs=new Set(); const add=(x,z)=>secs.add(tzSecAt(x,z)); add(P.pos.x,P.pos.z); for(const rp of NET.players.values()) if(rp.x!=null) add(rp.x,rp.z);
     for(const w of windows) if(!w.bus&&w.map==='tz'&&G.rooms.has(w.room)&&secs.has(tzSecOf(w.wz))) out.push({win:w,x:w.wx,z:w.wz});
     for(const g of GSPAWN) if(g.map==='tz'&&(g.road?secs.has(-1):G.rooms.has(g.room)&&secs.has(tzSecOf(g.z)))) out.push(g);
@@ -13425,7 +13449,7 @@ function frame(now){
     buildTargets();
     try{ tzFrame(dt); }catch(e){ if(!TZB.err){ TZB.err=1; console.warn('[Bunker] tranzitch quadro',e); } }
     updatePlayer(dt);
-    if(CUR==='tz'&&tzInBus(P.pos.x,P.pos.z,0)&&P.y>0.28){ P.y=0.28; P.vy=Math.min(P.vy,0); }
+    if(CUR==='tz'&&tzInBus(P.pos.x,P.pos.z,0)&&P.y>0.45){ P.y=0.45; P.vy=Math.min(P.vy,0); }
     if(flowDirty) computeFlow();
     updateWeapons(dt);
     updateInteract(dt);

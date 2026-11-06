@@ -2259,7 +2259,7 @@ const MAPS={
   farm:{name:'Fazenda Santa Luzia',start:[cx(23),FR0(70)],start2:[cx(25),FR0(70)],room:'FB',menu:{x:cx(23.5),z:FR0(52),yaw:0.0},fog:0x0b0e12,fogD:0.022,bg:0x06080b,sky:'farm'},
   hosp:{name:'Hospício Vale Negro',start:[cx(hx(21.5)),cx(hz(29))],start2:[cx(hx(22.5)),cx(hz(30))],room:'HE',menu:{x:cx(hx(21.5)),z:cx(hz(33)),yaw:0.0},fog:0x090c0a,fogD:0.052,bg:0x040605,sky:'hosp'},
   x1:{name:'Arena X1',start:[cx(X1_X0+1),cx(164.5)],start2:[cx(X1_X0+18),cx(164.5)],room:'X1',menu:{x:cx(X1_X0+1),z:cx(164.5),yaw:-Math.PI/2},fog:0x0a0c10,fogD:0.012,bg:0x07090c,sky:'bunker'},
-  tz:{name:'Tranzitch',start:[cx(36),cx(TZ0+12)],start2:[cx(37),cx(TZ0+13)],room:'ZB0',menu:{x:cx(22),z:cx(TZ0+23),yaw:0.55},fog:0x141a1f,fogD:0.044,bg:0x0b0f12,sky:'farm'},
+  tz:{name:'Tranzitch',start:[cx(36),cx(TZ0+12)],start2:[cx(37),cx(TZ0+13)],room:'ZB0',menu:{x:cx(22),z:cx(TZ0+23),yaw:0.55},fog:0x1f262c,fogD:0.04,bg:0x0e1215,sky:'farm'},
   sandbox:{name:'Sandbox de Testes',start:[cx(23),cx(146)],start2:[cx(24),cx(146)],room:'SB',menu:{x:cx(23),z:cx(146),yaw:0.0},fog:0x101820,fogD:0.009,bg:0x080d14,sky:'bunker'},
 };
 let CUR='bunker';
@@ -2593,7 +2593,7 @@ function tzBuildMats(){
     for(let i=0;i<30;i++){ g.strokeStyle='rgba(0,0,0,.5)'; g.lineWidth=rand(1,2.5); g.beginPath(); let x=rand(0,w),y=rand(0,h); g.moveTo(x,y); for(let k=0;k<6;k++){ x+=rand(-14,14); y+=rand(4,22); g.lineTo(x,y); } g.stroke(); } },[1,1]);
   asphalt.wrapS=asphalt.wrapT=THREE.RepeatWrapping;
   const neon=(txt,col,w,h,f)=>{ const t=tex(w||512,h||128,(g,W,H)=>{ g.fillStyle='rgba(0,0,0,0)'; g.clearRect(0,0,W,H); g.font=f||`bold ${Math.floor(H*0.62)}px "Stardos Stencil", Impact, sans-serif`; g.textAlign='center'; g.textBaseline='middle'; g.shadowColor=col; g.shadowBlur=H*0.25; g.fillStyle=col; g.fillText(txt,W/2,H/2); g.shadowBlur=H*0.08; g.fillStyle='#fff'; g.globalAlpha=0.55; g.fillText(txt,W/2,H/2); });
-    return new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,fog:false,side:THREE.DoubleSide}); };
+    return new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,fog:false}); };
   const sign=(lines,bg,fg,w,h)=>tex(w||512,h||256,(g,W,H)=>{ g.fillStyle=bg; g.fillRect(0,0,W,H); speckle(g,W,H,1800,['rgba(0,0,0,.4)','rgba(255,255,255,.08)'],0.6,2); g.strokeStyle=fg; g.lineWidth=8; g.strokeRect(10,10,W-20,H-20); g.fillStyle=fg; g.textAlign='center'; g.textBaseline='middle';
     lines.forEach((l,i)=>{ g.font=l[1]; g.fillText(l[0],W/2,H*(lines.length===1?0.52:(0.34+i*0.36))); }); for(let i=0;i<8;i++) blob(g,rand(0,W),rand(0,H),rand(4,18),'rgba(90,40,10,.35)'); });
   const M3={
@@ -2685,7 +2685,7 @@ function tzStopPosto(k){ const M3=TZG.M, s=tzSec(k);
   // placa alta de preço
   const pole=G3(cx(24),0,cx(s+5)); tzBx(pole,0.25,6,0.25,M3.trim,0,3,0); tzBx(pole,2.4,1.4,0.15,M3.sPosto,0,6.4,0); g.add(pole); addPropBox(cx(24),cx(s+5),0.15,0.15);
   // terminal (abrigo do ônibus) com neon
-  tzPl(g,6,0.95,M3.nTerminal,cx(25)+1.0,3.25,cx(s+18),0,-Math.PI/2);
+  tzPl(g,6,0.95,M3.nTerminal,cx(25)+1.0,3.25,cx(s+18),0,-Math.PI/2); tzPl(g,6,0.95,M3.nTerminal,cx(25)+1.12,3.25,cx(s+18),0,Math.PI/2);
   bake(g); tzBusShelter(k,18);
   // loja: prateleiras, balcão, freezers, bancada de trabalho
   for(const [c,r] of [[34.5,10],[34.5,15],[37,10],[37,15]]) tzProp('steel_frame_shelves_01',k,c,r,Math.PI/2,1.9,{byH:false});
@@ -3405,7 +3405,7 @@ function updateLights(dt){
     else if(Math.sin(l.ph*0.9)>0.995) f=0.6;
     l.L.intensity=base*f; l.bulb.material.color.setScalar(0.25+0.75*f*(base/1.25));
   }
-  hemi.intensity=CUR==='hosp'?(G.power?0.25:0.20):CUR==='farm'?(P.base<-1?0.13:(isOutside(P.pos.x,P.pos.z)?0.30:(G.power?0.26:0.22))):(G.power?0.29:0.24);
+  hemi.intensity=CUR==='tz'?(G.power?0.4:0.34):CUR==='hosp'?(G.power?0.25:0.20):CUR==='farm'?(P.base<-1?0.13:(isOutside(P.pos.x,P.pos.z)?0.30:(G.power?0.26:0.22))):(G.power?0.29:0.24);
   try{ eventsVisual(dt); }catch(e){}
   updateFires(dt); updateCity(dt); updateStaticLighting();
 }
@@ -11052,6 +11052,7 @@ function resetFlash(){ FL.on=false; FL.bat=1; FL.warned=false; flashL.intensity=
 /* ================= CHECKPOINT EVERY 10 ROUNDS: continue or save and leave ================= */
 function openCheckpoint(){
   if(!G.ckptPending) return;
+  if(CUR==='tz'){ G.ckptPending=false; return; }   // o ônibus e a missão do posto não cabem no save do meio da partida
   if(G.state!=='playing'||G.cardsOpen){ setTimeout(openCheckpoint,500); return; }
   G.ckptPending=false; G.state='ckpt'; IN.fire=false; IN.ads=false; IN.use=false; for(const k in keys) keys[k]=false;
   if(document.pointerLockElement) document.exitPointerLock();
@@ -13273,7 +13274,7 @@ function vmLightFrame(dt){ dt=Math.min(dt||0.016,0.05); VML.t-=dt;
 const _vlCol=new THREE.Color();
 /* seleção de mapas: passar o mouse mostra uma foto pronta do mapa (antes trocava o mapa 3D inteiro e travava) */
 function mapThumb(k){ const el=$('#mappick'); if(!el) return; for(const b of document.querySelectorAll('.mapc')) b.classList.toggle('on',b.dataset.map===k);
-  const img={bunker:'img/map_bunker.jpg',hosp:'img/map_hosp.jpg',farm:'img/map_farm.jpg'}[k]; el.style.backgroundImage=img?`linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.72)),url(${img})`:''; el.style.backgroundSize='cover'; el.style.backgroundPosition='center'; }
+  const img={bunker:'img/map_bunker.jpg',hosp:'img/map_hosp.jpg',farm:'img/map_farm.jpg',tz:'img/map_tz.jpg'}[k]; el.style.backgroundImage=img?`linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.72)),url(${img})`:''; el.style.backgroundSize='cover'; el.style.backgroundPosition='center'; }
 function previewMap(k){ if(k===CUR) return; setMap(k); const m=MAPS[k].menu; P.pos.set(m.x,0,m.z); for(const b of document.querySelectorAll('.mapc')) b.classList.toggle('on',b.dataset.map===k); }
 $('#play').addEventListener('click',()=>{ if(inParty()&&!isLeader()){ toast(`${SOC.party.leader} é o líder do grupo e escolhe o mapa. Quando ele começar, você entra junto.`); return; } openMapPick(inParty()?'host':'solo'); });
 $('#tab-play').addEventListener('click',()=>{ closeSocial(); });

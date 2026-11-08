@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, globalShortcut } = require('electron');
+const { app, BrowserWindow } = require('electron');
 const http = require('http');
 const path = require('path');
 
@@ -38,6 +38,13 @@ function createWindow() {
     }
   });
 
+  // Impede que Ctrl+W (ou Cmd+W) feche a janela durante os testes.
+  gameWindow.webContents.on('before-input-event', (event, input) => {
+    if ((input.control || input.meta) && input.key.toLowerCase() === 'w') {
+      event.preventDefault();
+    }
+  });
+
   gameWindow.loadURL('http://127.0.0.1:3000/');
   gameWindow.on('closed', () => { gameWindow = null; });
 }
@@ -59,5 +66,4 @@ app.whenReady().then(async () => {
   });
 });
 
-app.on('will-quit', () => globalShortcut.unregisterAll());
 app.on('window-all-closed', () => app.quit());

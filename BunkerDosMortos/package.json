@@ -2,15 +2,48 @@
   "name": "bunker-dos-mortos-v6",
   "version": "6.0.0",
   "private": true,
-  "description": "Servidor web e multiplayer WebSocket para Bunker dos Mortos",
-  "main": "server.js",
+  "description": "Bunker dos Mortos v6 - jogo local e multiplayer",
+  "main": "main.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "desktop": "electron .",
+    "build:win": "electron-builder --win portable"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
     "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.sena.bunkerdosmortos",
+    "productName": "Bunker dos Mortos",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "server.js",
+      "index.html",
+      "three.min.js",
+      "GLTFLoader.js",
+      "**/*",
+      "!dist/**",
+      "!node_modules/.cache/**"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "artifactName": "BunkerDosMortos-${version}-Windows.${ext}"
+    },
+    "portable": {
+      "artifactName": "BunkerDosMortos-${version}-Windows-Portable.${ext}"
+    }
   }
 }

@@ -1,0 +1,36 @@
+name: Build Windows desktop test
+on:
+  push:
+    branches:
+      - desktop-test-electron
+    paths:
+      - 'BunkerDosMortos/**'
+      - '.github/workflows/build-desktop.yml'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: BunkerDosMortos
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: BunkerDosMortos/package-lock.json
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build portable Windows executable
+        run: npm run build:win
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: BunkerDosMortos-Windows-Portable
+          path: BunkerDosMortos/dist/*.exe
+          if-no-files-found: error
+          retention-days: 14

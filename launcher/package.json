@@ -1,0 +1,29 @@
+{
+  "name": "bunker-dos-mortos-launcher",
+  "productName": "Bunker dos Mortos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Launcher do Bunker dos Mortos: baixa e atualiza o jogo, e abre numa janela própria.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.draxx46.bunkerdosmortos.launcher",
+    "productName": "Bunker dos Mortos",
+    "files": ["main.js", "preload.js", "index.html", "renderer.js"],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "artifactName": "BunkerLauncher-Setup.exe",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

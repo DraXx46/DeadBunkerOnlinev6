@@ -4,227 +4,92 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bunker dos Mortos</title>
-<meta name="description" content="Bunker dos Mortos: sobreviva às hordas de zumbis com seus amigos. Baixe o launcher para Windows.">
+<meta name="description" content="Bunker dos Mortos: sobreviva às hordas de zumbis com seus amigos. Mapas, personagens, caixas e download para Windows.">
 <style>
   :root {
     --bg: #0a0606;
+    --panel: rgba(20, 8, 8, 0.8);
     --blood: #8b0000;
     --blood-bright: #c81d1d;
     --bone: #d8cfc0;
+    --muted: #a89a88;
     --rust: #5a3a1a;
-    --fog: rgba(60, 10, 10, 0.35);
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  html, body {
-    min-height: 100%;
-    background: var(--bg);
-    color: var(--bone);
-    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-  }
-
-  body {
-    overflow-x: hidden;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Névoa e vinheta por cima de tudo */
+  html, body { min-height: 100%; background: var(--bg); color: var(--bone); font-family: "Segoe UI", Tahoma, Arial, sans-serif; }
+  body { overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column; }
   body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.9) 100%),
-      linear-gradient(to top, var(--fog), transparent 60%);
-    pointer-events: none;
-    z-index: 1;
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.9) 100%);
   }
-
-  /* Pulso vermelho de fundo */
   body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
     background: radial-gradient(circle at 50% 110%, rgba(139,0,0,0.35), transparent 60%);
     animation: pulse 4s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 0;
   }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
-  }
+  @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
   header, main, footer { position: relative; z-index: 2; }
 
   header {
-    padding: 1.2rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 1rem 2rem;
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
     border-bottom: 1px solid #2a1212;
   }
+  .logo-small { font-size: 0.95rem; letter-spacing: 0.3em; color: var(--blood-bright); text-transform: uppercase; }
 
-  .logo-small {
-    font-size: 0.95rem;
-    letter-spacing: 0.3em;
-    color: var(--blood-bright);
-    text-transform: uppercase;
+  nav.tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  nav.tabs button {
+    background: transparent; color: var(--muted); border: 1px solid #2a1212; padding: 0.55rem 1rem;
+    font-family: Impact, "Arial Black", sans-serif; font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
   }
+  nav.tabs button:hover { color: var(--bone); border-color: var(--blood); }
+  nav.tabs button[aria-selected="true"] { color: var(--bone); background: var(--blood); border-color: #3a0000; }
 
-  .tag-top {
-    font-size: 0.8rem;
-    color: #7a6a5a;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-  }
+  main { flex: 1; padding: 3rem 1.5rem 4rem; width: 100%; max-width: 1040px; margin: 0 auto; }
+  section[hidden] { display: none; }
 
-  main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 4rem 1.5rem;
-  }
-
-  .eyebrow {
-    font-size: 0.85rem;
-    letter-spacing: 0.5em;
-    color: var(--blood-bright);
-    text-transform: uppercase;
-    margin-bottom: 1rem;
-  }
-
-  h1 {
-    font-family: Impact, "Arial Black", sans-serif;
-    font-size: clamp(3rem, 10vw, 7rem);
-    line-height: 0.95;
-    text-transform: uppercase;
-    color: var(--bone);
-    text-shadow:
-      0 0 12px rgba(200, 29, 29, 0.6),
-      3px 0 0 var(--blood),
-      -3px 0 0 #1a3a4a;
-    animation: flicker 6s infinite;
-  }
-
-  @keyframes flicker {
-    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
-    20%, 24%, 55% { opacity: 0.55; }
-  }
-
-  .subtitle {
-    margin-top: 1.2rem;
-    font-size: clamp(1rem, 2.4vw, 1.3rem);
-    color: #b7a58f;
-    max-width: 38rem;
-    line-height: 1.6;
-  }
-
+  /* início */
+  .hero { text-align: center; padding: 2.5rem 0 1rem; }
+  .eyebrow { font-size: 0.85rem; letter-spacing: 0.5em; color: var(--blood-bright); text-transform: uppercase; margin-bottom: 1rem; }
+  h1 { font-family: Impact, "Arial Black", sans-serif; font-size: clamp(3rem, 10vw, 6.5rem); line-height: 0.95; text-transform: uppercase;
+       text-shadow: 0 0 12px rgba(200, 29, 29, 0.6), 3px 0 0 var(--blood), -3px 0 0 #1a3a4a; }
+  .subtitle { margin: 1.2rem auto 0; font-size: clamp(1rem, 2.4vw, 1.25rem); color: #b7a58f; max-width: 38rem; line-height: 1.6; }
   .btn {
-    display: inline-block;
-    margin-top: 2.5rem;
-    padding: 1.1rem 2.8rem;
-    font-family: Impact, "Arial Black", sans-serif;
-    font-size: 1.3rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--bone);
-    background: linear-gradient(180deg, var(--blood-bright), var(--blood));
-    border: 2px solid #3a0000;
-    box-shadow: 0 0 25px rgba(200, 29, 29, 0.45), inset 0 -4px 0 rgba(0,0,0,0.35);
-    text-decoration: none;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    display: inline-block; margin-top: 2.2rem; padding: 1.1rem 2.8rem;
+    font-family: Impact, "Arial Black", sans-serif; font-size: 1.3rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--bone); background: linear-gradient(180deg, var(--blood-bright), var(--blood));
+    border: 2px solid #3a0000; box-shadow: 0 0 25px rgba(200, 29, 29, 0.45), inset 0 -4px 0 rgba(0,0,0,0.35);
+    text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
+  .btn:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 0 40px rgba(200, 29, 29, 0.7), inset 0 -4px 0 rgba(0,0,0,0.35); }
+  .btn small { display: block; font-family: "Segoe UI", Tahoma, Arial, sans-serif; font-size: 0.75rem; letter-spacing: 0.08em; opacity: 0.8; margin-top: 0.2rem; text-transform: none; }
+  .req { margin-top: 1rem; font-size: 0.85rem; color: #7a6a5a; text-align: center; }
 
-  .btn:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 0 40px rgba(200, 29, 29, 0.7), inset 0 -4px 0 rgba(0,0,0,0.35);
-  }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.2rem; margin-top: 2.5rem; }
+  .card { background: var(--panel); border: 1px solid #2a1212; border-top: 3px solid var(--blood); padding: 1.4rem 1.3rem; }
+  .card .num { font-family: Impact, "Arial Black", sans-serif; font-size: 2rem; color: var(--blood-bright); }
+  .card h3 { margin: 0.4rem 0 0.5rem; font-size: 1.02rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .card p { font-size: 0.92rem; line-height: 1.5; color: #a89a88; }
 
-  .btn small {
-    display: block;
-    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    opacity: 0.8;
-    margin-top: 0.2rem;
-    text-transform: none;
-  }
-
-  .req {
-    margin-top: 1rem;
-    font-size: 0.85rem;
-    color: #7a6a5a;
-  }
-
-  section.steps {
-    margin-top: 5rem;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1.5rem;
-    max-width: 960px;
-    width: 100%;
-  }
-
-  .step {
-    background: rgba(20, 8, 8, 0.8);
-    border: 1px solid #2a1212;
-    border-top: 3px solid var(--blood);
-    padding: 1.6rem 1.4rem;
-    text-align: left;
-  }
-
-  .step .num {
-    font-family: Impact, "Arial Black", sans-serif;
-    font-size: 2.2rem;
-    color: var(--blood-bright);
-  }
-
-  .step h3 {
-    margin: 0.4rem 0 0.5rem;
-    font-size: 1.05rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .step p {
-    font-size: 0.92rem;
-    line-height: 1.5;
-    color: #a89a88;
-  }
-
-  .warning {
-    margin-top: 3rem;
-    max-width: 640px;
-    padding: 1rem 1.2rem;
-    border: 1px dashed var(--rust);
-    background: rgba(90, 58, 26, 0.12);
-    font-size: 0.88rem;
-    line-height: 1.55;
-    color: #bfae92;
-    text-align: left;
-  }
-
+  .warning { margin: 2.5rem auto 0; max-width: 640px; padding: 1rem 1.2rem; border: 1px dashed var(--rust); background: rgba(90,58,26,0.12); font-size: 0.88rem; line-height: 1.55; color: #bfae92; }
   .warning strong { color: #e0b070; }
 
-  footer {
-    padding: 1.5rem 2rem;
-    border-top: 1px solid #2a1212;
-    text-align: center;
-    font-size: 0.8rem;
-    color: #5f5246;
-    letter-spacing: 0.05em;
-  }
+  /* seções de conteúdo */
+  h2 { font-family: Impact, "Arial Black", sans-serif; font-size: clamp(2rem, 5vw, 3rem); text-transform: uppercase; color: var(--bone); letter-spacing: 0.02em; }
+  .intro { color: var(--muted); margin: 0.6rem 0 2rem; line-height: 1.6; max-width: 46rem; }
+
+  .list { display: grid; gap: 1rem; }
+  .item { background: var(--panel); border: 1px solid #2a1212; border-left: 3px solid var(--blood); padding: 1.2rem 1.4rem; }
+  .item h3 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .item .role { color: var(--blood-bright); font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 0.25rem 0 0.6rem; }
+  .item p { color: #a89a88; line-height: 1.55; font-size: 0.95rem; }
+  .item .tag { display: inline-block; margin-top: 0.6rem; font-size: 0.75rem; color: #b7a58f; border: 1px solid #3a2222; padding: 0.15rem 0.5rem; }
+
+  footer { padding: 1.5rem 2rem; border-top: 1px solid #2a1212; text-align: center; font-size: 0.8rem; color: #5f5246; letter-spacing: 0.05em; }
 
   @media (max-width: 600px) {
-    header { flex-direction: column; gap: 0.5rem; }
+    header { flex-direction: column; align-items: flex-start; }
     .btn { width: 100%; padding: 1rem 1.5rem; }
   }
 </style>
@@ -233,51 +98,105 @@
 
 <header>
   <div class="logo-small">Bunker dos Mortos</div>
-  <div class="tag-top">Versão Windows</div>
+  <nav class="tabs" role="tablist" aria-label="Seções do site">
+    <button role="tab" data-tab="inicio" aria-selected="true">Início</button>
+    <button role="tab" data-tab="mapas" aria-selected="false">Mapas</button>
+    <button role="tab" data-tab="personagens" aria-selected="false">Personagens</button>
+    <button role="tab" data-tab="caixas" aria-selected="false">Caixas</button>
+  </nav>
 </header>
 
 <main>
-  <div class="eyebrow">Sobreviva à horda</div>
-  <h1>Bunker<br>dos Mortos</h1>
-  <p class="subtitle">
-    Hordas de zumbis, armas improvisadas e um bunker que não aguenta para sempre.
-    Chame um amigo, feche a porta e sobreviva o máximo de rodadas que conseguir.
-  </p>
 
-  <a class="btn" href="https://github.com/DraXx46/DeadBunkerOnlinev6/releases/latest/download/BunkerLauncher-Setup.exe">
-    Baixar para Windows
-    <small>Launcher oficial · instalador .exe</small>
-  </a>
-  <p class="req">Windows 10 ou 11 · 64 bits</p>
+  <!-- INÍCIO -->
+  <section id="inicio" data-section>
+    <div class="hero">
+      <div class="eyebrow">Sobreviva à horda</div>
+      <h1>Bunker<br>dos Mortos</h1>
+      <p class="subtitle">
+        Hordas de zumbis, armas improvisadas e um bunker que não aguenta para sempre.
+        Chame um amigo, feche a porta e sobreviva o máximo de rodadas que conseguir.
+      </p>
+      <a class="btn" href="https://github.com/DraXx46/DeadBunkerOnlinev6/releases/latest/download/BunkerLauncher-Setup.exe">
+        Baixar para Windows
+        <small>Launcher oficial · instalador .exe</small>
+      </a>
+      <p class="req">Windows 10 ou 11 · 64 bits</p>
+    </div>
 
-  <section class="steps">
-    <div class="step">
-      <div class="num">01</div>
-      <h3>Baixe o launcher</h3>
-      <p>O instalador leve baixa o jogo e mantém tudo atualizado para você.</p>
+    <div class="grid">
+      <div class="card"><div class="num">01</div><h3>Baixe o launcher</h3><p>O instalador leve baixa o jogo e mantém tudo atualizado para você.</p></div>
+      <div class="card"><div class="num">02</div><h3>Execute o instalador</h3><p>Siga os passos na tela. A instalação é rápida e não precisa de configuração.</p></div>
+      <div class="card"><div class="num">03</div><h3>Entre no bunker</h3><p>Abra o launcher, clique em Jogar e chame seu amigo para a partida.</p></div>
     </div>
-    <div class="step">
-      <div class="num">02</div>
-      <h3>Execute o instalador</h3>
-      <p>Siga os passos na tela. A instalação é rápida e não precisa de configuração.</p>
-    </div>
-    <div class="step">
-      <div class="num">03</div>
-      <h3>Entre no bunker</h3>
-      <p>Abra o launcher, clique em Jogar e chame seu amigo para a partida.</p>
+
+    <div class="warning">
+      <strong>O Windows pode mostrar um aviso de "editor desconhecido".</strong>
+      Isso acontece com programas novos que ainda não têm assinatura digital. Para continuar,
+      clique em <strong>Mais informações</strong> e depois em <strong>Executar assim mesmo</strong>.
     </div>
   </section>
 
-  <div class="warning">
-    <strong>O Windows pode mostrar um aviso de "editor desconhecido".</strong>
-    Isso acontece com programas novos que ainda não têm assinatura digital. Para continuar,
-    clique em <strong>Mais informações</strong> e depois em <strong>Executar assim mesmo</strong>.
-  </div>
+  <!-- MAPAS -->
+  <section id="mapas" data-section hidden>
+    <h2>Mapas</h2>
+    <p class="intro">Cada mapa tem seu próprio lobby no modo online. Escolha o mapa ao criar a sala.</p>
+    <div class="list">
+      <div class="item"><h3>Bunker dos Mortos</h3><p>O bunker onde tudo começou. É o mapa principal e onde a maioria das partidas acontece.</p></div>
+      <div class="item"><h3>Fazenda Santa Luzia</h3><p>Campo aberto e estruturas rurais, com mais espaço para se movimentar e cercar as hordas.</p></div>
+      <div class="item"><h3>Hospício Vale Negro</h3><p>Corredores e celas. Um ambiente fechado, onde cada porta pode ser a última.</p></div>
+      <div class="item"><h3>Tranzitch</h3><p>Área de transição, com um ônibus no mapa e zumbis que aparecem pelos arredores.</p></div>
+      <div class="item"><h3>Arena X1</h3><p>Mapa de confronto, pensado para a modalidade X1.</p></div>
+    </div>
+  </section>
+
+  <!-- PERSONAGENS -->
+  <section id="personagens" data-section hidden>
+    <h2>Personagens</h2>
+    <p class="intro">Cada sobrevivente tem uma habilidade passiva que muda o jeito de jogar. Ao entrar na partida, cada jogador escolhe o seu.</p>
+    <div class="list">
+      <div class="item"><h3>Recruta Ramos</h3><div class="role">Deixado para trás no bunker</div><p>Ramos voltou ao bunker para buscar um rádio que nunca funcionou. Com a passiva Treinamento de Campo, ele recarrega mais rápido, carrega granadas extras e tem mais munição de reserva.</p></div>
+      <div class="item"><h3>Dra. Helena Vargas</h3><div class="role">Psiquiatra do Hospício Vale Negro</div><p>Conhece bem os corredores do hospício e os pacientes que nunca saíram de lá.</p></div>
+      <div class="item"><h3>Sargento Moreira</h3><div class="role">"Tanque", comandante de blindado</div><p>Resistente e direto. Pesado no combate, o tipo de sobrevivente que segura a linha de frente.</p></div>
+      <div class="item"><h3>Padre Tomás</h3><div class="role">Exorcista da diocese</div><p>Enfrenta os mortos com fé e com a experiência de quem já lidou com coisas piores.</p></div>
+      <div class="item"><h3>Iara "Raposa" Tavares</h3><div class="role">Atiradora de reconhecimento</div><p>Precisa de um tiro para cada alvo. Rápida para se esconder e escolher o momento certo.</p></div>
+      <div class="item"><h3>Viktor</h3><div class="role">Sobrevivente reconstruído com implantes militares</div><p>Tem o núcleo do projeto V.I.K.T.O.R. e usa implantes para se mover, se proteger e causar dano em área.</p></div>
+    </div>
+  </section>
+
+  <!-- CAIXAS -->
+  <section id="caixas" data-section hidden>
+    <h2>Caixas</h2>
+    <p class="intro">As caixas trazem facas e artefatos com diferentes raridades. Quanto mais rara a caixa, maior a chance de um item de raridade alta.</p>
+    <div class="list">
+      <div class="item"><h3>Caixa de Suprimentos</h3><p>A mais comum. Quase sempre facas e artefatos simples.</p></div>
+      <div class="item"><h3>Caixa Militar</h3><p>Equipamento do exército. Boa chance de itens incomuns e raros.</p></div>
+      <div class="item"><h3>Caixa do Bunker</h3><p>Guardada no fundo do bunker. Nada comum aqui dentro.</p></div>
+      <div class="item"><h3>Caixa Sombria</h3><p>Selada com cera preta. Só itens raros para cima.</p></div>
+      <div class="item"><h3>Caixa Oculta</h3><p>A mais rara. 3% de chance de um item Oculto vermelho.</p></div>
+    </div>
+  </section>
+
 </main>
 
 <footer>
   Bunker dos Mortos · Feito para jogar com amigos
 </footer>
+
+<script>
+  (function () {
+    var tabs = document.querySelectorAll('nav.tabs button');
+    var sections = document.querySelectorAll('[data-section]');
+    function show(name) {
+      tabs.forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tab === name ? 'true' : 'false'); });
+      sections.forEach(function (s) { s.hidden = s.id !== name; });
+      window.scrollTo(0, 0);
+    }
+    tabs.forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.tab); history.replaceState(null, '', '#' + b.dataset.tab); }); });
+    var start = location.hash.replace('#', '');
+    show(document.getElementById(start) && start ? start : 'inicio');
+  })();
+</script>
 
 </body>
 </html>

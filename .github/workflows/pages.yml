@@ -35,7 +35,7 @@ jobs:
       - name: Upload game files
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./BunkerDosMortos
+          path: ./site
 
       - name: Deploy to GitHub Pages
         id: deployment

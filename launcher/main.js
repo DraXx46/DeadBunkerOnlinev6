@@ -153,6 +153,15 @@ async function update() {
   }
 }
 
+/* Ctrl+W fecharia a janela (comportamento padrão do Electron). Bloqueia para não fechar o jogo sem querer. */
+function blockCtrlW(win) {
+  win.webContents.on('before-input-event', (event, input) => {
+    if (input.type === 'keyDown' && input.control && input.key.toLowerCase() === 'w') {
+      event.preventDefault();
+    }
+  });
+}
+
 function launchGame() {
   gameWin = new BrowserWindow({
     width: 1280,
@@ -171,6 +180,7 @@ function launchGame() {
   });
   gameWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
+  blockCtrlW(gameWin);
   gameWin.loadURL(GAME_URL);
   gameWin.on('closed', () => { gameWin = null; });
 
@@ -218,6 +228,7 @@ if (!app.requestSingleInstanceLock()) {
         contextIsolation: true
       }
     });
+    blockCtrlW(launcherWin);
     launcherWin.loadFile(path.join(__dirname, 'index.html'));
     launcherWin.on('closed', () => { launcherWin = null; });
     launcherWin.webContents.once('did-finish-load', () => update());

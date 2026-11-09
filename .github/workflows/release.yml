@@ -1,0 +1,74 @@
+name: Publicar jogo e launcher
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'BunkerDosMortos/**'
+      - 'launcher/**'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: true
+
+jobs:
+  game:
+    name: Empacotar o jogo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gerar game.zip e manifest.json
+        run: |
+          cd BunkerDosMortos
+          zip -qr ../game.zip . -x 'node_modules/*'
+          cd ..
+          VERSION=$(git rev-parse --short=12 HEAD)
+          SHA=$(sha256sum game.zip | cut -d' ' -f1)
+          SIZE=$(stat -c%s game.zip)
+          URL="https://github.com/${{ github.repository }}/releases/download/game-latest/game.zip"
+          printf '{"version":"%s","sha256":"%s","size":%s,"url":"%s"}\n' "$VERSION" "$SHA" "$SIZE" "$URL" > manifest.json
+          cat manifest.json
+
+      - name: Publicar na release game-latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release view game-latest >/dev/null 2>&1 || \
+            gh release create game-latest --latest=false --title "Jogo (última versão)" --notes "Gerado automaticamente a cada push na main."
+          gh release upload game-latest game.zip manifest.json --clobber
+
+  launcher:
+    name: Gerar instalador do launcher
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: launcher
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Gerar instalador (NSIS)
+        run: npm run dist
+
+      - name: Publicar na release launcher-latest
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release view launcher-latest >/dev/null 2>&1 || \
+            gh release create launcher-latest --title "Launcher (Windows)" --notes "Instalador do launcher."
+          gh release upload launcher-latest dist/BunkerLauncher-Setup.exe --clobber

@@ -153,6 +153,22 @@ async function update() {
   }
 }
 
+/* DualSense (PS5) por WebHID: gatilhos adaptativos, vibração e luz. No Electron o acesso ao controle
+   precisa ser liberado aqui, senão o jogo nunca vê o controle. Só aceitamos o controle da Sony (vendor 0x054c). */
+const SONY_VENDOR_ID = 0x054c;
+const ALLOWED_PERMISSIONS = new Set(['hid', 'fullscreen', 'pointerLock']);
+function allowDualSense(win) {
+  const ses = win.webContents.session;
+  ses.setPermissionCheckHandler((_wc, permission) => ALLOWED_PERMISSIONS.has(permission));
+  ses.setPermissionRequestHandler((_wc, permission, callback) => callback(ALLOWED_PERMISSIONS.has(permission)));
+  ses.setDevicePermissionHandler((details) => details.deviceType === 'hid' && details.device.vendorId === SONY_VENDOR_ID);
+  win.webContents.on('select-hid-device', (event, details, callback) => {
+    event.preventDefault();
+    const pad = details.deviceList.find((d) => d.vendorId === SONY_VENDOR_ID);
+    callback(pad ? pad.deviceId : '');
+  });
+}
+
 /* Ctrl+W fecharia a janela (comportamento padrão do Electron). Bloqueia para não fechar o jogo sem querer. */
 function blockCtrlW(win) {
   win.webContents.on('before-input-event', (event, input) => {
@@ -182,6 +198,7 @@ function launchGame() {
   gameWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
   blockCtrlW(gameWin);
+  allowDualSense(gameWin);
   gameWin.loadURL(GAME_URL);
   gameWin.on('closed', () => { gameWin = null; });
 

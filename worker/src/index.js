@@ -6,6 +6,15 @@ let STORE = null;
 const MAX_PAYLOAD = 16 * 1024;
 /* Única conta com acesso aos comandos de administrador (comparado em minúsculas). */
 const ADMIN_KEY = 'dev_draxx';
+/* Saldo de drax/rubi é entregue por "presentes": o servidor guarda até o cliente confirmar (giftAck).
+   Códigos de resgate valem uma vez. Tudo é salvo no storage do Durable Object. */
+const gifts = new Map();  // conta (minúsculas) -> [{ id, drax, rubi, from }]
+const codes = new Map();  // código -> { drax, rubi, used, usedBy }
+function giftPut(k, g) {
+  const arr = (gifts.get(k) || []).concat([g]);
+  gifts.set(k, arr); STORE && STORE.put('g:' + k, arr).catch(() => {});
+  const c = online.get(k); if (c) send(c.ws, { type: 'gifts', items: [g] });
+}
 const rooms = new Map();
 const clients = new Map();
 const CODE_CHARS = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
@@ -309,11 +318,45 @@ async function onMessage(client, ws, buffer) {
       else if (!client.friends) client.friends = new Set();
       if (msg.look && typeof msg.look === 'object') client.look = { c: String(msg.look.c || '').slice(0, 24), v: String(msg.look.v || '').slice(0, 24), lvl: Math.max(0, Math.min(999, Number(msg.look.lvl) || 0)) };
       send(ws, { type: 'loginOk', reqId, name: u.name, admin: k === ADMIN_KEY });
+      if ((gifts.get(k) || []).length) send(ws, { type: 'gifts', items: gifts.get(k) });
       sendSocial(client); socialChanged();
       return;
     }
-    if (!client.user && ['friends', 'friendReq', 'friendAnswer', 'partyInvite', 'partyAnswer', 'partyLeave', 'partyKick', 'partyGo', 'look'].includes(msg.type)) {
+    if (!client.user && ['friends', 'friendReq', 'friendAnswer', 'partyInvite', 'partyAnswer', 'partyLeave', 'partyKick', 'partyGo', 'look', 'giftAck', 'adminGive', 'codeCreate', 'redeem'].includes(msg.type)) {
       sendError(ws, reqId, 'Entre com sua conta primeiro.'); return;
+    }
+    if (msg.type === 'giftAck') {
+      const k = keyOf(client.user), ids = new Set((Array.isArray(msg.ids) ? msg.ids : []).map(String));
+      const left = (gifts.get(k) || []).filter(g => !ids.has(g.id));
+      if (left.length) { gifts.set(k, left); STORE && STORE.put('g:' + k, left).catch(() => {}); }
+      else { gifts.delete(k); STORE && STORE.delete('g:' + k).catch(() => {}); }
+      return;
+    }
+    if (msg.type === 'adminGive' || msg.type === 'codeCreate') {
+      if (keyOf(client.user) !== ADMIN_KEY) { sendError(ws, reqId, 'Comando restrito ao administrador.'); return; }
+      const drax = Math.max(0, Math.min(1000000, Math.floor(Number(msg.drax) || 0)));
+      const rubi = Math.max(0, Math.min(1000000, Math.floor(Number(msg.rubi) || 0)));
+      if (!drax && !rubi) { sendError(ws, reqId, 'Informe uma quantidade maior que zero.'); return; }
+      if (msg.type === 'adminGive') {
+        const to = keyOf(String(msg.to || ''));
+        if (!users.has(to)) { sendError(ws, reqId, 'Jogador não encontrado.'); return; }
+        giftPut(to, { id: randHex(8), drax, rubi, from: client.user });
+        send(ws, { type: 'ok', reqId, text: `Enviado: ${drax} drax e ${rubi} rubi para ${users.get(to).name}.` });
+        return;
+      }
+      const code = randHex(5).toUpperCase();
+      codes.set(code, { drax, rubi, used: false });
+      STORE && STORE.put('c:' + code, codes.get(code)).catch(() => {});
+      send(ws, { type: 'ok', reqId, text: `Código ${code}: ${drax} drax e ${rubi} rubi. Vale uma vez.` });
+      return;
+    }
+    if (msg.type === 'redeem') {
+      const code = String(msg.code || '').trim().toUpperCase(), c = codes.get(code), me = keyOf(client.user);
+      if (!c || c.used) { sendError(ws, reqId, 'Código inválido ou já usado.'); return; }
+      c.used = true; c.usedBy = me; STORE && STORE.put('c:' + code, c).catch(() => {});
+      giftPut(me, { id: 'c' + code, drax: c.drax, rubi: c.rubi, from: 'código' });
+      send(ws, { type: 'ok', reqId, text: 'Código resgatado! O saldo aparece agora.' });
+      return;
     }
     if (msg.type === 'friends') {
       client.friends = new Set((Array.isArray(msg.list) ? msg.list : []).map(keyOf).filter(f => f && f !== keyOf(client.user)).slice(0, 100));
@@ -408,6 +451,8 @@ export class Lobby {
     state.blockConcurrencyWhile(async () => {
       const all = await state.storage.list({ prefix: 'u:' });
       for (const [key, u] of all) users.set(key.slice(2), u);
+      for (const [key, v] of await state.storage.list({ prefix: 'g:' })) gifts.set(key.slice(2), v);
+      for (const [key, v] of await state.storage.list({ prefix: 'c:' })) codes.set(key.slice(2), v);
     });
   }
   startTimers() {

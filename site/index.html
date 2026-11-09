@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bunker dos Mortos</title>
+<meta name="description" content="Bunker dos Mortos: sobreviva às hordas de zumbis com seus amigos. Baixe o launcher para Windows.">
+<style>
+  :root {
+    --bg: #0a0606;
+    --blood: #8b0000;
+    --blood-bright: #c81d1d;
+    --bone: #d8cfc0;
+    --rust: #5a3a1a;
+    --fog: rgba(60, 10, 10, 0.35);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--bone);
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+  }
+
+  body {
+    overflow-x: hidden;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Névoa e vinheta por cima de tudo */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.9) 100%),
+      linear-gradient(to top, var(--fog), transparent 60%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Pulso vermelho de fundo */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 110%, rgba(139,0,0,0.35), transparent 60%);
+    animation: pulse 4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  header, main, footer { position: relative; z-index: 2; }
+
+  header {
+    padding: 1.2rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #2a1212;
+  }
+
+  .logo-small {
+    font-size: 0.95rem;
+    letter-spacing: 0.3em;
+    color: var(--blood-bright);
+    text-transform: uppercase;
+  }
+
+  .tag-top {
+    font-size: 0.8rem;
+    color: #7a6a5a;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 1.5rem;
+  }
+
+  .eyebrow {
+    font-size: 0.85rem;
+    letter-spacing: 0.5em;
+    color: var(--blood-bright);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-family: Impact, "Arial Black", sans-serif;
+    font-size: clamp(3rem, 10vw, 7rem);
+    line-height: 0.95;
+    text-transform: uppercase;
+    color: var(--bone);
+    text-shadow:
+      0 0 12px rgba(200, 29, 29, 0.6),
+      3px 0 0 var(--blood),
+      -3px 0 0 #1a3a4a;
+    animation: flicker 6s infinite;
+  }
+
+  @keyframes flicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+    20%, 24%, 55% { opacity: 0.55; }
+  }
+
+  .subtitle {
+    margin-top: 1.2rem;
+    font-size: clamp(1rem, 2.4vw, 1.3rem);
+    color: #b7a58f;
+    max-width: 38rem;
+    line-height: 1.6;
+  }
+
+  .btn {
+    display: inline-block;
+    margin-top: 2.5rem;
+    padding: 1.1rem 2.8rem;
+    font-family: Impact, "Arial Black", sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--bone);
+    background: linear-gradient(180deg, var(--blood-bright), var(--blood));
+    border: 2px solid #3a0000;
+    box-shadow: 0 0 25px rgba(200, 29, 29, 0.45), inset 0 -4px 0 rgba(0,0,0,0.35);
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 0 40px rgba(200, 29, 29, 0.7), inset 0 -4px 0 rgba(0,0,0,0.35);
+  }
+
+  .btn small {
+    display: block;
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    opacity: 0.8;
+    margin-top: 0.2rem;
+    text-transform: none;
+  }
+
+  .req {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: #7a6a5a;
+  }
+
+  section.steps {
+    margin-top: 5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    max-width: 960px;
+    width: 100%;
+  }
+
+  .step {
+    background: rgba(20, 8, 8, 0.8);
+    border: 1px solid #2a1212;
+    border-top: 3px solid var(--blood);
+    padding: 1.6rem 1.4rem;
+    text-align: left;
+  }
+
+  .step .num {
+    font-family: Impact, "Arial Black", sans-serif;
+    font-size: 2.2rem;
+    color: var(--blood-bright);
+  }
+
+  .step h3 {
+    margin: 0.4rem 0 0.5rem;
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .step p {
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: #a89a88;
+  }
+
+  .warning {
+    margin-top: 3rem;
+    max-width: 640px;
+    padding: 1rem 1.2rem;
+    border: 1px dashed var(--rust);
+    background: rgba(90, 58, 26, 0.12);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: #bfae92;
+    text-align: left;
+  }
+
+  .warning strong { color: #e0b070; }
+
+  footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #2a1212;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #5f5246;
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 600px) {
+    header { flex-direction: column; gap: 0.5rem; }
+    .btn { width: 100%; padding: 1rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-small">Bunker dos Mortos</div>
+  <div class="tag-top">Versão Windows</div>
+</header>
+
+<main>
+  <div class="eyebrow">Sobreviva à horda</div>
+  <h1>Bunker<br>dos Mortos</h1>
+  <p class="subtitle">
+    Hordas de zumbis, armas improvisadas e um bunker que não aguenta para sempre.
+    Chame um amigo, feche a porta e sobreviva o máximo de rodadas que conseguir.
+  </p>
+
+  <a class="btn" href="https://github.com/DraXx46/DeadBunkerOnlinev6/releases/latest/download/BunkerLauncher-Setup.exe">
+    Baixar para Windows
+    <small>Launcher oficial · instalador .exe</small>
+  </a>
+  <p class="req">Windows 10 ou 11 · 64 bits</p>
+
+  <section class="steps">
+    <div class="step">
+      <div class="num">01</div>
+      <h3>Baixe o launcher</h3>
+      <p>O instalador leve baixa o jogo e mantém tudo atualizado para você.</p>
+    </div>
+    <div class="step">
+      <div class="num">02</div>
+      <h3>Execute o instalador</h3>
+      <p>Siga os passos na tela. A instalação é rápida e não precisa de configuração.</p>
+    </div>
+    <div class="step">
+      <div class="num">03</div>
+      <h3>Entre no bunker</h3>
+      <p>Abra o launcher, clique em Jogar e chame seu amigo para a partida.</p>
+    </div>
+  </section>
+
+  <div class="warning">
+    <strong>O Windows pode mostrar um aviso de "editor desconhecido".</strong>
+    Isso acontece com programas novos que ainda não têm assinatura digital. Para continuar,
+    clique em <strong>Mais informações</strong> e depois em <strong>Executar assim mesmo</strong>.
+  </div>
+</main>
+
+<footer>
+  Bunker dos Mortos · Feito para jogar com amigos
+</footer>
+
+</body>
+</html>

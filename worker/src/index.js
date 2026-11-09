@@ -4,6 +4,8 @@
    Um único Durable Object ("lobby") guarda tudo na memória; as contas ficam salvas no storage dele. */
 let STORE = null;
 const MAX_PAYLOAD = 16 * 1024;
+/* Única conta com acesso aos comandos de administrador (comparado em minúsculas). */
+const ADMIN_KEY = 'dev_draxx';
 const rooms = new Map();
 const clients = new Map();
 const CODE_CHARS = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
@@ -306,7 +308,7 @@ async function onMessage(client, ws, buffer) {
       if (Array.isArray(msg.friends)) client.friends = new Set(msg.friends.map(keyOf).filter(f => f && f !== k).slice(0, 100));
       else if (!client.friends) client.friends = new Set();
       if (msg.look && typeof msg.look === 'object') client.look = { c: String(msg.look.c || '').slice(0, 24), v: String(msg.look.v || '').slice(0, 24), lvl: Math.max(0, Math.min(999, Number(msg.look.lvl) || 0)) };
-      send(ws, { type: 'loginOk', reqId, name: u.name });
+      send(ws, { type: 'loginOk', reqId, name: u.name, admin: k === ADMIN_KEY });
       sendSocial(client); socialChanged();
       return;
     }

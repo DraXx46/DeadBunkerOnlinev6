@@ -6241,7 +6241,7 @@ $('#chatin').addEventListener('blur',()=>{ if(CHAT.open) setTimeout(()=>{ if(CHA
 /* ================= CONTA, AMIGOS E GRUPO =================
    A conta (nome + senha) e a lista de amigos ficam salvas no navegador; o servidor só confere a senha
    enquanto está ligado e refaz tudo sozinho quando o jogador entra de novo. */
-const SOC={acc:null,friends:[],online:[],party:null,pending:[],offline:false,loginBusy:false,lookSig:''};
+const SOC={acc:null,friends:[],online:[],party:null,pending:[],offline:false,loginBusy:false,lookSig:'',admin:false};
 const store2={get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } },set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }};
 SOC.acc=store2.get('bdm_acc',null); if(SOC.acc&&!(SOC.acc.name&&SOC.acc.pass)) SOC.acc=null;
 SOC.friends=store2.get('bdm_friends',[]); if(!Array.isArray(SOC.friends)) SOC.friends=[];
@@ -10040,7 +10040,7 @@ const CMDS={
   clear:{d:'limpa o console',f:()=>{ conLog.textContent=''; }},
   echo:{d:'escreve um texto',f:a=>cprint(a.join(' '))},
   status:{d:'mostra mapa, rodada, pontos e jogadores',f:()=>{ cprint(`mapa: ${MAPS[CUR].name} (${CUR}) · estado: ${G.state} · rodada ${G.round} · pontos ${G.points} · zumbis vivos ${zlist().filter(z=>!z.dead).length}`); cprint(`modo: ${NET.mode||'solo'} · jogadores: ${1+[...NET.players.values()].filter(r=>r.has).length} · ameaça ${G.tl|0} · sv_cheats ${CHEAT.on?1:0}`); cprint(`posição: ${P.pos.x.toFixed(1)} ${P.y.toFixed(1)} ${P.pos.z.toFixed(1)} · yaw ${(P.yaw*57.3).toFixed(0)}°`); }},
-  sv_cheats:{d:'0/1 libera os comandos de trapaça (drax por abate fica desligado)',f:a=>{ if(a[0]==null){ cprint(`sv_cheats = ${CHEAT.on?1:0}`); return; } if(!needHost()) return; CHEAT.on=bool(a[0]); if(!CHEAT.on){ Object.assign(CHEAT,{god:false,buddha:false,noclip:false,ammo:0,ts:1,grav:1,botStop:false,forceKind:null,tl:null}); } cprint(`sv_cheats ${CHEAT.on?1:0}${CHEAT.on?' · com trapaça ligada, abates e rodadas não rendem drax':''}`,CHEAT.on?'warn':''); hudCheat(); }},
+  sv_cheats:{d:'0/1 libera os comandos de trapaça (drax por abate fica desligado)',f:a=>{ if(!SOC.admin){ cprint('sv_cheats é restrito ao administrador','err'); return; } if(a[0]==null){ cprint(`sv_cheats = ${CHEAT.on?1:0}`); return; } if(!needHost()) return; CHEAT.on=bool(a[0]); if(!CHEAT.on){ Object.assign(CHEAT,{god:false,buddha:false,noclip:false,ammo:0,ts:1,grav:1,botStop:false,forceKind:null,tl:null}); } cprint(`sv_cheats ${CHEAT.on?1:0}${CHEAT.on?' · com trapaça ligada, abates e rodadas não rendem drax':''}`,CHEAT.on?'warn':''); hudCheat(); }},
   god:{cheat:1,d:'invencível',f:a=>cvarToggle('god',a[0],'godmode')},
   buddha:{cheat:1,d:'leva dano mas nunca passa de 1 de vida',f:a=>cvarToggle('buddha',a[0],'buddha')},
   noclip:{cheat:1,d:'voa e atravessa paredes (Espaço sobe, Ctrl/C desce)',f:a=>{ cvarToggle('noclip',a[0],'noclip'); if(!CHEAT.noclip) P.vy=0; }},
@@ -10217,6 +10217,7 @@ function runCommand(line){
     const a=part.trim().split(/\s+/).filter(Boolean); if(!a.length) continue;
     const name=a.shift().toLowerCase(); const c=CMDS[name];
     if(!c){ cprint(`Comando desconhecido: ${name}. Digite help.`,'err'); continue; }
+    if(c.cheat&&!SOC.admin){ cprint(`${name} é restrito ao administrador`,'err'); continue; }
     if(c.cheat&&!CHEAT.on){ cprint(`${name} precisa de sv_cheats 1`,'err'); continue; }
     try{ c.f(a); }catch(e){ cprint('Erro: '+e.message,'err'); }
   }
@@ -12625,7 +12626,7 @@ function handleNetMessage(m){
   else if(m.type==='disconnect'){ NET.connected=false; $('#host').disabled=true; $('#join-code-btn').disabled=true; lobbyMsg('Conexão perdida com o servidor online.'); }
   else if(m.type==='pres'){ const pc=(NET.peerCache||[]).find(q=>q.id===m.id); if(pc){ pc.presence=m.data||null; if(G.state==='lobby'){ const t=performance.now(); if(t-(handleNetMessage.lt||0)>500){ handleNetMessage.lt=t; updateRoomLobbyUI(); } } } }
   else if(m.type==='chat'){ chatRecv(m); }
-  else if(m.type==='loginOk'||m.type==='ok'){ showPending(m.reqId,m); }
+  else if(m.type==='loginOk'||m.type==='ok'){ if(m.type==='loginOk') SOC.admin=!!m.admin; showPending(m.reqId,m); }
   else if(['social','friendReq','friendAdded','partyInvite','party','partyNote','partyGo','kicked'].includes(m.type)){ socialMsg(m); }
   else if(m.type==='pickState'||m.type==='pickDone'||m.type==='pickTaken'){ pickNetMsg(m); }
   else if(m.type==='pong'){ /* keepalive response */ }

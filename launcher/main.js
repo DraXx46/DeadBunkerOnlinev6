@@ -170,6 +170,7 @@ function launchGame() {
     minHeight: 500,
     backgroundColor: '#0a0606',
     title: 'Bunker dos Mortos',
+    icon: path.join(__dirname, 'build', 'icon.png'),
     autoHideMenuBar: true,
     webPreferences: { sandbox: true, contextIsolation: true }
   });
@@ -221,6 +222,7 @@ if (!app.requestSingleInstanceLock()) {
       maximizable: false,
       backgroundColor: '#0a0606',
       title: 'Bunker dos Mortos - Launcher',
+      icon: path.join(__dirname, 'build', 'icon.png'),
       autoHideMenuBar: true,
       webPreferences: {
         preload: path.join(__dirname, 'preload.js'),

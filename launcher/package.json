@@ -16,14 +16,19 @@
   "build": {
     "appId": "com.draxx46.bunkerdosmortos.launcher",
     "productName": "Bunker dos Mortos",
-    "files": ["main.js", "preload.js", "index.html", "renderer.js"],
+    "files": ["main.js", "preload.js", "index.html", "renderer.js", "build/icon.png"],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icon.png"
     },
     "nsis": {
       "artifactName": "BunkerLauncher-Setup.exe",
+      "shortcutName": "Bunker dos Mortos",
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "uninstallDisplayName": "Bunker dos Mortos"
     }
   }
 }

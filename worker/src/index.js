@@ -1,5 +1,5 @@
 'use strict';
-/* Bunker dos Mortos — servidor online na Cloudflare (Worker + Durable Object).
+/* Dead Bunker — servidor online na Cloudflare (Worker + Durable Object).
    Porte do server.js do Render: mesma lógica de salas, contas, amigos e grupo.
    Um único Durable Object ("lobby") guarda tudo na memória; as contas ficam salvas no storage dele. */
 let STORE = null;

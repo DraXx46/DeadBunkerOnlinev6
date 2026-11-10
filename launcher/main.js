@@ -1,9 +1,12 @@
 'use strict';
-/* Launcher do Bunker dos Mortos.
+/* Launcher do Dead Bunker.
    1. Consulta o manifesto da última versão do jogo (release "game-latest" no GitHub).
    2. Se houver versão nova, baixa o zip, confere o SHA-256 e substitui a pasta do jogo.
    3. Abre o jogo numa janela própria, servido pelo esquema bunker:// (sem servidor local). */
 const { app, BrowserWindow, ipcMain, net, protocol } = require('electron');
+/* O jogo agora se chama Dead Bunker, mas a pasta de dados continua a antiga ("Bunker dos Mortos"):
+   assim quem já tinha o launcher não perde o jogo baixado nem o progresso salvo (localStorage fica nessa pasta). */
+try { app.setPath('userData', require('path').join(app.getPath('appData'), 'Bunker dos Mortos')); } catch (e) {}
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -185,7 +188,7 @@ function launchGame() {
     minWidth: 800,
     minHeight: 500,
     backgroundColor: '#0a0606',
-    title: 'Bunker dos Mortos',
+    title: 'Dead Bunker',
     icon: path.join(__dirname, 'build', 'icon.png'),
     autoHideMenuBar: true,
     webPreferences: { sandbox: true, contextIsolation: true }
@@ -238,7 +241,7 @@ if (!app.requestSingleInstanceLock()) {
       resizable: false,
       maximizable: false,
       backgroundColor: '#0a0606',
-      title: 'Bunker dos Mortos - Launcher',
+      title: 'Dead Bunker - Launcher',
       icon: path.join(__dirname, 'build', 'icon.png'),
       autoHideMenuBar: true,
       webPreferences: {

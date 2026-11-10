@@ -3,200 +3,546 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bunker dos Mortos</title>
-<meta name="description" content="Bunker dos Mortos: sobreviva às hordas de zumbis com seus amigos. Mapas, personagens, caixas e download para Windows.">
+<title>DEAD BUNKER · Sobreviva à horda</title>
+<meta name="description" content="DEAD BUNKER: tiro em primeira pessoa contra hordas de zumbis, sozinho ou com amigos. Seis personagens, mapas com segredos, chefes, caixas e um launcher para Windows.">
+<meta property="og:title" content="DEAD BUNKER">
+<meta property="og:description" content="Feche a porta, recarregue e sobreviva o máximo de rodadas que conseguir.">
+<meta property="og:image" content="img/shots/boss.jpg">
+<link rel="icon" href="img/icon.png">
 <style>
-  :root {
-    --bg: #0a0606;
-    --panel: rgba(20, 8, 8, 0.8);
-    --blood: #8b0000;
-    --blood-bright: #c81d1d;
-    --bone: #d8cfc0;
-    --muted: #a89a88;
-    --rust: #5a3a1a;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { min-height: 100%; background: var(--bg); color: var(--bone); font-family: "Segoe UI", Tahoma, Arial, sans-serif; }
-  body { overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column; }
-  body::before {
-    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1;
-    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.9) 100%);
-  }
-  body::after {
-    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background: radial-gradient(circle at 50% 110%, rgba(139,0,0,0.35), transparent 60%);
-    animation: pulse 4s ease-in-out infinite;
-  }
-  @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+:root{
+  --bg:#070505; --bg2:#0e0909; --panel:rgba(22,12,11,.78); --line:#2b1614; --line2:#3d1f1b;
+  --blood:#8e130d; --red:#c8241b; --red2:#ff3b2f; --bone:#ece4d2; --muted:#a8998a; --dim:#6d5f54; --gold:#e8b44a;
+  --r-com:#a7adb3; --r-inc:#5fb0ef; --r-rar:#4f6dff; --r-epi:#b45cff; --r-len:#f4c03a; --r-ocu:#ff1a2a;
+  --display:Impact,"Haettenschweiler","Arial Narrow Bold","Arial Black",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:72px;overflow-x:hidden}
+body{background:var(--bg);color:var(--bone);font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;line-height:1.55;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+::selection{background:var(--red);color:#fff}
+/* grão de filme por cima de tudo */
+body::after{content:"";position:fixed;inset:-50%;pointer-events:none;z-index:100;opacity:.07;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain 1s steps(6) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
 
-  header, main, footer { position: relative; z-index: 2; }
+/* ---------- navegação ---------- */
+.nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:1.4rem;padding:.8rem 2rem;transition:background .3s,border-color .3s,padding .3s;border-bottom:1px solid transparent}
+.nav.solid{background:rgba(7,5,5,.88);backdrop-filter:blur(8px);border-color:var(--line);padding:.55rem 2rem}
+.brand{font-family:var(--display);font-size:1.45rem;letter-spacing:.06em;text-decoration:none;line-height:1;display:flex;gap:.35em}
+.brand b{color:var(--red);font-weight:400}
+.nav ul{display:flex;gap:1.2rem;list-style:none;margin-left:auto}
+.nav ul a{text-decoration:none;font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);position:relative;padding:.3rem 0;transition:color .2s}
+.nav ul a::after{content:"";position:absolute;left:0;right:100%;bottom:-2px;height:2px;background:var(--red);transition:right .25s}
+.nav ul a:hover,.nav ul a.on{color:var(--bone)} .nav ul a:hover::after,.nav ul a.on::after{right:0}
+.nav .dl{font-family:var(--display);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;background:var(--red);padding:.5rem 1.1rem;border:1px solid #4a0a06;box-shadow:0 0 18px rgba(200,36,27,.35);transition:transform .15s,box-shadow .15s}
+.nav .dl:hover{transform:translateY(-1px);box-shadow:0 0 28px rgba(200,36,27,.6)}
+.burger{display:none;margin-left:auto;background:none;border:1px solid var(--line2);width:42px;height:38px}
+.burger span{display:block;width:20px;height:2px;background:var(--bone);margin:4px auto}
 
-  header {
-    padding: 1rem 2rem;
-    display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
-    border-bottom: 1px solid #2a1212;
-  }
-  .logo-small { font-size: 0.95rem; letter-spacing: 0.3em; color: var(--blood-bright); text-transform: uppercase; }
+/* ---------- hero ---------- */
+.hero{position:relative;min-height:100vh;display:grid;place-items:center;text-align:center;overflow:hidden;isolation:isolate}
+.slides{position:absolute;inset:0;z-index:-4}
+.slides i{position:absolute;inset:-4%;background:center/cover no-repeat;opacity:0;filter:saturate(.7) contrast(1.1) brightness(.5);animation:kb 28s infinite}
+.slides i:nth-child(2){animation-delay:7s}.slides i:nth-child(3){animation-delay:14s}.slides i:nth-child(4){animation-delay:21s}
+@keyframes kb{0%{opacity:0;transform:scale(1.02) translate(0,0)}5%{opacity:1}25%{opacity:1}31%{opacity:0;transform:scale(1.12) translate(-2%,-1%)}100%{opacity:0}}
+#embers{position:absolute;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none}
+.hero .shade{position:absolute;inset:0;z-index:-3;background:radial-gradient(ellipse at 50% 45%,rgba(7,5,5,.15),rgba(7,5,5,.92) 75%),linear-gradient(180deg,rgba(7,5,5,.4),transparent 30%,transparent 70%,var(--bg))}
+.hero .torch{position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(circle 260px at var(--mx,50%) var(--my,45%),rgba(255,214,150,.13),transparent 70%);mix-blend-mode:screen}
+.hero-in{padding:7rem 1.5rem 5rem;max-width:980px}
+.kicker{font-size:.8rem;letter-spacing:.55em;text-transform:uppercase;color:var(--red2);margin-bottom:1.2rem;opacity:0;animation:up .9s .2s forwards}
+.title{font-family:var(--display);font-weight:400;font-size:clamp(4rem,15vw,11rem);line-height:.82;letter-spacing:.02em;text-transform:uppercase;position:relative;opacity:0;animation:up 1s .35s forwards}
+.title .t1{display:block;color:var(--bone);text-shadow:0 6px 0 #000,0 0 40px rgba(0,0,0,.8)}
+.title .t2{display:block;color:var(--red);-webkit-text-stroke:2px #2a0604;text-shadow:0 6px 0 #160302,0 0 60px rgba(200,36,27,.4);position:relative}
+.title .t2::before,.title .t2::after{content:attr(data-t);position:absolute;inset:0;pointer-events:none;opacity:0}
+.title .t2::before{color:#3fd0ff;transform:translate(-4px,0);animation:glitch 6s infinite}
+.title .t2::after{color:#ff2a20;transform:translate(4px,0);animation:glitch 6s .08s infinite}
+@keyframes glitch{0%,92%,100%{opacity:0;clip-path:inset(0 0 100% 0)}93%{opacity:.7;clip-path:inset(20% 0 55% 0)}95%{opacity:.6;clip-path:inset(60% 0 10% 0)}97%{opacity:.7;clip-path:inset(40% 0 35% 0)}}
+.drip{position:absolute;left:50%;bottom:-.25em;width:min(60%,520px);height:4px;transform:translateX(-50%);background:linear-gradient(90deg,transparent,var(--red),transparent)}
+.drip i{position:absolute;top:3px;width:4px;border-radius:0 0 4px 4px;background:var(--blood);animation:drip 5s ease-in infinite}
+@keyframes drip{0%,55%{height:0;opacity:1}85%{height:26px;opacity:1}100%{height:30px;opacity:0}}
+.lead{margin:2.2rem auto 0;max-width:40rem;font-size:clamp(1.02rem,2.2vw,1.22rem);color:#c9b9a5;opacity:0;animation:up .9s .6s forwards}
+.ctas{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:2.4rem;opacity:0;animation:up .9s .8s forwards}
+@keyframes up{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+.btn{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:.15rem;min-width:240px;padding:1rem 2rem;font-family:var(--display);font-size:1.3rem;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;color:var(--bone);background:linear-gradient(180deg,var(--red),var(--blood));border:1px solid #3a0503;box-shadow:0 0 30px rgba(200,36,27,.4),inset 0 -4px 0 rgba(0,0,0,.35);transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden}
+.btn::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);transform:skewX(-20deg);transition:left .5s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 0 46px rgba(200,36,27,.7),inset 0 -4px 0 rgba(0,0,0,.35)} .btn:hover::after{left:130%}
+.btn small{font-family:"Segoe UI",system-ui,sans-serif;font-size:.72rem;letter-spacing:.06em;text-transform:none;opacity:.85}
+.btn.ghost{background:rgba(10,6,6,.55);border-color:var(--line2);box-shadow:none}
+.btn.ghost:hover{border-color:var(--red);box-shadow:0 0 30px rgba(200,36,27,.25)}
+.req{margin-top:1rem;font-size:.82rem;color:var(--dim)}
+.stats{display:flex;gap:2.6rem;justify-content:center;flex-wrap:wrap;margin-top:3.4rem;opacity:0;animation:up .9s 1s forwards}
+.stat b{display:block;font-family:var(--display);font-weight:400;font-size:2.6rem;line-height:1;color:var(--bone)}
+.stat span{font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+.scroll{position:absolute;bottom:1.6rem;left:50%;transform:translateX(-50%);width:24px;height:38px;border:2px solid rgba(236,228,210,.35);border-radius:14px}
+.scroll::after{content:"";position:absolute;left:50%;top:7px;width:3px;height:8px;margin-left:-1.5px;background:var(--bone);border-radius:2px;animation:wheel 1.8s infinite}
+@keyframes wheel{0%{opacity:0;transform:translateY(0)}30%{opacity:1}100%{opacity:0;transform:translateY(12px)}}
 
-  nav.tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-  nav.tabs button {
-    background: transparent; color: var(--muted); border: 1px solid #2a1212; padding: 0.55rem 1rem;
-    font-family: Impact, "Arial Black", sans-serif; font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
-  }
-  nav.tabs button:hover { color: var(--bone); border-color: var(--blood); }
-  nav.tabs button[aria-selected="true"] { color: var(--bone); background: var(--blood); border-color: #3a0000; }
+/* ---------- seções ---------- */
+section.blk{position:relative;padding:7rem 1.5rem}
+.wrap{max-width:1180px;margin:0 auto}
+.eyebrow{font-size:.74rem;letter-spacing:.5em;text-transform:uppercase;color:var(--red2)}
+h2{font-family:var(--display);font-weight:400;font-size:clamp(2.4rem,6vw,4.2rem);line-height:.95;text-transform:uppercase;letter-spacing:.015em;margin:.6rem 0 1rem}
+.intro{color:var(--muted);max-width:44rem;font-size:1.04rem}
+.reveal{opacity:0;transform:translateY(34px);transition:opacity .8s,transform .8s cubic-bezier(.2,.8,.2,1)}
+.reveal.in{opacity:1;transform:none}
+.alt{background:linear-gradient(180deg,var(--bg),var(--bg2) 20%,var(--bg2) 80%,var(--bg))}
+.tape{position:absolute;left:-5%;right:-5%;height:34px;background:repeating-linear-gradient(-45deg,#e8b44a 0 22px,#141008 22px 44px);transform:rotate(-1.4deg);opacity:.85;box-shadow:0 6px 18px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.tape span{font-family:var(--display);letter-spacing:.4em;background:#141008;color:#e8b44a;padding:0 1.2rem;font-size:.95rem;white-space:nowrap}
 
-  main { flex: 1; padding: 3rem 1.5rem 4rem; width: 100%; max-width: 1040px; margin: 0 auto; }
-  section[hidden] { display: none; }
+/* recursos */
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.2rem;margin-top:3rem}
+.fc{background:var(--panel);border:1px solid var(--line);padding:1.6rem 1.4rem 1.5rem;position:relative;overflow:hidden;transition:transform .25s,border-color .25s}
+.fc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red);transform:scaleY(.25);transform-origin:top;transition:transform .35s}
+.fc:hover{transform:translateY(-4px);border-color:var(--line2)} .fc:hover::before{transform:scaleY(1)}
+.fc svg{width:34px;height:34px;color:var(--red2);margin-bottom:1rem}
+.fc h3{font-size:1rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.45rem}
+.fc p{color:var(--muted);font-size:.93rem}
 
-  /* início */
-  .hero { text-align: center; padding: 2.5rem 0 1rem; }
-  .eyebrow { font-size: 0.85rem; letter-spacing: 0.5em; color: var(--blood-bright); text-transform: uppercase; margin-bottom: 1rem; }
-  h1 { font-family: Impact, "Arial Black", sans-serif; font-size: clamp(3rem, 10vw, 6.5rem); line-height: 0.95; text-transform: uppercase;
-       text-shadow: 0 0 12px rgba(200, 29, 29, 0.6), 3px 0 0 var(--blood), -3px 0 0 #1a3a4a; }
-  .subtitle { margin: 1.2rem auto 0; font-size: clamp(1rem, 2.4vw, 1.25rem); color: #b7a58f; max-width: 38rem; line-height: 1.6; }
-  .btn {
-    display: inline-block; margin-top: 2.2rem; padding: 1.1rem 2.8rem;
-    font-family: Impact, "Arial Black", sans-serif; font-size: 1.3rem; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--bone); background: linear-gradient(180deg, var(--blood-bright), var(--blood));
-    border: 2px solid #3a0000; box-shadow: 0 0 25px rgba(200, 29, 29, 0.45), inset 0 -4px 0 rgba(0,0,0,0.35);
-    text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-  .btn:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 0 40px rgba(200, 29, 29, 0.7), inset 0 -4px 0 rgba(0,0,0,0.35); }
-  .btn small { display: block; font-family: "Segoe UI", Tahoma, Arial, sans-serif; font-size: 0.75rem; letter-spacing: 0.08em; opacity: 0.8; margin-top: 0.2rem; text-transform: none; }
-  .req { margin-top: 1rem; font-size: 0.85rem; color: #7a6a5a; text-align: center; }
+/* mapas */
+.maps{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem;margin-top:3rem}
+.map{grid-column:span 4;position:relative;aspect-ratio:16/10;overflow:hidden;border:1px solid var(--line);background:#000;text-align:left;padding:0}
+.map.big{grid-column:span 8;grid-row:span 2;aspect-ratio:auto;min-height:100%}
+.map img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .8s,filter .5s;filter:saturate(.8) brightness(.72)}
+.map:hover img{transform:scale(1.06);filter:saturate(1) brightness(.9)}
+.map .cap{position:absolute;left:0;right:0;bottom:0;padding:1.2rem 1.2rem 1rem;background:linear-gradient(0deg,rgba(0,0,0,.92),transparent)}
+.map .cap small{font-size:.68rem;letter-spacing:.3em;text-transform:uppercase;color:var(--red2)}
+.map .cap h3{font-family:var(--display);font-weight:400;font-size:1.7rem;letter-spacing:.03em;text-transform:uppercase;line-height:1.05}
+.map .cap p{color:#c2b4a2;font-size:.86rem;max-height:0;overflow:hidden;transition:max-height .45s}
+.map:hover .cap p,.map:focus-visible .cap p{max-height:6em}
+.map .new{position:absolute;top:.8rem;left:.8rem;background:var(--red);font-family:var(--display);letter-spacing:.12em;font-size:.8rem;padding:.2rem .6rem}
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.2rem; margin-top: 2.5rem; }
-  .card { background: var(--panel); border: 1px solid #2a1212; border-top: 3px solid var(--blood); padding: 1.4rem 1.3rem; }
-  .card .num { font-family: Impact, "Arial Black", sans-serif; font-size: 2rem; color: var(--blood-bright); }
-  .card h3 { margin: 0.4rem 0 0.5rem; font-size: 1.02rem; text-transform: uppercase; letter-spacing: 0.05em; }
-  .card p { font-size: 0.92rem; line-height: 1.5; color: #a89a88; }
+/* personagens */
+.chars{display:grid;grid-template-columns:1.05fr 1fr;gap:2.4rem;margin-top:3rem;align-items:stretch}
+.cstage{position:relative;min-height:520px;overflow:hidden;border:1px solid var(--line);background:#000}
+.cstage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;transition:opacity .45s,transform 6s ease-out}
+.cstage img.fade{opacity:0;transform:scale(1.04)}
+.cstage::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 55%,rgba(7,5,5,.75)),linear-gradient(0deg,rgba(7,5,5,.7),transparent 35%)}
+.cname{position:absolute;left:1.4rem;bottom:1.2rem;z-index:2}
+.cname h3{font-family:var(--display);font-weight:400;font-size:clamp(2rem,4vw,3rem);text-transform:uppercase;line-height:1}
+.cname p{color:var(--red2);font-size:.8rem;letter-spacing:.18em;text-transform:uppercase}
+.picker{display:grid;grid-template-columns:repeat(6,1fr);gap:.55rem;margin-bottom:1.6rem}
+.picker button{position:relative;aspect-ratio:1;border:1px solid var(--line2);background:#000;padding:0;overflow:hidden;transition:transform .2s,border-color .2s}
+.picker button img{width:100%;height:100%;object-fit:cover;filter:grayscale(.85) brightness(.7);transition:filter .25s}
+.picker button:hover img,.picker button[aria-selected="true"] img{filter:none}
+.picker button[aria-selected="true"]{border-color:var(--red);box-shadow:0 0 0 2px var(--red),0 0 18px rgba(200,36,27,.4);transform:translateY(-3px)}
+.cinfo .story{color:#c9b9a5;font-style:italic;border-left:2px solid var(--line2);padding-left:1rem;margin-bottom:1.4rem;min-height:4.6em}
+.skill{display:grid;grid-template-columns:44px 1fr;gap:.9rem;padding:.95rem 0;border-top:1px solid var(--line)}
+.skill .k{width:44px;height:44px;display:grid;place-items:center;font-family:var(--display);font-size:1.25rem;border:1px solid var(--line2);background:rgba(200,36,27,.08);color:var(--red2)}
+.skill h4{font-size:.95rem;text-transform:uppercase;letter-spacing:.06em}
+.skill h4 small{font-weight:400;color:var(--dim);letter-spacing:.14em;font-size:.68rem;margin-left:.4rem}
+.skill p{color:var(--muted);font-size:.9rem}
 
-  .warning { margin: 2.5rem auto 0; max-width: 640px; padding: 1rem 1.2rem; border: 1px dashed var(--rust); background: rgba(90,58,26,0.12); font-size: 0.88rem; line-height: 1.55; color: #bfae92; }
-  .warning strong { color: #e0b070; }
+/* novidades */
+.news{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.2rem;margin-top:3rem}
+.nc{background:var(--panel);border:1px solid var(--line);overflow:hidden;display:flex;flex-direction:column}
+.nc .ph{aspect-ratio:16/8;overflow:hidden;position:relative;background:#120a09}
+.nc .ph img{width:100%;height:100%;object-fit:cover;transition:transform .7s}
+.nc:hover .ph img{transform:scale(1.05)}
+.nc .tx{padding:1.3rem 1.3rem 1.4rem}
+.nc .tag{font-size:.66rem;letter-spacing:.28em;text-transform:uppercase;color:var(--gold)}
+.nc h3{font-family:var(--display);font-weight:400;font-size:1.55rem;text-transform:uppercase;letter-spacing:.02em;margin:.25rem 0 .5rem}
+.nc p{color:var(--muted);font-size:.92rem}
+.nc ul{margin:.7rem 0 0 1rem;color:var(--muted);font-size:.88rem}
+.patch{margin-top:2.4rem;border:1px solid var(--line)}
+.patch summary{list-style:none;cursor:pointer;padding:1.1rem 1.3rem;display:flex;justify-content:space-between;align-items:center;font-family:var(--display);letter-spacing:.06em;font-size:1.15rem;text-transform:uppercase;background:var(--panel)}
+.patch summary::-webkit-details-marker{display:none}
+.patch summary::after{content:"+";font-size:1.6rem;color:var(--red2);transition:transform .25s}
+.patch[open] summary::after{transform:rotate(45deg)}
+.patch .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.6rem;padding:1.4rem 1.3rem 1.6rem}
+.patch h4{font-size:.78rem;letter-spacing:.24em;text-transform:uppercase;color:var(--red2);margin-bottom:.5rem}
+.patch li{color:var(--muted);font-size:.88rem;margin:0 0 .35rem 1rem}
 
-  /* seções de conteúdo */
-  h2 { font-family: Impact, "Arial Black", sans-serif; font-size: clamp(2rem, 5vw, 3rem); text-transform: uppercase; color: var(--bone); letter-spacing: 0.02em; }
-  .intro { color: var(--muted); margin: 0.6rem 0 2rem; line-height: 1.6; max-width: 46rem; }
+/* arsenal */
+.guns{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:2rem}
+.gun{border:1px solid var(--line2);padding:.55rem .9rem;font-size:.86rem;letter-spacing:.05em;background:rgba(255,255,255,.02);transition:background .2s,border-color .2s,transform .2s}
+.gun:hover{border-color:var(--red);background:rgba(200,36,27,.08);transform:translateY(-2px)}
+.gun.hot{border-color:var(--gold);color:var(--gold)}
+.gun i{font-style:normal;font-size:.7rem;color:var(--dim);margin-left:.4rem;letter-spacing:.1em;text-transform:uppercase}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:2.4rem;align-items:start}
+.perks{display:grid;grid-template-columns:repeat(2,1fr);gap:.8rem;margin-top:2rem}
+.perk{display:flex;gap:.8rem;align-items:center;padding:.8rem;border:1px solid var(--line);background:var(--panel)}
+.perk .bt{width:22px;height:42px;border-radius:6px 6px 4px 4px;flex:none;position:relative;box-shadow:inset -4px 0 0 rgba(0,0,0,.25),0 0 14px var(--c)}
+.perk .bt::before{content:"";position:absolute;left:6px;right:6px;top:-8px;height:9px;background:#222;border-radius:2px 2px 0 0}
+.perk b{display:block;font-size:.88rem;text-transform:uppercase;letter-spacing:.05em}
+.perk span{font-size:.8rem;color:var(--muted)}
 
-  .list { display: grid; gap: 1rem; }
-  .item { background: var(--panel); border: 1px solid #2a1212; border-left: 3px solid var(--blood); padding: 1.2rem 1.4rem; }
-  .item h3 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.04em; }
-  .item .role { color: var(--blood-bright); font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 0.25rem 0 0.6rem; }
-  .item p { color: #a89a88; line-height: 1.55; font-size: 0.95rem; }
-  .item .tag { display: inline-block; margin-top: 0.6rem; font-size: 0.75rem; color: #b7a58f; border: 1px solid #3a2222; padding: 0.15rem 0.5rem; }
+/* caixas */
+.boxes{display:grid;grid-template-columns:330px 1fr;gap:2.4rem;margin-top:3rem;align-items:start}
+.blist{display:grid;gap:.5rem}
+.blist button{display:flex;align-items:center;gap:.8rem;text-align:left;padding:.85rem 1rem;border:1px solid var(--line);background:var(--panel);transition:border-color .2s,transform .2s}
+.blist button:hover{transform:translateX(4px)}
+.blist button[aria-selected="true"]{border-color:var(--bc);box-shadow:inset 3px 0 0 var(--bc)}
+.blist .sw{width:16px;height:16px;transform:rotate(45deg);background:var(--bc);box-shadow:0 0 10px var(--bc);flex:none}
+.blist b{display:block;font-size:.92rem}
+.blist small{color:var(--dim);font-size:.78rem}
+.opener{border:1px solid var(--line);background:var(--panel);padding:1.6rem}
+.reelwin{position:relative;height:150px;overflow:hidden;border:1px solid var(--line2);background:#0b0707;margin:1.2rem 0}
+.reelwin::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--gold);z-index:3;box-shadow:0 0 12px var(--gold)}
+.reelwin::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(90deg,#0b0707,transparent 18%,transparent 82%,#0b0707)}
+.reel{display:flex;gap:8px;position:absolute;top:14px;left:0;will-change:transform}
+.tile{flex:none;width:118px;height:120px;border:1px solid #2a2222;border-bottom:4px solid var(--rc);background:radial-gradient(circle at 50% 35%,color-mix(in srgb,var(--rc) 28%,transparent),#120d0c 70%);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:.5rem;font-size:.72rem;text-align:center;color:#d8cbbb}
+.tile .ic{font-size:2rem;flex:1;display:grid;place-items:center;color:var(--rc);text-shadow:0 0 14px var(--rc)}
+.odds{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem;margin-top:.4rem}
+.odds div{border:1px solid var(--line);padding:.55rem .3rem;text-align:center;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em}
+.odds b{display:block;font-family:var(--display);font-weight:400;font-size:1.25rem;letter-spacing:.02em}
+.won{min-height:2.2em;margin-top:.9rem;font-size:1rem}
+.won b{font-family:var(--display);font-weight:400;letter-spacing:.06em;font-size:1.3rem}
 
-  footer { padding: 1.5rem 2rem; border-top: 1px solid #2a1212; text-align: center; font-size: 0.8rem; color: #5f5246; letter-spacing: 0.05em; }
+/* galeria */
+.gal{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.7rem;margin-top:2.6rem}
+.gal button{padding:0;border:1px solid var(--line);background:#000;aspect-ratio:16/9;overflow:hidden}
+.gal img{width:100%;height:100%;object-fit:cover;filter:brightness(.82);transition:transform .6s,filter .4s}
+.gal button:hover img{transform:scale(1.06);filter:none}
+.lb{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.92);display:grid;place-items:center;padding:3vw;opacity:0;pointer-events:none;transition:opacity .25s}
+.lb.on{opacity:1;pointer-events:auto}
+.lb img{max-height:86vh;border:1px solid var(--line2);box-shadow:0 20px 80px #000}
+.lb p{margin-top:.8rem;color:var(--muted);text-align:center}
+.lb .x{position:absolute;top:1rem;right:1.4rem;background:none;border:none;font-size:2.2rem;color:var(--bone)}
 
-  @media (max-width: 600px) {
-    header { flex-direction: column; align-items: flex-start; }
-    .btn { width: 100%; padding: 1rem 1.5rem; }
-  }
+/* FAQ */
+.faq{margin-top:2.4rem;display:grid;gap:.6rem;max-width:860px}
+.faq details{border:1px solid var(--line);background:var(--panel)}
+.faq summary{list-style:none;cursor:pointer;padding:1rem 1.2rem;font-weight:600;display:flex;justify-content:space-between;gap:1rem}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"›";color:var(--red2);transform:rotate(90deg);transition:transform .2s;font-size:1.3rem;line-height:1}
+.faq details[open] summary::after{transform:rotate(-90deg)}
+.faq details p{padding:0 1.2rem 1.1rem;color:var(--muted);font-size:.94rem}
+
+/* download final */
+.final{text-align:center;position:relative;overflow:hidden;padding:8rem 1.5rem}
+.final::before{content:"";position:absolute;inset:0;background:url(img/shots/city.jpg) center/cover;filter:brightness(.25) saturate(.7);z-index:-1}
+.final::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent,var(--bg) 75%);z-index:-1}
+.final{isolation:isolate}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;max-width:900px;margin:3rem auto 0;text-align:left}
+.steps div{border-top:2px solid var(--red);padding-top:.8rem}
+.steps b{font-family:var(--display);font-weight:400;font-size:1.8rem;color:var(--red2)}
+.steps h4{text-transform:uppercase;letter-spacing:.05em;font-size:.95rem}
+.steps p{color:var(--muted);font-size:.88rem}
+.warn{max-width:680px;margin:2.4rem auto 0;padding:1rem 1.2rem;border:1px dashed #6a4a22;background:rgba(232,180,74,.06);color:#d6c39a;font-size:.88rem;text-align:left}
+footer{border-top:1px solid var(--line);padding:2rem;text-align:center;color:var(--dim);font-size:.82rem;letter-spacing:.06em}
+footer .brand{justify-content:center;margin-bottom:.4rem;font-size:1.2rem}
+
+@media (max-width:980px){
+  .nav ul{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;gap:0;background:rgba(7,5,5,.97);border-bottom:1px solid var(--line);padding:.5rem 2rem 1rem}
+  .nav ul.open{display:flex} .nav ul a{display:block;padding:.7rem 0}
+  .burger{display:block} .nav .dl{display:none}
+  .chars,.split,.boxes{grid-template-columns:1fr} .cstage{min-height:420px}
+  .map,.map.big{grid-column:span 12;aspect-ratio:16/9;min-height:0}
+  .steps{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation:none!important;transition:none!important} .reveal,.kicker,.title,.lead,.ctas,.stats{opacity:1;transform:none} }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo-small">Bunker dos Mortos</div>
-  <nav class="tabs" role="tablist" aria-label="Seções do site">
-    <button role="tab" data-tab="inicio" aria-selected="true">Início</button>
-    <button role="tab" data-tab="mapas" aria-selected="false">Mapas</button>
-    <button role="tab" data-tab="personagens" aria-selected="false">Personagens</button>
-    <button role="tab" data-tab="caixas" aria-selected="false">Caixas</button>
-  </nav>
+<nav class="nav" id="nav">
+  <a class="brand" href="#topo">DEAD <b>BUNKER</b></a>
+  <ul id="menu">
+    <li><a href="#jogo">O jogo</a></li>
+    <li><a href="#mapas">Mapas</a></li>
+    <li><a href="#personagens">Personagens</a></li>
+    <li><a href="#novidades">Novidades</a></li>
+    <li><a href="#arsenal">Arsenal</a></li>
+    <li><a href="#caixas">Caixas</a></li>
+    <li><a href="#faq">Dúvidas</a></li>
+  </ul>
+  <a class="dl" href="#baixar">Baixar</a>
+  <button class="burger" id="burger" aria-label="Abrir menu" aria-expanded="false"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="hero" id="topo">
+  <div class="slides" aria-hidden="true"><i style="background-image:url(img/shots/city.jpg)"></i><i style="background-image:url(img/maps/bunker.jpg)"></i><i style="background-image:url(img/shots/boss.jpg)"></i><i style="background-image:url(img/maps/hosp.jpg)"></i></div>
+  <canvas id="embers" aria-hidden="true"></canvas>
+  <div class="shade"></div><div class="torch" id="torch"></div>
+  <div class="hero-in">
+    <p class="kicker">Tiro em primeira pessoa · Zumbis · Co-op online</p>
+    <h1 class="title"><span class="t1">Dead</span><span class="t2" data-t="Bunker">Bunker</span><span class="drip"><i style="left:18%;animation-delay:.4s"></i><i style="left:47%;animation-delay:2.1s"></i><i style="left:71%;animation-delay:3.3s"></i></span></h1>
+    <p class="lead">O caminhão foi embora sem você. Pregue as tábuas nas janelas, junte pontos, ligue a energia e aguente quantas noites conseguir — sozinho ou com seus amigos.</p>
+    <div class="ctas">
+      <a class="btn" href="https://github.com/DraXx46/DeadBunkerOnlinev6/releases/latest/download/BunkerLauncher-Setup.exe">Baixar para Windows<small>Launcher oficial · atualiza sozinho</small></a>
+      <a class="btn ghost" href="#novidades">Ver novidades<small>Cidade, chefe mutante, máquina do tempo…</small></a>
+    </div>
+    <p class="req">Windows 10 ou 11 · 64 bits · grátis</p>
+    <div class="stats">
+      <div class="stat"><b data-count="7">0</b><span>Mapas</span></div>
+      <div class="stat"><b data-count="6">0</b><span>Personagens</span></div>
+      <div class="stat"><b data-count="17">0</b><span>Armas</span></div>
+      <div class="stat"><b data-count="12">0</b><span>Eventos</span></div>
+      <div class="stat"><b>∞</b><span>Rodadas</span></div>
+    </div>
+  </div>
+  <a class="scroll" href="#jogo" aria-label="Rolar para baixo"></a>
 </header>
 
-<main>
-
-  <!-- INÍCIO -->
-  <section id="inicio" data-section>
-    <div class="hero">
-      <div class="eyebrow">Sobreviva à horda</div>
-      <h1>Bunker<br>dos Mortos</h1>
-      <p class="subtitle">
-        Hordas de zumbis, armas improvisadas e um bunker que não aguenta para sempre.
-        Chame um amigo, feche a porta e sobreviva o máximo de rodadas que conseguir.
-      </p>
-      <a class="btn" href="https://github.com/DraXx46/DeadBunkerOnlinev6/releases/latest/download/BunkerLauncher-Setup.exe">
-        Baixar para Windows
-        <small>Launcher oficial · instalador .exe</small>
-      </a>
-      <p class="req">Windows 10 ou 11 · 64 bits</p>
+<!-- ================= O JOGO ================= -->
+<section class="blk" id="jogo">
+  <div class="wrap">
+    <p class="eyebrow reveal">Como se joga</p>
+    <h2 class="reveal">Cada noite é pior que a anterior</h2>
+    <p class="intro reveal">Matar zumbis rende pontos. Pontos abrem portas, compram armas na parede, bebidas, a caixa misteriosa e o afiador. A cada rodada eles chegam em maior número, mais rápidos e mais resistentes — até alguém cair.</p>
+    <div class="feat">
+      <div class="fc reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M14.5 14.5c3.5-.6 6.5 1.6 6.5 5.5"/></svg><h3>Co-op online</h3><p>Crie uma sala, mande o código para os amigos e joguem juntos. Vocês veem a lanterna uns dos outros no escuro.</p></div>
+      <div class="fc reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><h3>Habilidade e ultimate</h3><p>Cada personagem tem uma passiva, uma habilidade (Z) e uma ultimate (X) — com mãos na tela, fogo, raios e cura.</p></div>
+      <div class="fc reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="7" height="10" rx="1"/><rect x="14" y="4" width="7" height="10" rx="1"/><path d="M6.5 17v3M17.5 17v3"/></svg><h3>Cartas de modificador</h3><p>Escolha cartas entre as rodadas. No fim do jogo aparecem cartas exclusivas de cada personagem, tiro congelante e tiro-granada.</p></div>
+      <div class="fc reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 2h6M10 2v4l-4 6v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8l-4-6V2"/><path d="M6 14h12"/></svg><h3>Bebidas</h3><p>Máquinas espalhadas pelos mapas: Couraça, Mão Ligeira, Dedo Nervoso e as novas Soro da Vida (um reviver a mais) e Mula de Carga (3ª arma).</p></div>
+      <div class="fc reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 4l6 6-9 9H5v-6z"/><path d="M12 6l6 6"/></svg><h3>Afiador e forja</h3><p>Melhore a arma até o nível máximo. Depois, deixe-a 5 rodadas na forja: ela volta muito mais forte.</p></div>
+      <div class="fc reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 4"/></svg><h3>Eventos aleatórios</h3><p>Apagão, fúria, roleta da sorte, troca de personagem, um sósia seu como mini-chefe, chuva ácida, eclipse…</p></div>
+      <div class="fc reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l3 6 6 .9-4.5 4.3 1 6.3L12 16.8 6.5 19.5l1-6.3L3 8.9 9 8z"/></svg><h3>Relíquias raras</h3><p>Zumbis às vezes deixam cair um poder que dura 5 rodadas: tiro explosivo, super velocidade, lanterna forte, regeneração…</p></div>
+      <div class="fc reveal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 8h16v12H4zM2 4h20v4H2zM12 8v12"/></svg><h3>Recompensas</h3><p>A cada 3 rodadas você ganha uma caixa, faca ou artefato. No fim, o anel de XP mostra tudo o que você conquistou.</p></div>
     </div>
+  </div>
+</section>
 
-    <div class="grid">
-      <div class="card"><div class="num">01</div><h3>Baixe o launcher</h3><p>O instalador leve baixa o jogo e mantém tudo atualizado para você.</p></div>
-      <div class="card"><div class="num">02</div><h3>Execute o instalador</h3><p>Siga os passos na tela. A instalação é rápida e não precisa de configuração.</p></div>
-      <div class="card"><div class="num">03</div><h3>Entre no bunker</h3><p>Abra o launcher, clique em Jogar e chame seu amigo para a partida.</p></div>
+<!-- ================= MAPAS ================= -->
+<section class="blk alt" id="mapas">
+  <div class="tape" style="top:0"><span>ÁREA CONTAMINADA · NÃO ENTRE · ÁREA CONTAMINADA · NÃO ENTRE</span></div>
+  <div class="wrap">
+    <p class="eyebrow reveal">Lugares para morrer</p>
+    <h2 class="reveal">Mapas</h2>
+    <p class="intro reveal">Todo mapa esconde um objetivo: ligar a energia, montar peças, consertar um carro ou viajar no tempo. Passe o mouse para ler.</p>
+    <div class="maps">
+      <button class="map big reveal" data-lb="img/shots/city.jpg" data-cap="Cidade destruída"><img src="img/shots/city.jpg" alt="Cidade destruída" loading="lazy"><span class="new">NOVO</span><div class="cap"><small>Saída do Bunker</small><h3>Cidade destruída</h3><p>Conserte o carro abandonado do lado de fora do bunker (10 peças escondidas) e fuja para uma cidade pós-apocalíptica com lojas para entrar, energia, bebidas e caixa. Na 3ª rodada, o Zumbi Mutante aparece no centro.</p></div></button>
+      <button class="map reveal" data-lb="img/maps/bunker.jpg" data-cap="Dead Bunker"><img src="img/maps/bunker.jpg" alt="Bunker" loading="lazy"><div class="cap"><small>Mapa principal</small><h3>O Bunker</h3><p>Paredes destruídas, buracos de bomba e três fusíveis para religar a energia. Lá fora, um carro sem peças.</p></div></button>
+      <button class="map reveal" data-lb="img/maps/hosp.jpg" data-cap="Hospício Vale Negro"><img src="img/maps/hosp.jpg" alt="Hospício" loading="lazy"><div class="cap"><small>Máquina do tempo</small><h3>Hospício Vale Negro</h3><p>Ache as 10 peças da máquina do tempo no quintal — duas estão com os chefes — e viaje para o laboratório secreto do futuro.</p></div></button>
+      <button class="map reveal" data-lb="img/maps/tz.jpg" data-cap="Tranzitch"><img src="img/maps/tz.jpg" alt="Tranzitch" loading="lazy"><div class="cap"><small>De ônibus</small><h3>Tranzitch</h3><p>Um ônibus que roda entre paradas. Posto de gasolina maior com estoque e oficina, munição em toda parada e afiador a cada duas.</p></div></button>
+      <button class="map reveal" data-lb="img/maps/farm.jpg" data-cap="Fazenda Santa Luzia"><img src="img/maps/farm.jpg" alt="Fazenda" loading="lazy"><div class="cap"><small>Campo aberto</small><h3>Fazenda Santa Luzia</h3><p>Celeiro, plantação e espaço para correr em círculos com a horda atrás.</p></div></button>
+      <button class="map reveal" data-lb="img/shots/boss.jpg" data-cap="Laboratório 2087"><img src="img/shots/boss.jpg" alt="Laboratório" loading="lazy"><span class="new">SEGREDO</span><div class="cap"><small>Ano 2087</small><h3>Laboratório secreto</h3><p>O hospício no futuro: um laboratório que pesquisava a cura, foi invadido e abandonado. Tudo mais difícil e mais caro.</p></div></button>
     </div>
+  </div>
+</section>
 
-    <div class="warning">
-      <strong>O Windows pode mostrar um aviso de "editor desconhecido".</strong>
-      Isso acontece com programas novos que ainda não têm assinatura digital. Para continuar,
-      clique em <strong>Mais informações</strong> e depois em <strong>Executar assim mesmo</strong>.
+<!-- ================= PERSONAGENS ================= -->
+<section class="blk" id="personagens">
+  <div class="wrap">
+    <p class="eyebrow reveal">Escolha quem desce</p>
+    <h2 class="reveal">Personagens</h2>
+    <div class="chars reveal">
+      <div class="cstage"><img id="cimg" src="img/chars/recruta.jpg" alt=""><div class="cname"><h3 id="cname">Recruta Ramos</h3><p id="crole">Deixado para trás no bunker</p></div></div>
+      <div class="cinfo">
+        <div class="picker" id="picker" role="tablist" aria-label="Personagens"></div>
+        <p class="story" id="cstory"></p>
+        <div class="skill"><div class="k">P</div><div><h4 id="cpn"></h4><p id="cpd"></p></div></div>
+        <div class="skill"><div class="k">Z</div><div><h4 id="can"></h4><p id="cad"></p></div></div>
+        <div class="skill"><div class="k">X</div><div><h4 id="cun"></h4><p id="cud"></p></div></div>
+      </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- MAPAS -->
-  <section id="mapas" data-section hidden>
-    <h2>Mapas</h2>
-    <p class="intro">Cada mapa tem seu próprio lobby no modo online. Escolha o mapa ao criar a sala.</p>
-    <div class="list">
-      <div class="item"><h3>Bunker dos Mortos</h3><p>O bunker onde tudo começou. É o mapa principal e onde a maioria das partidas acontece.</p></div>
-      <div class="item"><h3>Fazenda Santa Luzia</h3><p>Campo aberto e estruturas rurais, com mais espaço para se movimentar e cercar as hordas.</p></div>
-      <div class="item"><h3>Hospício Vale Negro</h3><p>Corredores e celas. Um ambiente fechado, onde cada porta pode ser a última.</p></div>
-      <div class="item"><h3>Tranzitch</h3><p>Área de transição, com um ônibus no mapa e zumbis que aparecem pelos arredores.</p></div>
-      <div class="item"><h3>Arena X1</h3><p>Mapa de confronto, pensado para a modalidade X1.</p></div>
+<!-- ================= NOVIDADES ================= -->
+<section class="blk alt" id="novidades">
+  <div class="wrap">
+    <p class="eyebrow reveal">Atualização v9</p>
+    <h2 class="reveal">O que tem de novo</h2>
+    <p class="intro reveal">A maior atualização até agora: um mapa inteiro, um chefe gigante, viagem no tempo, armas novas e um monte de coisa refeita do zero.</p>
+    <div class="news">
+      <article class="nc reveal"><div class="ph"><img src="img/shots/boss.jpg" alt="" loading="lazy"></div><div class="tx"><span class="tag">Chefe</span><h3>Zumbi Mutante</h3><p>4,5 m de altura, bolhas de ácido nas costas e um escudo que só quebra por trás. Entra com animação na tela de todo mundo.</p><ul><li>Acertos nas costas valem tiro na cabeça em dobro… e espalham ácido no chão</li><li>Jogando sozinho, atire bastante e ele cai — é a sua chance</li></ul></div></article>
+      <article class="nc reveal"><div class="ph"><img src="img/shots/city.jpg" alt="" loading="lazy"></div><div class="tx"><span class="tag">Mapa</span><h3>Do bunker à cidade</h3><p>Ache as 10 peças do carro (3 s para instalar cada), entrem todos e deem a partida. Rodadas recomeçam do zero, mas armas e progresso vão junto.</p></div></article>
+      <article class="nc reveal"><div class="ph"><img src="img/maps/hosp.jpg" alt="" loading="lazy"></div><div class="tx"><span class="tag">Hospício</span><h3>Máquina do tempo</h3><p>Fica azul e transparente até receber as peças. Todos juntos perto dela, e a equipe atravessa o túnel de 1955 para 2087.</p></div></article>
+      <article class="nc reveal"><div class="ph"><img src="img/chars/moreira.jpg" alt="" loading="lazy" style="object-position:center 25%"></div><div class="tx"><span class="tag">Cachorros</span><h3>Agarrão na perna</h3><p>Os cães agora mordem a sua perna: −50 de vida e você olha para baixo. Aperte ataque sem parar para esfaquear — se falhar, cai.</p></div></article>
     </div>
-  </section>
+    <details class="patch reveal">
+      <summary>Notas completas da atualização</summary>
+      <div class="cols">
+        <div><h4>Armas</h4><ul><li>Besta Carcará: arma nova com modelo, animações e sons próprios</li><li>Barrett: abrir a mira mais lento, ferrolho a cada tiro, muito mais dano</li><li>AA-12 pixelada no nível máximo: dano em área em quase toda a tela</li><li>Cada arma tem nível próprio, visível no menu</li><li>Tiros só empurram com cartas; sem carta, só deixam os zumbis um pouco mais lentos</li><li>Zumbi de capacete: o 1º tiro arranca o capacete com um “ping”</li><li>Sangue nas paredes</li></ul></div>
+        <div><h4>Mapas</h4><ul><li>Tranzitch: posto maior com 2 portas internas, interruptor de luz, munição em toda parada e afiador a cada duas</li><li>Peças do manequim mais escondidas, com brilho dourado</li><li>Menos zumbis entram no ônibus e as tábuas aguentam mais; sem homem-bomba enquanto alguém está nele</li><li>Revólver no teto do ônibus só olhando para cima</li><li>Construções mais detalhadas; escadas do hospício corrigidas</li></ul></div>
+        <div><h4>Sistemas</h4><ul><li>Soro da Vida e Mula de Carga</li><li>Reviver sozinho com drax (cada vez mais caro)</li><li>Recompensa a cada 3 rodadas</li><li>Inventário com filtros e ordenação; vitrine do dia na loja com rubis</li><li>Chances escritas embaixo de cada item (“1 em 100.000”)</li><li>Perfil com arma, mapa, carta e personagem favoritos</li></ul></div>
+        <div><h4>Visual e áudio</h4><ul><li>Personagens e zumbis mais detalhados</li><li>Mãos e efeitos novos nas habilidades</li><li>Animações de faca mais suaves</li><li>Iluminação realista, motion blur, bloom, granulação e mais opções gráficas</li><li>Abertura em vídeo e música nova no menu</li><li>Sons gravados e mixagem que não corta mais com muito tiro</li></ul></div>
+      </div>
+    </details>
+  </div>
+</section>
 
-  <!-- PERSONAGENS -->
-  <section id="personagens" data-section hidden>
-    <h2>Personagens</h2>
-    <p class="intro">Cada sobrevivente tem uma habilidade passiva que muda o jeito de jogar. Ao entrar na partida, cada jogador escolhe o seu.</p>
-    <div class="list">
-      <div class="item"><h3>Recruta Ramos</h3><div class="role">Deixado para trás no bunker</div><p>Ramos voltou ao bunker para buscar um rádio que nunca funcionou. Com a passiva Treinamento de Campo, ele recarrega mais rápido, carrega granadas extras e tem mais munição de reserva.</p></div>
-      <div class="item"><h3>Dra. Helena Vargas</h3><div class="role">Psiquiatra do Hospício Vale Negro</div><p>Conhece bem os corredores do hospício e os pacientes que nunca saíram de lá.</p></div>
-      <div class="item"><h3>Sargento Moreira</h3><div class="role">"Tanque", comandante de blindado</div><p>Resistente e direto. Pesado no combate, o tipo de sobrevivente que segura a linha de frente.</p></div>
-      <div class="item"><h3>Padre Tomás</h3><div class="role">Exorcista da diocese</div><p>Enfrenta os mortos com fé e com a experiência de quem já lidou com coisas piores.</p></div>
-      <div class="item"><h3>Iara "Raposa" Tavares</h3><div class="role">Atiradora de reconhecimento</div><p>Precisa de um tiro para cada alvo. Rápida para se esconder e escolher o momento certo.</p></div>
-      <div class="item"><h3>Viktor</h3><div class="role">Sobrevivente reconstruído com implantes militares</div><p>Tem o núcleo do projeto V.I.K.T.O.R. e usa implantes para se mover, se proteger e causar dano em área.</p></div>
+<!-- ================= ARSENAL ================= -->
+<section class="blk" id="arsenal">
+  <div class="wrap split">
+    <div>
+      <p class="eyebrow reveal">Na parede e na caixa</p>
+      <h2 class="reveal">Arsenal</h2>
+      <p class="intro reveal">Compre na parede, tente a sorte na caixa misteriosa ou ganhe na roleta. Passe as armas pelo afiador e, no máximo, pela forja.</p>
+      <div class="guns reveal" id="guns"></div>
     </div>
-  </section>
-
-  <!-- CAIXAS -->
-  <section id="caixas" data-section hidden>
-    <h2>Caixas</h2>
-    <p class="intro">As caixas trazem facas e artefatos com diferentes raridades. Quanto mais rara a caixa, maior a chance de um item de raridade alta.</p>
-    <div class="list">
-      <div class="item"><h3>Caixa de Suprimentos</h3><p>A mais comum. Quase sempre facas e artefatos simples.</p></div>
-      <div class="item"><h3>Caixa Militar</h3><p>Equipamento do exército. Boa chance de itens incomuns e raros.</p></div>
-      <div class="item"><h3>Caixa do Bunker</h3><p>Guardada no fundo do bunker. Nada comum aqui dentro.</p></div>
-      <div class="item"><h3>Caixa Sombria</h3><p>Selada com cera preta. Só itens raros para cima.</p></div>
-      <div class="item"><h3>Caixa Oculta</h3><p>A mais rara. 3% de chance de um item Oculto vermelho.</p></div>
+    <div>
+      <p class="eyebrow reveal">Máquinas</p>
+      <h2 class="reveal">Bebidas</h2>
+      <div class="perks reveal">
+        <div class="perk" style="--c:#b3201a"><span class="bt" style="background:#b3201a"></span><div><b>Couraça</b><span>Aguenta mais golpes</span></div></div>
+        <div class="perk" style="--c:#2f8f3a"><span class="bt" style="background:#2f8f3a"></span><div><b>Mão Ligeira</b><span>Recarrega na metade do tempo</span></div></div>
+        <div class="perk" style="--c:#c48a14"><span class="bt" style="background:#c48a14"></span><div><b>Dedo Nervoso</b><span>Atira mais rápido</span></div></div>
+        <div class="perk" style="--c:#2f7fd8"><span class="bt" style="background:#2f7fd8"></span><div><b>Soro da Vida</b><span>Um reviver a mais</span></div></div>
+        <div class="perk" style="--c:#1f9a72"><span class="bt" style="background:#1f9a72"></span><div><b>Mula de Carga</b><span>Terceiro espaço de arma</span></div></div>
+      </div>
     </div>
-  </section>
+  </div>
+</section>
 
-</main>
+<!-- ================= CAIXAS ================= -->
+<section class="blk alt" id="caixas">
+  <div class="wrap">
+    <p class="eyebrow reveal">Facas, artefatos e drax</p>
+    <h2 class="reveal">Caixas</h2>
+    <p class="intro reveal">As caixas trazem facas, artefatos e agora também drax — quanto mais rara a caixa, mais vem. Experimente abrir uma aqui (é só de mentirinha, usa as mesmas chances do jogo).</p>
+    <div class="boxes reveal">
+      <div class="blist" id="blist" role="tablist" aria-label="Caixas"></div>
+      <div class="opener">
+        <div class="odds" id="odds"></div>
+        <div class="reelwin"><div class="reel" id="reel"></div></div>
+        <button class="btn" id="open" style="min-width:200px;font-size:1.1rem;padding:.8rem 1.6rem">Abrir caixa</button>
+        <p class="won" id="won" aria-live="polite"></p>
+      </div>
+    </div>
+  </div>
+</section>
 
-<footer>
-  Bunker dos Mortos · Feito para jogar com amigos
-</footer>
+<!-- ================= GALERIA ================= -->
+<section class="blk" id="galeria">
+  <div class="wrap">
+    <p class="eyebrow reveal">Imagens</p>
+    <h2 class="reveal">Galeria</h2>
+    <div class="gal reveal" id="gal">
+      <button data-lb="img/shots/boss.jpg" data-cap="O Zumbi Mutante no centro da cidade"><img src="img/shots/boss.jpg" alt="Chefe" loading="lazy"></button>
+      <button data-lb="img/shots/city.jpg" data-cap="Cidade destruída"><img src="img/shots/city.jpg" alt="Cidade" loading="lazy"></button>
+      <button data-lb="img/shots/menu.jpg" data-cap="Menu principal"><img src="img/shots/menu.jpg" alt="Menu" loading="lazy"></button>
+      <button data-lb="img/maps/bunker.jpg" data-cap="O Bunker"><img src="img/maps/bunker.jpg" alt="Bunker" loading="lazy"></button>
+      <button data-lb="img/maps/hosp.jpg" data-cap="Hospício Vale Negro"><img src="img/maps/hosp.jpg" alt="Hospício" loading="lazy"></button>
+      <button data-lb="img/maps/tz.jpg" data-cap="Tranzitch"><img src="img/maps/tz.jpg" alt="Tranzitch" loading="lazy"></button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="blk alt" id="faq">
+  <div class="wrap">
+    <p class="eyebrow reveal">Antes de descer</p>
+    <h2 class="reveal">Dúvidas</h2>
+    <div class="faq reveal">
+      <details><summary>É grátis?</summary><p>Sim. Baixe o launcher e jogue. Drax e rubis são ganhos jogando.</p></details>
+      <details><summary>Como jogo com meus amigos?</summary><p>No menu, crie uma sala online e passe o código de 6 letras. Seus amigos digitam o código em “Código da sala” e entram.</p></details>
+      <details><summary>Perco meu progresso se atualizar?</summary><p>Não. O launcher baixa as atualizações sozinho e mantém seu progresso, caixas e itens.</p></details>
+      <details><summary>O Windows mostrou “editor desconhecido”. É seguro?</summary><p>O aviso aparece em programas novos sem assinatura digital paga. Clique em “Mais informações” e depois em “Executar assim mesmo”.</p></details>
+      <details><summary>Qual computador eu preciso?</summary><p>Windows 10 ou 11 de 64 bits. Roda em placas de vídeo integradas; nas Configurações dá para ligar iluminação realista, texturas HD e efeitos se o PC aguentar.</p></details>
+      <details><summary>Funciona com controle?</summary><p>Sim, com controles de Xbox e PlayStation (incluindo vibração no DualSense).</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= BAIXAR ================= -->
+<section class="final" id="baixar">
+  <p class="eyebrow reveal">Feche a porta</p>
+  <h2 class="reveal">Pronto para a primeira noite?</h2>
+  <div class="reveal" style="margin-top:2rem"><a class="btn" href="https://github.com/DraXx46/DeadBunkerOnlinev6/releases/latest/download/BunkerLauncher-Setup.exe">Baixar DEAD BUNKER<small>Instalador .exe · Windows 10/11</small></a></div>
+  <div class="steps">
+    <div class="reveal"><b>01</b><h4>Baixe o launcher</h4><p>Ele baixa o jogo e mantém tudo atualizado.</p></div>
+    <div class="reveal"><b>02</b><h4>Instale</h4><p>Siga as telas. Rápido e sem configuração.</p></div>
+    <div class="reveal"><b>03</b><h4>Entre no bunker</h4><p>Clique em Jogar e chame os amigos.</p></div>
+  </div>
+  <p class="warn reveal"><strong>Aviso do Windows:</strong> se aparecer “O Windows protegeu o computador”, clique em <strong>Mais informações</strong> → <strong>Executar assim mesmo</strong>.</p>
+</section>
+
+<footer><div class="brand">DEAD <b>BUNKER</b></div>Feito por Drax · para jogar com amigos</footer>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Imagem ampliada"><button class="x" aria-label="Fechar">×</button><div><img id="lbimg" alt=""><p id="lbcap"></p></div></div>
 
 <script>
-  (function () {
-    var tabs = document.querySelectorAll('nav.tabs button');
-    var sections = document.querySelectorAll('[data-section]');
-    function show(name) {
-      tabs.forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tab === name ? 'true' : 'false'); });
-      sections.forEach(function (s) { s.hidden = s.id !== name; });
-      window.scrollTo(0, 0);
-    }
-    tabs.forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.tab); history.replaceState(null, '', '#' + b.dataset.tab); }); });
-    var start = location.hash.replace('#', '');
-    show(document.getElementById(start) && start ? start : 'inicio');
-  })();
-</script>
+(function(){
+  'use strict';
+  var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
 
+  /* navegação: fica sólida ao rolar, marca a seção atual, menu no celular */
+  var nav=$('#nav'), menu=$('#menu'), burger=$('#burger');
+  function onScroll(){ nav.classList.toggle('solid',scrollY>40); }
+  addEventListener('scroll',onScroll,{passive:true}); onScroll();
+  burger.addEventListener('click',function(){ var o=menu.classList.toggle('open'); burger.setAttribute('aria-expanded',o); });
+  $$('#menu a').forEach(function(a){ a.addEventListener('click',function(){ menu.classList.remove('open'); burger.setAttribute('aria-expanded','false'); }); });
+  if('IntersectionObserver' in window){
+    var links={}; $$('#menu a').forEach(function(a){ links[a.getAttribute('href').slice(1)]=a; });
+    var so=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting&&links[e.target.id]){ $$('#menu a').forEach(function(a){a.classList.remove('on')}); links[e.target.id].classList.add('on'); } }); },{rootMargin:'-45% 0px -50% 0px'});
+    $$('section[id]').forEach(function(s){ so.observe(s); });
+    var ro=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); ro.unobserve(e.target); } }); },{threshold:.12});
+    $$('.reveal').forEach(function(el,i){ el.style.transitionDelay=((i%4)*70)+'ms'; ro.observe(el); });
+  } else $$('.reveal').forEach(function(el){ el.classList.add('in'); });
+
+  /* lanterna seguindo o mouse no topo */
+  var hero=$('#topo');
+  hero.addEventListener('pointermove',function(e){ var r=hero.getBoundingClientRect(); hero.style.setProperty('--mx',(e.clientX-r.left)+'px'); hero.style.setProperty('--my',(e.clientY-r.top)+'px'); });
+
+  /* brasas subindo no topo */
+  (function(){ var c=$('#embers'); if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches) return; var g=c.getContext('2d'), P=[], W=0, H=0;
+    function rs(){ W=c.width=c.clientWidth; H=c.height=c.clientHeight; } rs(); addEventListener('resize',rs);
+    for(var i=0;i<70;i++) P.push({x:Math.random(),y:Math.random(),v:.2+Math.random()*.6,s:.6+Math.random()*2,w:Math.random()*6.28});
+    (function f(){ g.clearRect(0,0,W,H); for(var i=0;i<P.length;i++){ var p=P[i]; p.y-=p.v/H*1.6; p.w+=.02; if(p.y<-.02){ p.y=1.02; p.x=Math.random(); } var x=p.x*W+Math.sin(p.w)*14, y=p.y*H, a=Math.min(1,p.y*1.4)*.8;
+      g.fillStyle='rgba(255,'+(120+(p.s*40|0))+',40,'+a+')'; g.beginPath(); g.arc(x,y,p.s,0,6.283); g.fill(); } if(scrollY<innerHeight) requestAnimationFrame(f); else setTimeout(function(){ requestAnimationFrame(f); },300); })(); })();
+
+  /* contadores */
+  setTimeout(function(){ $$('[data-count]').forEach(function(el){ var n=+el.dataset.count, t0=performance.now(); (function step(t){ var k=Math.min(1,(t-t0)/1400); el.textContent=Math.round(n*(1-Math.pow(1-k,3))); if(k<1) requestAnimationFrame(step); })(t0); }); },1000);
+
+  /* personagens */
+  var CH=[
+    {id:'recruta',n:'Recruta Ramos',r:'Deixado para trás no bunker',s:'Tinha dezenove anos quando o caminhão partiu sem ele. Voltou ao bunker para buscar um rádio que nunca funcionou.',p:['Treinamento de Campo','Recarrega mais rápido, carrega granadas extras e leva mais munição de reserva.'],a:['Recarga Tática','Enche o pente de todas as armas, recarrega mais rápido e os tiros causam mais dano por 8 s.'],u:['Apoio de Artilharia','Barragem de morteiros no ponto para onde você olha. Cada explosão deixa os zumbis em chamas.']},
+    {id:'helena',n:'Dra. Helena Vargas',r:'Psiquiatra do Hospício Vale Negro',s:'Conhece cada corredor do hospício — e os pacientes que nunca saíram de lá.',p:['Juramento','A vida volta mais rápido, cada abate cura um pouco e ela levanta aliados mais depressa.'],a:['Injeção de Adrenalina','Cura você e os aliados a até 8 m e injeta adrenalina: mais dano e velocidade por alguns segundos.'],u:['Protocolo Vale Negro','Campo de 7 m por 12 s: cura, levanta quem caiu e seda os zumbis dentro dele.']},
+    {id:'moreira',n:'Sargento Moreira',r:'“Tanque”, comandante de blindado',s:'Perdeu o blindado, não o temperamento. Segura a linha de frente sozinho se precisar.',p:['Casca Grossa','Mais vida máxima e menos dano recebido em cada golpe.'],a:['Investida','Avança e derruba os zumbis à sua frente com dano pesado.'],u:['Fúria do Blindado','Por 10 s recebe muito menos dano, a faca fica mais forte, regenera vida e esmaga quem chegar perto.']},
+    {id:'tomas',n:'Padre Tomás',r:'Exorcista da diocese',s:'Já viu coisa pior que zumbi. Enfrenta os mortos com fé, água benta e fogo.',p:['Lâmina Benta','Faca muito mais forte e rápida, e mais chance de power-up.'],a:['Água Benta','Uma onda de água benta fere e incendeia os zumbis a até 5 m.'],u:['Exorcismo','Por 8 s uma aura de 6 m queima e fere todos os zumbis em volta.']},
+    {id:'iara',n:'Iara “Raposa” Tavares',r:'Atiradora de reconhecimento',s:'Um tiro para cada alvo. Rápida para se esconder e escolher o momento certo.',p:['Olho de Raposa','Mais dano em tiros na cabeça e chance de acerto crítico.'],a:['Marcação','Marca os zumbis à vista (até 35 m) por 8 s: eles recebem mais dano.'],u:['Olho da Raposa','Por 8 s todo tiro conta como tiro na cabeça, o pente não esvazia e cada acerto ricocheteia.']},
+    {id:'viktor',n:'Viktor',r:'Sobrevivente reconstruído com implantes',s:'O núcleo do projeto V.I.K.T.O.R. ainda zumbe no peito dele. Os implantes esquentam — e ele também.',p:['Hardware Reforçado','Mais vida máxima e recarga mais rápida.'],a:['Overclock Neural','Por 5 s: mais velocidade, recarga e troca de arma; os tiros soltam choques em zumbis próximos.'],u:['Pulso EMP','Descarga de 10 m que fere e paralisa; depois uma tempestade elétrica atinge quem chegar perto.']}
+  ];
+  var picker=$('#picker'), cimg=$('#cimg'), cur=-1;
+  CH.forEach(function(c,i){ var b=document.createElement('button'); b.setAttribute('role','tab'); b.setAttribute('aria-label',c.n); b.innerHTML='<img src="img/chars/'+c.id+'_face.jpg" alt="">'; b.addEventListener('click',function(){ pickChar(i); stopAuto(); }); picker.appendChild(b); });
+  function pickChar(i){ if(i===cur) return; cur=i; var c=CH[i];
+    $$('#picker button').forEach(function(b,j){ b.setAttribute('aria-selected',j===i?'true':'false'); });
+    cimg.classList.add('fade'); setTimeout(function(){ cimg.src='img/chars/'+c.id+'.jpg'; cimg.onload=function(){ cimg.classList.remove('fade'); }; },220);
+    $('#cname').textContent=c.n; $('#crole').textContent=c.r; $('#cstory').textContent=c.s;
+    $('#cpn').innerHTML=c.p[0]+'<small>passiva</small>'; $('#cpd').textContent=c.p[1];
+    $('#can').innerHTML=c.a[0]+'<small>habilidade</small>'; $('#cad').textContent=c.a[1];
+    $('#cun').innerHTML=c.u[0]+'<small>ultimate</small>'; $('#cud').textContent=c.u[1]; }
+  pickChar(0);
+  var auto=setInterval(function(){ pickChar((cur+1)%CH.length); },6500); function stopAuto(){ clearInterval(auto); }
+
+  /* armas */
+  var G=[['Glock 17','pistola'],['Blazeson & Julius 357','revólver'],['H&K MP7','submetralhadora'],['H&K UMP45','submetralhadora'],['KRISS Vector','submetralhadora'],['AK-556','fuzil'],['SKS','semiautomático'],['Mosin-Nagant','ferrolho'],['RPK-556','metralhadora'],['RPD','metralhadora'],['S12P8','escopeta'],['XMA-10','escopeta'],['AA-12','pixelada',1],['Barrett M107','antimaterial',1],['Besta Carcará','nova',1],['RARAN Prototype 1130','protótipo'],['Faca','corpo a corpo']];
+  $('#guns').innerHTML=G.map(function(g){ return '<span class="gun'+(g[2]?' hot':'')+'">'+g[0]+'<i>'+g[1]+'</i></span>'; }).join('');
+
+  /* caixas: mesmas chances do jogo */
+  var RAR=[['Comum','#a7adb3'],['Incomum','#5fb0ef'],['Rara','#4f6dff'],['Épica','#b45cff'],['Lendária','#f4c03a'],['Oculto','#ff1a2a']];
+  var BOX=[
+    {n:'Caixa de Suprimentos',c:'#a7adb3',red:.003,k:[.62,.27,.08,.03,0],d:'A mais comum.'},
+    {n:'Caixa Militar',c:'#5fb0ef',red:.006,k:[.3,.42,.19,.07,.02],d:'Boa chance de incomuns e raros.'},
+    {n:'Caixa do Bunker',c:'#b45cff',red:.01,k:[0,.36,.4,.19,.05],d:'Nada comum aqui dentro.'},
+    {n:'Caixa Sombria',c:'#f4c03a',red:.018,k:[0,0,.45,.4,.15],d:'Só raros para cima.'},
+    {n:'Caixa Oculta',c:'#ff1a2a',red:.03,k:[0,0,0,.6,.4],d:'3% de item Oculto vermelho.'}
+  ];
+  var KN=['Baioneta','Karambit','Faca Borboleta','Bowie','Kukri','Adaga','Faca de Trincheira','Canivete','Estilete','Faca Esqueleto'];
+  var SK=['Ferrugem','Carmesim','Gelo','Noite','Selva','Ossos','Ouro Velho','Neon','Sangue Seco','Cinzas'];
+  var ART=['Medalha do Cabo','Terço Antigo','Rádio Quebrado','Dente de Cão','Bússola','Isqueiro Zippo'];
+  var bsel=0, spinning=false, blist=$('#blist');
+  BOX.forEach(function(b,i){ var e=document.createElement('button'); e.setAttribute('role','tab'); e.style.setProperty('--bc',b.c); e.innerHTML='<span class="sw"></span><span><b>'+b.n+'</b><small>'+b.d+'</small></span>'; e.addEventListener('click',function(){ if(!spinning) selBox(i); }); blist.appendChild(e); });
+  function odds1(p){ if(p<=0) return '—'; var n=Math.round(1/p); return n<=1?'certo':'1 em '+n.toLocaleString('pt-BR'); }
+  function selBox(i){ bsel=i; var b=BOX[i]; $$('#blist button').forEach(function(e,j){ e.setAttribute('aria-selected',j===i?'true':'false'); });
+    var html=''; for(var r=0;r<5;r++) html+='<div style="border-color:'+(b.k[r]?RAR[r][1]+'55':'')+'"><b style="color:'+RAR[r][1]+'">'+Math.round(b.k[r]*(1-b.red)*1000)/10+'%</b>'+RAR[r][0]+'</div>';
+    $('#odds').innerHTML=html+'<div style="grid-column:1/-1;border-color:#ff1a2a55"><b style="color:#ff1a2a">'+(b.red*100).toFixed(1)+'%</b>Oculto · '+odds1(b.red)+'</div>';
+    fillReel(null); $('#won').textContent=''; }
+  function roll(b){ if(Math.random()<b.red) return 5; var x=Math.random(),a=0; for(var r=0;r<5;r++){ a+=b.k[r]; if(x<a) return r; } return 4; }
+  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function item(r){ var isArt=Math.random()<.32, drax=Math.random()<.12; if(drax) return {r:r,ic:'◆',n:(40+r*60+Math.floor(Math.random()*40))+' drax'}; return isArt?{r:r,ic:'✦',n:pick(ART)}:{r:r,ic:'🗡',n:pick(KN)+' | '+pick(SK)}; }
+  function tile(it){ return '<div class="tile" style="--rc:'+RAR[it.r][1]+'"><span class="ic">'+it.ic+'</span>'+it.n+'</div>'; }
+  var reel=$('#reel'), N=46, WIN=40;
+  function fillReel(win){ var b=BOX[bsel], h=''; for(var i=0;i<N;i++) h+=tile(i===WIN&&win?win:item(roll(b))); reel.innerHTML=h; reel.style.transition='none'; reel.style.transform='translateX(0)'; }
+  $('#open').addEventListener('click',function(){ if(spinning) return; spinning=true; $('#won').textContent=''; var b=BOX[bsel], it=item(roll(b)); fillReel(it);
+    var w=$('.reelwin').clientWidth, tw=126, off=WIN*tw+tw/2-w/2+(Math.random()-.5)*90;
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ reel.style.transition='transform 5.2s cubic-bezier(.08,.6,.12,1)'; reel.style.transform='translateX('+(-off)+'px)'; }); });
+    setTimeout(function(){ spinning=false; $('#won').innerHTML='Você tirou <b style="color:'+RAR[it.r][1]+'">'+it.n+'</b> · '+RAR[it.r][0]; },5300); });
+  selBox(0);
+
+  /* lightbox */
+  var lb=$('#lb');
+  $$('[data-lb]').forEach(function(b){ b.addEventListener('click',function(){ $('#lbimg').src=b.dataset.lb; $('#lbcap').textContent=b.dataset.cap||''; lb.classList.add('on'); }); });
+  lb.addEventListener('click',function(e){ if(e.target===lb||e.target.classList.contains('x')) lb.classList.remove('on'); });
+  addEventListener('keydown',function(e){ if(e.key==='Escape') lb.classList.remove('on'); });
+})();
+</script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-name: Deploy Bunker dos Mortos to GitHub Pages
+name: Deploy Dead Bunker to GitHub Pages
 
 on:
   push:

@@ -1,0 +1,76 @@
+DEAD BUNKER · v9.0.0
+=====================
+
+O jogo agora se chama DEAD BUNKER (o repositório e a pasta continuam "BunkerDosMortos").
+O launcher continua usando a mesma pasta de dados de antes, então ninguém perde o jogo baixado nem o progresso.
+
+ABERTURA E MENU
+- Vídeo de abertura no lugar da tela "feito por drax"; o menu aparece com fade no fim (clique ou tecla pula).
+- Música nova do menu (REND), entrando em 17:10 do vídeo.
+- Logo DEAD BUNKER no menu. Personagem mais centralizado, com botões "+" ao lado para chamar amigos.
+- Cenário do menu com grama baixa, pedras, terra, poças e entulho.
+- "Arsenal" virou Inventário, com filtros (skins, facas, artefatos, caixas, todos) e ordenação (tipo, raridade, quantidade, data).
+- Loja: vitrine do dia com 5 itens roxos, lendários ou vermelhos comprados com rubis.
+- Chance escrita embaixo de facas, skins e artefatos ("1 em 100.000").
+- Destaque da loja maior, com carrossel de skins que muda a cada partida.
+- Clicar no perfil mostra arma, mapa, carta e personagem favoritos e outras estatísticas.
+- Cada arma tem nível próprio, visível no menu.
+
+TRANZITCH
+- Sem homem-bomba enquanto alguém está no ônibus; menos zumbis entram e as tábuas do ônibus demoram mais para quebrar.
+- Revólver do teto do ônibus só pode ser comprado olhando para cima.
+- Posto bem maior, com estoque (750) e oficina (1000) atrás de duas portas internas; interruptor de luz do lado de fora.
+- Peças do manequim mais escondidas, com brilho dourado fraco.
+- Munição em todas as paradas e afiador a cada duas.
+- Construções mais detalhadas: ar-condicionado, caixas d'água e antenas nos telhados, calhas, cartazes, pichações, lixo, paletes, poças e fios.
+
+HOSPÍCIO
+- Corrigidas as texturas que atravessavam as escadas.
+- Portas para o quintal custam 100.000.
+- Máquina do tempo no quintal: 10 peças em lugares aleatórios (2 com os chefes), uma por vez por jogador, 3 s para instalar.
+  Fica azul e transparente até ser montada. Todos precisam estar juntos para viajar, com animação do túnel mostrando a equipe.
+- Futuro: laboratório secreto que pesquisava a cura, invadido e abandonado. Tudo mais difícil e mais caro.
+
+BUNKER → CIDADE
+- Carro do lado de fora do bunker com 10 peças espalhadas (3 s cada). Todos entram no carro e a partida leva 3 s.
+- Cidade grande destruída com lojas para entrar e todos os recursos (energia, bebidas, caixa, afiador, munição).
+- Rodadas recomeçam do zero; armas e progresso vão junto.
+- Na 3ª rodada da cidade, o Zumbi Mutante (4,5 m) aparece no centro com animação na tela de todos.
+  Escudo que quebra com dano nas costas; sozinho, ele cai depois de levar bastante tiro.
+  Costas sem escudo = tiro na cabeça em dobro, mas solta ácido no chão.
+
+SOBREVIVÊNCIA
+- Solo: reviver com drax na primeira morte, cada vez mais caro.
+- Bebidas novas: Soro da Vida (um reviver a mais) e Mula de Carga (3ª arma). Máquinas e garrafas redesenhadas.
+- Cachorros agarram a perna (−50 de vida); aperte ataque para esfaquear olhando para baixo. Falhou: morre no solo, cai no multi.
+- Eventos mais frequentes e novos: troca de personagem, sósia mini-chefe, roleta da sorte (boa e ruim), chuva e eclipse.
+- Relíquias raras que duram 5 rodadas: lanterna forte, tiro explosivo, super velocidade, super regeneração, pontos em dobro e vampirismo.
+- Lanternas dos amigos aparecem para todos.
+- Recompensa a cada 3 rodadas (caixas, facas e artefatos, melhores em rodadas altas), com animação no canto.
+- Tela de fim de partida com anel de XP, fontes aparecendo uma a uma e caixas ganhas.
+- Caixas podem dar drax (mais nas caixas raras).
+- Tábuas dão mais pontos conforme as rodadas.
+
+ARMAS E CARTAS
+- Tiro só empurra com carta (até 30 cm); sem carta, só deixa o zumbi um pouco mais lento. Menos em chefes.
+- Carta da faca que mata qualquer zumbi não vale para chefes.
+- Cartas de fim de jogo específicas de cada personagem (habilidade, ultimate, passiva), tiro congelante e tiro-granada.
+- Forja: arma no nível máximo pode ficar 5 rodadas no afiador (bem caro) e volta MUITO mais forte.
+- AA-12 pixelada no nível máximo: dano em área monstruoso em quase todos os zumbis na tela.
+- Besta Carcará: arma nova com modelo, animações e sons.
+- Zumbi de capacete: o primeiro tiro arranca o capacete com um "ping".
+- Sangue nas paredes.
+- Barrett: mira abre devagar; atira → sai da mira → puxa o ferrolho → atira de novo. Muito mais dano.
+
+VISUAL
+- Personagens com o dobro de detalhe, formas suaves e relevo no tecido; rosto com lábios, testa e bochechas.
+- Zumbis mais orgânicos (músculos, panturrilhas, mãos e botas arredondadas, pele irregular).
+- Habilidades com mãos na tela (arma abaixa): fogo do padre, cura da médica, raios do Viktor, socos do Moreira, sinal da Iara e do Ramos.
+  Efeitos novos no mundo: labaredas, anéis de fogo, descargas elétricas, esferas de cura.
+- Animações da faca mais suaves (estilo CS).
+- Opções gráficas: iluminação realista, texturas HD, motion blur, bloom, granulação, aberração cromática, nitidez, sombra da lanterna.
+
+ÁUDIO
+- Sons gravados (Artlist e os que você mandou) para cachorros, faca na parede, padre, médica, besta, capacete, chefe, escudo,
+  roleta, recompensas, carro, máquina do tempo, choque, fogo, dor e cliques de menu.
+- Mixagem com limitador e teto de vozes: o som não corta mais quando muita coisa toca junto.

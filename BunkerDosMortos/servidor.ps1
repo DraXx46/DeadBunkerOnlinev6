@@ -1,4 +1,4 @@
-﻿# Servidor local do Bunker dos Mortos: entrega os arquivos desta pasta em http://localhost e abre o navegador.
+﻿# Servidor local do Dead Bunker: entrega os arquivos desta pasta em http://localhost e abre o navegador.
 $root = (Split-Path -Parent $MyInvocation.MyCommand.Path).TrimEnd('\') + '\'
 $types = @{ '.html'='text/html; charset=utf-8'; '.js'='text/javascript'; '.json'='application/json'; '.jpg'='image/jpeg'; '.jpeg'='image/jpeg'; '.png'='image/png'; '.mp3'='audio/mpeg'; '.css'='text/css' }
 $l = $null

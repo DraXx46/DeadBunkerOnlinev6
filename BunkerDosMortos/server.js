@@ -452,7 +452,7 @@ const cleanup = setInterval(() => {
 if (cleanup.unref) cleanup.unref();
 
 server.listen(PORT, HOST, () => {
-  console.log(`Bunker dos Mortos v6 online em http://${HOST}:${PORT}`);
+  console.log(`Dead Bunker v6 online em http://${HOST}:${PORT}`);
   console.log('WebSocket: /ws');
 });
 

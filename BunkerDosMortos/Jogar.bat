@@ -1,6 +1,6 @@
 @echo off
 setlocal
- title Bunker dos Mortos v6 - Servidor local
+ title Dead Bunker v6 - Servidor local
 cd /d "%~dp0"
 
 where node >nul 2>nul
@@ -24,6 +24,6 @@ if not exist "node_modules\ws\package.json" (
 
 echo.
 echo Iniciando o servidor local em http://localhost:3000
-start "Abrir Bunker dos Mortos" cmd /c "timeout /t 2 /nobreak ^>nul ^& start http://localhost:3000"
+start "Abrir Dead Bunker" cmd /c "timeout /t 2 /nobreak ^>nul ^& start http://localhost:3000"
 call npm start
 pause

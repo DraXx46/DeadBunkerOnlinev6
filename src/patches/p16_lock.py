@@ -1,0 +1,1 @@
+P=[("""&&!(typeof X1!=='undefined'&&x1Live())&&!PAD.active) pauseGame(); });""","""&&!(typeof X1!=='undefined'&&x1Live())&&!PAD.active&&!(typeof v9NoPause==='function'&&v9NoPause())) pauseGame(); });""")]

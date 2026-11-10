@@ -1,0 +1,1 @@
+P=[("""  const v=raw?n:Math.round(n*ECONOMY_REWARD_SCALE*Mod.pts*(G.double>0?2:1));""","""  const v=raw?n:Math.round(n*ECONOMY_REWARD_SCALE*Mod.pts*(G.double>0?2:1)*v9PtsK()*(typeof V9DIFF!=='undefined'?V9DIFF.pts:1));""")]

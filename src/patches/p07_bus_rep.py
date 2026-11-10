@@ -1,0 +1,1 @@
+P=[("""netAct(['rep',windows.indexOf(w)]); if(G.repairPts<200){ addPoints(5); G.repairPts+=5; } } } else addBoard(w,true); } }};""","""netAct(['rep',windows.indexOf(w)]); if(G.repairPts<boardCap()){ const p=boardPts(); addPoints(p); G.repairPts+=p; } } } else addBoard(w,true); } }};""")]

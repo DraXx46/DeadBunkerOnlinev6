@@ -1,0 +1,1 @@
+P=[("""function removeRemote(peer){ const rp=NET.players.get(peer); if(!rp) return; scene.remove(rp.g);""","""function removeRemote(peer){ const rp=NET.players.get(peer); if(!rp) return; try{ v9DropRemoteLight(rp); }catch(e){} scene.remove(rp.g);""")]

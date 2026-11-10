@@ -365,11 +365,12 @@ input[type=range]{accent-color:var(--blood-hi);width:100%}
 #soundhint{font-size:13px;color:var(--muted);margin:0}
 #err{position:fixed;inset:0;display:grid;place-items:center;z-index:9;background:var(--bg);text-align:center;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 #loading{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1;color:var(--muted);letter-spacing:.2em;font-size:13px}
-#intro{position:fixed;inset:0;z-index:300;background:#000;display:flex;align-items:center;justify-content:center;opacity:1;transition:opacity 1.6s ease;cursor:pointer}
-#intro video{width:100%;height:100%;object-fit:contain;background:#000}
-#intro.out{opacity:0;pointer-events:none}
-#intro .intro-skip{position:absolute;right:22px;bottom:16px;margin:0;font:11px "Special Elite","Courier New",monospace;letter-spacing:.18em;text-transform:uppercase;color:#3c3a36;opacity:0;transition:opacity 1s ease 2.5s}
-#intro.playing .intro-skip{opacity:1}
+#v9intro{position:fixed;inset:0;z-index:300;background:#000;display:flex;align-items:center;justify-content:center;opacity:1;transition:opacity 1.6s ease;cursor:pointer}
+#v9intro video{width:100%;height:100%;object-fit:contain;background:#000}
+#v9intro.out{opacity:0;pointer-events:none}
+#v9intro .intro-load{position:absolute;left:0;right:0;bottom:8vh;margin:0;text-align:center;font:12px "Special Elite","Courier New",monospace;letter-spacing:.3em;text-transform:uppercase;color:#8a8478;opacity:0;transition:opacity .6s}
+#v9intro.waiting .intro-load{opacity:1;animation:v9blink 1.4s ease-in-out infinite}@keyframes v9blink{50%{opacity:.35}}
+#v9intro{cursor:default}
 body.menu-fadein .screen:not([hidden]){animation:mmFadeIn 1.6s ease both}
 @keyframes mmFadeIn{from{opacity:0;filter:blur(3px)}to{opacity:1;filter:none}}
 
@@ -990,7 +991,7 @@ body.cinema #tzcap{display:none}
 
 <canvas id="game" aria-label="Jogo de zumbis em primeira pessoa"></canvas>
 <div id="loading">DEAD BUNKER · CARREGANDO…</div>
-<div id="intro" aria-hidden="true"><video id="introv" src="intro.mp4" muted playsinline preload="auto"></video><p class="intro-skip">clique ou aperte qualquer tecla para pular</p></div>
+<div id="v9intro" aria-hidden="true"><video id="introv" src="intro.mp4" muted playsinline preload="auto"></video><p class="intro-load">carregando…</p></div>
 <div id="cinefade" aria-hidden="true"></div><div id="cinebars" aria-hidden="true"><i></i><i></i></div>
 
 <canvas id="doomvm" hidden aria-hidden="true"></canvas>
@@ -1919,18 +1920,19 @@ const Snd=(()=>{
 const INTRO={done:false,musicAt:17+10/30,musicFired:false,ready:false};
 function introFireMusic(){ if(INTRO.musicFired) return; INTRO.musicFired=true; try{ Snd.init(); Snd.startMusic(); }catch(e){} }
 function introInit(){
-  const el=document.getElementById('intro'), v=document.getElementById('introv');
+  const el=document.getElementById('v9intro'), v=document.getElementById('introv');
   if(!el||!v){ INTRO.done=true; return; }
   let finQ=false;
   const fin=()=>{ if(INTRO.done) return; INTRO.done=true; introFireMusic(); el.classList.add('out'); document.body.classList.add('menu-fadein'); setTimeout(()=>{ try{ el.remove(); }catch(e){} document.body.classList.remove('menu-fadein'); },1700); };
-  const finWhenReady=()=>{ if(finQ) return; finQ=true; const w=()=>{ if(INTRO.ready) fin(); else setTimeout(w,120); }; w(); };
+  const finWhenReady=()=>{ if(finQ) return; finQ=true; const w=()=>{ if(INTRO.ready) fin(); else { el.classList.add('waiting'); setTimeout(w,120); } }; w(); };   // v9: o jogo carrega por trás do vídeo; se o vídeo acabar antes, fica "carregando…" no preto
   const poll=()=>{ if(INTRO.done) return; if(v.currentTime>=INTRO.musicAt) introFireMusic(); requestAnimationFrame(poll); }; requestAnimationFrame(poll);
   v.addEventListener('playing',()=>el.classList.add('playing'));
   v.addEventListener('ended',finWhenReady); v.addEventListener('error',finWhenReady);
   try{ const p=v.play(); if(p&&p.catch) p.catch(()=>finWhenReady()); }catch(e){ finWhenReady(); }
   setTimeout(()=>{ if(!INTRO.done&&(v.readyState<2||v.currentTime<0.05)) finWhenReady(); },6000);   // vídeo não carregou: segue para o menu
-  const skip=e=>{ if(INTRO.done) return; if(v.currentTime<1.0&&!v.error) return; finWhenReady(); if(e&&e.type==='keydown'){ e.stopPropagation(); } removeEventListener('keydown',skip,true); };
-  el.addEventListener('pointerdown',skip); addEventListener('keydown',skip,true);
+  // v9: abertura obrigatória — não dá para pular; teclas e cliques ficam presos no vídeo enquanto ele toca
+  const block=e=>{ if(INTRO.done){ removeEventListener('keydown',block,true); return; } e.stopPropagation(); if(e.key!=='F11'&&e.key!=='F12') e.preventDefault(); };
+  addEventListener('keydown',block,true); el.addEventListener('pointerdown',e=>{ e.stopPropagation(); try{ if(v.paused) v.play(); }catch(_){} });
 }
 introInit();
 
@@ -14448,23 +14450,52 @@ v9Css(`.v9prof{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.72);disp
 @media(max-width:700px){.v9prof .pfg{grid-template-columns:repeat(2,1fr)}}`);
 (function(){ const p=document.getElementById('pgprof'); if(p){ p.style.cursor='pointer'; p.title='Ver perfil'; p.addEventListener('click',profOpen); } })();
 
-/* ---- DESTAQUE DA LOJA: maior, com o visual aparecendo e um carrossel (muda a cada partida) ---- */
+/* ---- PAINEL DO MENU: novidades da atualização em cima, carrossel de skins (uma por vez) embaixo ---- */
+const V9NEWS=[
+  ['Novo mapa','Cidade destruída','Conserte o carro do lado de fora do bunker e fuja para a cidade.'],
+  ['Chefe','O Mutante Ácido','4,5 m de altura. O escudo só quebra com tiros nas costas.'],
+  ['Hospício','Máquina do tempo','Ache as 10 peças e viaje com a equipe para o laboratório de 2087.'],
+  ['Bebidas','Soro da Vida e Mula de Carga','Um reviver a mais e espaço para uma 3ª arma.'],
+  ['Armas','Besta Carcará','Arma nova — e a Barrett agora puxa o ferrolho e bate muito mais forte.'],
+  ['Cachorros','Agarrão na perna','Aperte ataque sem parar para esfaquear antes que ele te derrube.'],
+  ['Eventos','Roleta, sósia e troca','Eventos mais frequentes, com prêmios e castigos.']];
+const NWS={i:0,t:null};
+function newsRender(){ const box=document.querySelector('#ad .v9news'); if(!box) return; const n=V9NEWS[NWS.i%V9NEWS.length];
+  box.querySelector('.nw-s').innerHTML=`<small>${n[0]}</small><b>${n[1]}</b><p>${n[2]}</p>`;
+  box.querySelector('.nw-dots').innerHTML=V9NEWS.map((_,i)=>`<i class="${i===NWS.i%V9NEWS.length?'on':''}" data-n="${i}"></i>`).join(''); }
 const CRS={i:0,list:null,t:null};
-function carList(){ const n=(v9St().games|0); const rng=mulberry(n*131+7); const pool=SKIN_DEFS.slice(); const out=[]; while(out.length<4&&pool.length) out.push(pool.splice(Math.floor(rng()*pool.length),1)[0]); return out; }
-function carRender(){ const ad=document.getElementById('ad'); if(!ad) return; if(!CRS.list) CRS.list=carList(); let box=ad.querySelector('.v9car'); if(!box){ box=v9El('div','v9car'); ad.querySelector('.adbody').appendChild(box); }
-  const d=CRS.list[CRS.i%CRS.list.length]; if(!d) return; let img=''; try{ img=charThumb3d(d.c,d.k); }catch(e){}
+function carList(){ const n=(v9St().games|0); const rng=mulberry(n*131+7); const pool=SKIN_DEFS.slice(); const out=[]; while(out.length<6&&pool.length) out.push(pool.splice(Math.floor(rng()*pool.length),1)[0]); return out; }
+function adBuild(){ const ad=document.getElementById('ad'); if(!ad||ad.querySelector('.v9news')) return; const body=ad.querySelector('.adbody'); ad.classList.add('v9ad');
+  const nw=v9El('div','v9news'); nw.innerHTML='<div class="nw-h"><span>Novidades</span><em>'+GAME_VERSION+'</em></div><div class="nw-s"></div><div class="nw-dots"></div>';
+  body.prepend(nw); nw.querySelector('.nw-dots').addEventListener('click',e=>{ const i=e.target.dataset&&e.target.dataset.n; if(i==null) return; NWS.i=+i; newsRender(); });
+  const cr=v9El('div','v9car'); body.appendChild(cr); }
+function carRender(){ adBuild(); const box=document.querySelector('#ad .v9car'); if(!box) return; if(!CRS.list) CRS.list=carList(); const L=CRS.list, k=CRS.i%L.length;
+  const d=L[k]; if(!d) return; let img=''; try{ img=charThumb3d(d.c,d.k); }catch(e){}
   const own=ownSkin(d.c,d.k);
-  box.innerHTML=`<div class="cr-img"><img alt="" src="${img}"><button class="cr-p" type="button">‹</button><button class="cr-n" type="button">›</button></div><div class="cr-tx"><small>${(CHARS[d.c]||{}).name||''}</small><b>${d.name}</b><div class="cr-dots">${CRS.list.map((_,i)=>`<i class="${i===CRS.i%CRS.list.length?'on':''}"></i>`).join('')}</div>
-  <button class="cta small" type="button" data-carbuy ${own||PROG.rubies<d.price?'disabled':''}>${own?'Já é seu':'Comprar · ♦ '+v9Fmt(d.price)}</button></div>`;
-  box.querySelector('.cr-p').onclick=e=>{ e.stopPropagation(); CRS.i=(CRS.i+CRS.list.length-1)%CRS.list.length; carRender(); Snd.ui('slide'); };
-  box.querySelector('.cr-n').onclick=e=>{ e.stopPropagation(); CRS.i=(CRS.i+1)%CRS.list.length; carRender(); Snd.ui('slide'); };
+  box.innerHTML=`<div class="cr-h"><span>Loja · Skins</span><small>${k+1} / ${L.length}</small></div>
+  <div class="cr-img"><img alt="" src="${img}"><button class="cr-p" type="button" aria-label="Anterior">‹</button><button class="cr-n" type="button" aria-label="Próxima">›</button></div>
+  <div class="cr-tx"><small>${(CHARS[d.c]||{}).name||''}</small><b>${d.name}</b></div>
+  <div class="cr-row"><button class="cta small" type="button" data-carbuy ${own||PROG.rubies<d.price?'disabled':''}>${own?'Já é seu':'Comprar · ♦ '+v9Fmt(d.price)}</button><div class="cr-dots">${L.map((_,i)=>`<i class="${i===k?'on':''}"></i>`).join('')}</div></div>`;
+  box.querySelector('.cr-p').onclick=e=>{ e.stopPropagation(); CRS.i=(CRS.i+L.length-1)%L.length; carRender(); carTimer(); Snd.ui('slide'); };
+  box.querySelector('.cr-n').onclick=e=>{ e.stopPropagation(); CRS.i=(CRS.i+1)%L.length; carRender(); carTimer(); Snd.ui('slide'); };
   const bb=box.querySelector('[data-carbuy]'); if(bb) bb.onclick=e=>{ e.stopPropagation(); try{ buySkin(d.c,d.k); }catch(x){} carRender(); }; }
-v9On('menu',()=>{ CRS.list=carList(); carRender(); clearInterval(CRS.t); CRS.t=setInterval(()=>{ const m=document.getElementById('menu'); if(!m||m.hidden) return; CRS.i++; carRender(); },6500); });
-v9Css(`#ad{width:min(420px,32vw)!important;max-width:none!important}#ad .v9car{display:grid;grid-template-columns:150px 1fr;gap:10px;margin-top:10px;border-top:1px solid #3a2a22;padding-top:10px}
-#ad .cr-img{position:relative;height:190px;background:radial-gradient(ellipse at 50% 70%,rgba(255,40,40,.25),transparent 70%);display:flex;align-items:flex-end;justify-content:center}#ad .cr-img img{height:190px;animation:crIn .6s ease}
-#ad .cr-p,#ad .cr-n{position:absolute;top:45%;background:rgba(0,0,0,.6);border:1px solid #3a3022;color:#eee;width:24px;height:30px;cursor:pointer}#ad .cr-p{left:0}#ad .cr-n{right:0}
-#ad .cr-tx{display:flex;flex-direction:column;gap:6px;justify-content:center}#ad .cr-tx small{font:10px "Special Elite",monospace;color:#8a8478;letter-spacing:.15em;text-transform:uppercase}#ad .cr-tx b{font:700 18px "Stardos Stencil",Impact;color:#f4ead2}
-#ad .cr-dots{display:flex;gap:4px}#ad .cr-dots i{width:16px;height:3px;background:#3a3022}#ad .cr-dots i.on{background:#e0301f}@keyframes crIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}`);
+function carTimer(){ clearInterval(CRS.t); CRS.t=setInterval(()=>{ const m=document.getElementById('menu'); if(!m||m.hidden) return; CRS.i++; carRender(); },5000); }
+v9On('menu',()=>{ CRS.list=carList(); carRender(); newsRender(); carTimer(); clearInterval(NWS.t); NWS.t=setInterval(()=>{ const m=document.getElementById('menu'); if(!m||m.hidden) return; NWS.i++; newsRender(); },7000); });
+v9Css(`#ad{width:min(400px,31vw)!important;max-width:none!important}
+#ad.v9ad .adtag,#ad.v9ad .adhead,#ad.v9ad .adline,#ad.v9ad .adbody>.row,#ad.v9ad .admsg{display:none!important}
+#ad.v9ad .adbody{gap:0;padding:0}
+#ad .v9news{padding:12px 14px 12px;border-bottom:1px solid rgba(255,40,60,.25);background:linear-gradient(180deg,rgba(255,40,60,.08),transparent)}
+#ad .nw-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}#ad .nw-h span{font:11px "Special Elite",monospace;letter-spacing:.22em;text-transform:uppercase;color:#ff5a4a}#ad .nw-h em{font:10px "Special Elite",monospace;font-style:normal;color:#8a8478;letter-spacing:.12em}
+#ad .nw-s{min-height:78px;animation:crIn .5s ease}#ad .nw-s small{display:block;font:10px "Special Elite",monospace;letter-spacing:.18em;text-transform:uppercase;color:#c9a24a}#ad .nw-s b{display:block;font:700 21px "Stardos Stencil",Impact;color:#f4ead2;margin:2px 0 3px}#ad .nw-s p{margin:0;font-size:12px;line-height:1.4;color:#b8ab98}
+#ad .nw-dots,#ad .cr-dots{display:flex;gap:4px}#ad .nw-dots,#ad .cr-dots{margin-top:6px}#ad .nw-dots i,#ad .cr-dots i{width:14px;height:3px;background:#6a5a48;cursor:pointer;flex:none}#ad .nw-dots i.on,#ad .cr-dots i.on{background:#e0301f}
+#ad .v9car{padding:10px 14px 14px}
+#ad .cr-h{display:flex;justify-content:space-between;align-items:center}#ad .cr-h span{font:11px "Special Elite",monospace;letter-spacing:.22em;text-transform:uppercase;color:#ff5a4a}#ad .cr-h small{font:10px "Special Elite",monospace;color:#8a8478}
+#ad .cr-img{position:relative;height:clamp(150px,22vh,230px);margin:6px 0 4px;background:radial-gradient(ellipse at 50% 75%,rgba(255,40,40,.22),transparent 70%);display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+#ad .cr-img img{height:100%;object-fit:contain;animation:crIn .55s ease}
+#ad .cr-p,#ad .cr-n{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.55);border:1px solid #3a3022;color:#eee;width:28px;height:38px;cursor:pointer;font-size:18px}#ad .cr-p{left:0}#ad .cr-n{right:0}#ad .cr-p:hover,#ad .cr-n:hover{border-color:#e0301f}
+#ad .cr-tx{text-align:center}#ad .cr-tx small{display:block;font:10px "Special Elite",monospace;color:#8a8478;letter-spacing:.15em;text-transform:uppercase}#ad .cr-tx b{display:block;font:700 20px "Stardos Stencil",Impact;color:#f4ead2}
+#ad .cr-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px}
+@keyframes crIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}`);
 const _v9menuEnter=menuEnter; menuEnter=function(){ _v9menuEnter(); try{ v9Run('menu'); }catch(e){} };
 
 /* ---- cenário do menu: grama, pedras, terra, entulho e mato em volta do grupo ---- */

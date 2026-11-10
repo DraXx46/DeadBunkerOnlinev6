@@ -3,7 +3,7 @@
    1. Consulta o manifesto da última versão do jogo (release "game-latest" no GitHub).
    2. Se houver versão nova, baixa o zip, confere o SHA-256 e substitui a pasta do jogo.
    3. Abre o jogo numa janela própria, servido pelo esquema bunker:// (sem servidor local). */
-const { app, BrowserWindow, ipcMain, net, protocol } = require('electron');
+const { app, BrowserWindow, ipcMain, net, protocol, screen } = require('electron');
 /* O jogo agora se chama Dead Bunker, mas a pasta de dados continua a antiga ("Bunker dos Mortos"):
    assim quem já tinha o launcher não perde o jogo baixado nem o progresso salvo (localStorage fica nessa pasta). */
 try { app.setPath('userData', require('path').join(app.getPath('appData'), 'Bunker dos Mortos')); } catch (e) {}
@@ -181,17 +181,53 @@ function blockCtrlW(win) {
   });
 }
 
+/* Modo de tela do jogo: guardado em display.json na pasta de dados. Começa em tela cheia. */
+let displayFile = null;
+function readDisplay() {
+  try { const d = JSON.parse(fs.readFileSync(displayFile, 'utf8')); if (d && typeof d === 'object') return d; } catch (e) {}
+  return { mode: 'full', w: 0, h: 0 };
+}
+function writeDisplay(d) { try { fs.writeFileSync(displayFile, JSON.stringify(d)); } catch (e) {} }
+function applyDisplay(win, d) {
+  if (!win || win.isDestroyed()) return;
+  if (d.mode === 'full') { win.setFullScreen(true); return; }
+  if (win.isFullScreen()) win.setFullScreen(false);
+  if (d.mode === 'max') { setTimeout(() => { if (!win.isDestroyed()) win.maximize(); }, 60); return; }
+  if (win.isMaximized()) win.unmaximize();
+  const area = screen.getDisplayMatching(win.getBounds()).workAreaSize;
+  const w = Math.min(d.w || 1280, area.width), h = Math.min(d.h || 720, area.height);
+  setTimeout(() => { if (win.isDestroyed()) return; win.setContentSize(w, h); win.center(); }, 60);
+}
+ipcMain.handle('display:get', () => {
+  const d = readDisplay(); const p = screen.getPrimaryDisplay();
+  return Object.assign({}, d, { screenW: Math.round(p.size.width * p.scaleFactor), screenH: Math.round(p.size.height * p.scaleFactor), full: !!(gameWin && gameWin.isFullScreen()) });
+});
+ipcMain.handle('display:set', (_e, opts) => {
+  const cur = readDisplay();
+  const d = { mode: ['full', 'window', 'max'].includes(opts && opts.mode) ? opts.mode : cur.mode, w: Math.max(0, (opts && opts.w) | 0), h: Math.max(0, (opts && opts.h) | 0) };
+  writeDisplay(d); applyDisplay(gameWin, d); return d;
+});
+
 function launchGame() {
+  const disp = readDisplay();
   gameWin = new BrowserWindow({
-    width: 1280,
-    height: 720,
+    width: disp.mode === 'window' && disp.w ? disp.w : 1280,
+    height: disp.mode === 'window' && disp.h ? disp.h : 720,
+    useContentSize: true,
+    fullscreen: disp.mode === 'full',
+    show: false,
     minWidth: 800,
     minHeight: 500,
     backgroundColor: '#0a0606',
     title: 'Dead Bunker',
     icon: path.join(__dirname, 'build', 'icon.png'),
     autoHideMenuBar: true,
-    webPreferences: { sandbox: true, contextIsolation: true }
+    webPreferences: { sandbox: true, contextIsolation: true, preload: path.join(__dirname, 'gamepreload.js') }
+  });
+  gameWin.once('ready-to-show', () => { if (disp.mode === 'max') gameWin.maximize(); gameWin.show(); });
+  // F11 alterna tela cheia a qualquer momento
+  gameWin.webContents.on('before-input-event', (event, input) => {
+    if (input.type === 'keyDown' && input.key === 'F11') { event.preventDefault(); const d = readDisplay(); d.mode = gameWin.isFullScreen() ? 'window' : 'full'; writeDisplay(d); applyDisplay(gameWin, d); }
   });
 
   // O jogo só deve navegar dentro do próprio esquema; links externos ficam fora da janela.
@@ -222,6 +258,7 @@ if (!app.requestSingleInstanceLock()) {
     gameDir = path.join(app.getPath('userData'), 'game');
     stagingDir = path.join(app.getPath('userData'), 'game-new');
     installedFile = path.join(app.getPath('userData'), 'installed.json');
+    displayFile = path.join(app.getPath('userData'), 'display.json');
 
     protocol.handle(SCHEME, (req) => {
       const { pathname } = new URL(req.url);

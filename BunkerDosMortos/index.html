@@ -1266,7 +1266,7 @@ body.cinema #tzcap{display:none}
     </div>
     <div class="setp" data-st="video" hidden>
       <label class="sl"><span>Campo de visão</span><input type="range" data-k="fov" data-fmt="deg" min="60" max="110" step="1"><output></output></label>
-      <label class="sl"><span>Resolução</span><input type="range" data-k="quality" data-fmt="pct" min="0.5" max="1" step="0.05"><output></output></label>
+      <label class="sl"><span>Escala de renderização</span><input type="range" data-k="quality" data-fmt="pct" min="0.5" max="1" step="0.05"><output></output></label>
       <label class="sl"><span>Brilho</span><input type="range" data-k="bright" data-fmt="pct" min="0.7" max="1.6" step="0.05"><output></output></label>
       <p class="file" style="margin:14px 0 4px">Gráficos avançados</p>
       <button type="button" class="sw" role="switch" data-k="realLight"><span>Iluminação realista (tonemapping de cinema, luzes e cores mais naturais)</span><i></i></button>
@@ -6635,7 +6635,7 @@ function padTxt(t){ return String(t).replace(/\b(Pressione|pressione|Aperte|aper
 const PAD={idx:-1,active:false,id:'',prev:[],rx:0,ry:0,lx:0,ly:0,r2:0,l2:0,accT:0,ads0:0,snapT:0,env:[],m:[0,0],sent:'',hid:null,hidBT:false,seq:0,hidT:0,trig:['',''],light:'',heartT:0,
   nav:{el:null,rep:0,dir:'',held:0},sq:0,sqUsed:false,err:0,last:0,toasted:false};
 const PB={X:0,O:1,SQ:2,TRI:3,L1:4,R1:5,L2:6,R2:7,CREATE:8,OPT:9,L3:10,R3:11,UP:12,DOWN:13,LEFT:14,RIGHT:15,PS:16,TP:17};
-function padGet(){ if(PAD.hidBT&&PAD.hid&&PAD.hidPad&&performance.now()-PAD.hidPad.timestamp<700) return PAD.hidPad;   // v9: DualSense por Bluetooth com gatilhos ligados
+function padGet(){ if(PAD.hid&&PAD.hidPad&&performance.now()-PAD.hidPad.timestamp<700) return PAD.hidPad;   // v9: DualSense por Bluetooth com gatilhos ligados
   let gps=[]; try{ gps=navigator.getGamepads?navigator.getGamepads():[]; }catch(e){ return null; }
   if(PAD.idx>=0&&gps[PAD.idx]&&gps[PAD.idx].connected) return gps[PAD.idx];
   for(const g of gps) if(g&&g.connected&&g.buttons.length>=16){ PAD.idx=g.index; PAD.id=g.id; return g; } PAD.idx=-1; return null; }
@@ -6752,9 +6752,12 @@ function padHaptics(dt){
 const DS_FILTERS=[{vendorId:0x054c,productId:0x0ce6},{vendorId:0x054c,productId:0x0df2}];
 async function padHidConnect(ask){ if(!navigator.hid){ if(ask) toast('Este navegador não deixa acessar o controle direto (use Chrome ou Edge).',{bad:true}); return false; }
   try{ let devs=await navigator.hid.getDevices(); devs=devs.filter(d=>DS_FILTERS.some(f=>f.vendorId===d.vendorId&&f.productId===d.productId));
-    if(!devs.length&&ask) devs=await navigator.hid.requestDevice({filters:DS_FILTERS}); const d=devs[0]; if(!d) return false;
+    if(!devs.length&&ask) devs=await navigator.hid.requestDevice({filters:DS_FILTERS});
+    const d=devs.find(x=>(x.collections||[]).some(c=>(c.outputReports||[]).length))||devs[0]; if(!d) return false;
     if(!d.opened) await d.open(); PAD.hid=d; PAD.hidBT=!(d.collections||[]).some(c=>(c.outputReports||[]).some(r=>r.reportId===0x02));
-    if(PAD.hidBT){ if(!d._v9in){ d._v9in=true; d.addEventListener('inputreport',padHidInput); } try{ await d.receiveFeatureReport(0x05); }catch(e){} }
+    // v9: escuta a entrada de todos os DualSense abertos (no Windows o mesmo controle Bluetooth pode virar mais de um dispositivo)
+    for(const x of devs){ try{ if(!x.opened) await x.open(); }catch(e){} if(!x._v9in){ x._v9in=true; x.addEventListener('inputreport',padHidInput); } }
+    if(PAD.hidBT){ try{ await d.receiveFeatureReport(0x05); }catch(e){} }
     PAD.sent=''; PAD.trig=['','']; PAD.light=''; PAD.setup=true; padStatus(); if(ask) toast('DualSense conectado: gatilhos adaptativos e luz ativos.'); return true;
   }catch(e){ console.warn('[Bunker] DualSense HID',e); if(ask) toast('Não foi possível abrir o controle. Feche outros programas que usam o DualSense (Steam, DS4Windows) e tente de novo.',{bad:true}); return false; } }
 if(navigator.hid){ navigator.hid.addEventListener('disconnect',e=>{ if(e.device===PAD.hid){ PAD.hid=null; padStatus(); } }); setTimeout(()=>padHidConnect(false),1500); }
@@ -6762,10 +6765,14 @@ if(navigator.hid){ navigator.hid.addEventListener('disconnect',e=>{ if(e.device=
    não consegue mais ler os botões pela Gamepad API e o controle "para". Então lemos os botões e analógicos direto do relatório
    HID e montamos um controle no formato padrão para o resto do jogo. */
 const HIDPAD_HAT=[[1,0,0,0],[1,0,0,1],[0,0,0,1],[0,1,0,1],[0,1,0,0],[0,1,1,0],[0,0,1,0],[1,0,1,0],[0,0,0,0]];   // cima, baixo, esq, dir
-function padHidInput(e){ if(e.reportId!==0x31) return; const v=e.data; if(!v||v.byteLength<11) return;
-  const o=1;   // relatório 0x31 do Bluetooth: 1 byte de contador antes do mesmo formato do USB
-  const ax=i=>{ const x=(v.getUint8(o+i)-128)/127.5; return Math.abs(x)<0.02?0:Math.max(-1,Math.min(1,x)); };
-  const l2=v.getUint8(o+4)/255, r2=v.getUint8(o+5)/255, b0=v.getUint8(o+7), b1=v.getUint8(o+8), b2=v.byteLength>o+9?v.getUint8(o+9):0;
+function padHidInput(e){ const v=e.data; const st=PAD.hidStat||(PAD.hidStat={}); const key=e.reportId+':'+(v?v.byteLength:0); st[key]=(st[key]|0)+1;
+  if(!v||v.byteLength<9) return;
+  // 0x31 (Bluetooth completo): 1 byte de contador + formato do USB · 0x01 longo (USB): formato do USB · 0x01 curto (Bluetooth simples): formato antigo
+  let o, l2, r2, b0, b1, b2;
+  if(e.reportId===0x31&&v.byteLength>=11){ o=1; } else if(e.reportId===0x01&&v.byteLength>=40){ o=0; } else if(e.reportId===0x01){ o=-1; } else return;
+  if(o>=0){ l2=v.getUint8(o+4)/255; r2=v.getUint8(o+5)/255; b0=v.getUint8(o+7); b1=v.getUint8(o+8); b2=v.getUint8(o+9); }
+  else { b0=v.getUint8(4); b1=v.getUint8(5); b2=v.getUint8(6)&0x03; l2=v.getUint8(7)/255; r2=v.getUint8(8)/255; o=0; }
+  const ax=i=>{ const x=(v.getUint8(o+i)-128)/127.5; return Math.abs(x)<0.06?0:Math.max(-1,Math.min(1,x)); };
   const hat=HIDPAD_HAT[b0&0x0f]||HIDPAD_HAT[8];
   const pr=[b0&0x20,b0&0x40,b0&0x10,b0&0x80,b1&0x01,b1&0x02,null,null,b1&0x10,b1&0x20,b1&0x40,b1&0x80,hat[0],hat[1],hat[2],hat[3],b2&0x01,b2&0x02];
   let g=PAD.hidPad; if(!g){ g=PAD.hidPad={id:'DualSense Wireless Controller (Bluetooth · HID) Vendor: 054c',index:-2,connected:true,mapping:'standard',timestamp:0,axes:[0,0,0,0],buttons:pr.map(()=>({pressed:false,touched:false,value:0})),vibrationActuator:null}; }
@@ -6846,6 +6853,7 @@ const HAPS={
 for(const k in HAPS){ const f=Snd[k]; if(typeof f!=='function') continue; Snd[k]=function(...a){ if(PAD.active) try{ HAPS[k](...a); }catch(e){} return f.apply(this,a); }; }
 function padStatus(){ const el=$('#pad-status'); if(!el) return; const g=padGet(); const ds=g&&/dualsense|054c|wireless controller/i.test(g.id);
   el.textContent=!g?'Nenhum controle detectado. Ligue o controle (USB ou Bluetooth) e aperte qualquer botão.':`${ds?'DualSense':'Controle'} conectado${PAD.hid?` · gatilhos adaptativos e luz ativos (${PAD.hidBT?'Bluetooth':'USB'})`:navigator.hid?' · para gatilhos adaptativos e luz, clique em Ativar abaixo':''}`;
+  if(PAD.hid){ const st=PAD.hidStat||{}; const ks=Object.keys(st); el.textContent+=` · entrada HID: ${ks.length?ks.map(k=>'#'+(+k.split(':')[0]).toString(16)+'/'+k.split(':')[1]+'×'+st[k]).join(' '):'nenhuma ainda'}`; }
   const hb=$('#pad-hid'); if(hb){ hb.hidden=!navigator.hid; hb.textContent=PAD.hid?'DualSense ativo ✓':'Ativar gatilhos adaptativos e luz (DualSense)'; hb.disabled=!!PAD.hid; } }
 
 /* ---- touch ---- */
@@ -15363,6 +15371,47 @@ function v9OrganicZG(ZG){
   CMDS.v9={d:'lista os comandos da v9',f:()=>{ cprint('Comandos da v9 (os marcados com * pedem sv_cheats 1):','dim'); for(const k of ['map','tp','pos','carro','maquina','lab','chefe','mutante','evento','troca','reliquia','perk','reviver','forja','cachorro_agarrar','recompensa','recompensa_fim','vitrine','carrossel','arma_xp','intro','give']) if(CMDS[k]) cprint(`${CMDS[k].cheat?'* ':'  '}${k} — ${CMDS[k].d}`); cprint('  give weapon_xbow · Besta Carcará (as outras armas novas também estão no give)','dim'); }};
   for(const k of ['vitrine','tp','carro','maquina','lab','mutante','troca','reliquia','reviver','forja','cachorro_agarrar','recompensa','recompensa_fim','arma_xp']) if(CMDS[k]) CMDS[k].cheat=1;
 })();
+
+/* ---- 20_display.js ---- */
+/* ================= v9 · MODO DE TELA E RESOLUÇÃO =================
+   Opções de vídeo: modo de tela (tela cheia, janela, janela maximizada) e resolução.
+   No launcher a janela muda de verdade (e o jogo já abre em tela cheia). No navegador, tela cheia pelo próprio navegador
+   (no primeiro clique, porque o navegador exige um clique) e a resolução vira a resolução de desenho do jogo. */
+const DISP={mode:'full',res:'native',asked:false};
+try{ Object.assign(DISP,JSON.parse(localStorage.getItem('db_display')||'{}')); }catch(e){}
+const RES_LIST=[['native','Nativa da tela'],['3840x2160','3840 × 2160 (4K)'],['2560x1440','2560 × 1440'],['1920x1080','1920 × 1080'],['1600x900','1600 × 900'],['1366x768','1366 × 768'],['1280x720','1280 × 720']];
+function dispSave(){ try{ localStorage.setItem('db_display',JSON.stringify({mode:DISP.mode,res:DISP.res})); }catch(e){} }
+function dispWH(){ const m=/^(\d+)x(\d+)$/.exec(DISP.res||''); return m?[+m[1],+m[2]]:null; }
+// resolução de desenho: em tela cheia (ou no navegador) a resolução escolhida vira a densidade de pixels do jogo
+const _prTarget=prTarget; prTarget=function(){ const wh=dispWH(); if(!wh||(window.deadBunker&&DISP.mode==='window')) return _prTarget();
+  const pr=Math.max(0.35,Math.min(3,wh[0]/Math.max(320,innerWidth)))*CFG.quality; return CFG.potato?Math.min(pr,0.8):pr; };
+function dispApplyRender(){ try{ renderer.setPixelRatio(prTarget()); resize(); }catch(e){} }
+addEventListener('resize',()=>{ if(dispWH()) dispApplyRender(); });
+function dispFullBrowser(on){ try{ if(on&&!document.fullscreenElement) return document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{}); if(!on&&document.fullscreenElement) return document.exitFullscreen().catch(()=>{}); }catch(e){} }
+function dispApply(){ dispSave(); dispApplyRender();
+  const wh=dispWH()||[0,0];
+  if(window.deadBunker&&window.deadBunker.setDisplay){ try{ window.deadBunker.setDisplay({mode:DISP.mode,w:wh[0],h:wh[1]}); }catch(e){} }
+  else dispFullBrowser(DISP.mode==='full'); }
+// navegador: pede tela cheia no primeiro clique/tecla (o vídeo de abertura não conta, ele não aceita cliques)
+function dispFirstGesture(){ if(DISP.asked||window.deadBunker) return; if(document.getElementById('v9intro')) return; DISP.asked=true; if(DISP.mode==='full') dispFullBrowser(true); }
+addEventListener('pointerdown',dispFirstGesture,true); addEventListener('keydown',e=>{ if(e.key!=='Escape') dispFirstGesture(); },true);
+// launcher: lê o modo atual guardado nele
+if(window.deadBunker&&window.deadBunker.getDisplay){ window.deadBunker.getDisplay().then(d=>{ if(d&&d.mode){ DISP.mode=d.mode; if(d.w&&d.h&&DISP.mode==='window') DISP.res=d.w+'x'+d.h; dispSave(); dispUiSync(); } }).catch(()=>{}); }
+dispApplyRender();
+// controles na aba Vídeo
+function dispUiSync(){ const m=document.getElementById('v9-dmode'), r=document.getElementById('v9-dres'); if(m) m.value=DISP.mode; if(r) r.value=DISP.res; }
+(function(){ const box=document.querySelector('.setp[data-st="video"]'); if(!box||document.getElementById('v9-dmode')) return;
+  const wrap=v9El('div','v9disp',`<label class="v9sel"><span>Modo de tela</span><select id="v9-dmode"><option value="full">Tela cheia</option><option value="window">Janela</option><option value="max">Janela maximizada</option></select></label>
+  <label class="v9sel"><span>Resolução</span><select id="v9-dres">${RES_LIST.map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></label>
+  <p class="v9dhint">${window.deadBunker?'F11 também alterna a tela cheia.':'No navegador, a tela cheia pede um clique; Esc sai dela.'}</p>`);
+  box.prepend(wrap); dispUiSync();
+  wrap.querySelector('#v9-dmode').addEventListener('change',e=>{ DISP.mode=e.target.value; dispApply(); try{ Snd.ui('tab'); }catch(_){} });
+  wrap.querySelector('#v9-dres').addEventListener('change',e=>{ DISP.res=e.target.value; dispApply(); try{ Snd.ui('tab'); }catch(_){} });
+  document.addEventListener('fullscreenchange',()=>{ if(!window.deadBunker&&!document.fullscreenElement&&DISP.mode==='full'){ /* saiu com Esc: mantém a escolha, mas não força de novo */ } });
+})();
+v9Css(`.v9disp{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-bottom:12px}.v9sel{display:flex;flex-direction:column;gap:5px}.v9sel span{font-size:13px;color:var(--muted,#a89a88)}
+.v9sel select{background:#120d0b;color:#ece4d2;border:1px solid #3a2a22;padding:8px 10px;font:inherit;font-size:14px}.v9sel select:focus{outline:1px solid #c8241b}
+.v9dhint{grid-column:1/-1;margin:0;font-size:11px;color:#6d5f54}`);
 
 /*</V9>*/
 /* ================= MAIN LOOP ================= */

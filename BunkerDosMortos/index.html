@@ -15394,9 +15394,13 @@ function v9OrganicZG(ZG){
 })();
 /* ---- habilidade e ultimate na hora ---- */
 const V9AB={inf:false};
-CMDS.carregar={cheat:1,d:'carregar · enche a ultimate e zera a recarga da habilidade agora',f:()=>{ AB.ult=100; AB.cd=0; AB.heat=0; AB.ready=true; try{ abHud(true); }catch(e){} cprint('Habilidade (Z) e ultimate (X) prontas.'); }};
+function abReadyNow(){ V9AB.unlock=true; AB.ult=100; AB.cd=0; AB.heat=0; AB.act=0; AB.dash=0; AB.ultAct=0; AB.ready=true; try{ abHud(true); }catch(e){} }
+// com o carregar, habilidade e ultimate ficam liberadas nesta sessão mesmo se o personagem ainda não desbloqueou
+const _v9lvA=abLvAx; abLvAx=function(ax,z){ const r=_v9lvA(ax,z); return V9AB.unlock&&CHEAT.on?Math.max(r,0):r; };
+const _v9lvU=abLvUx; abLvUx=function(ax,z){ const r=_v9lvU(ax,z); return V9AB.unlock&&CHEAT.on?Math.max(r,1):r; };
+CMDS.carregar={cheat:1,d:'carregar · habilidade (Z) e ultimate (X) prontas para usar agora: sem recarga, sem efeito ativo travando e liberadas mesmo se bloqueadas',f:()=>{ abReadyNow(); cprint('Habilidade (Z) e ultimate (X) prontas para usar.'); }};
 CMDS.hab_infinita={cheat:1,d:'hab_infinita 0/1 · habilidade e ultimate sempre carregadas (recarregam na hora depois de usar)',f:a=>{ const b=bool(a[0]); V9AB.inf=b==null?!V9AB.inf:b; cprint('Habilidade infinita '+(V9AB.inf?'LIGADA':'DESLIGADA')); }};
-v9On('always',()=>{ if(!V9AB.inf||!CHEAT.on||G.state!=='playing') return; if(AB.ult<100) AB.ult=100; if(AB.cd>0) AB.cd=0; AB.heat=0; AB.ready=true; });
+v9On('always',()=>{ if(!V9AB.inf||!CHEAT.on||G.state!=='playing') return; V9AB.unlock=true; if(AB.ult<100) AB.ult=100; if(AB.cd>0) AB.cd=0; AB.heat=0; AB.ready=true; });
 v9On('reset',()=>{ if(!CHEAT.on) V9AB.inf=false; });
 
 /* ---- 20_display.js ---- */

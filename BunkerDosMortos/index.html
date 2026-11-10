@@ -15386,9 +15386,15 @@ function v9OrganicZG(ZG){
   CMDS.intro={d:'toca de novo o vídeo de abertura',f:()=>{ closeConsole(); const d=v9El('div','',`<video src="intro.mp4" autoplay playsinline style="width:100%;height:100%;object-fit:contain;background:#000"></video>`); d.style.cssText='position:fixed;inset:0;z-index:300;background:#000'; document.body.appendChild(d); const v=d.querySelector('video'); v.muted=false; const end=()=>d.remove(); v.onended=end; v.onerror=end; d.onclick=end; }};
 
   /* ---- lista do que é novo ---- */
-  CMDS.v9={d:'lista os comandos da v9',f:()=>{ cprint('Comandos da v9 (os marcados com * pedem sv_cheats 1):','dim'); for(const k of ['map','tp','pos','carro','maquina','lab','chefe','mutante','evento','troca','reliquia','perk','reviver','forja','cachorro_agarrar','recompensa','recompensa_fim','vitrine','carrossel','arma_xp','intro','give']) if(CMDS[k]) cprint(`${CMDS[k].cheat?'* ':'  '}${k} — ${CMDS[k].d}`); cprint('  give weapon_xbow · Besta Carcará (as outras armas novas também estão no give)','dim'); }};
+  CMDS.v9={d:'lista os comandos da v9',f:()=>{ cprint('Comandos da v9 (os marcados com * pedem sv_cheats 1):','dim'); for(const k of ['map','tp','pos','carro','maquina','lab','chefe','mutante','evento','troca','reliquia','perk','reviver','forja','cachorro_agarrar','recompensa','recompensa_fim','carregar','hab_infinita','vitrine','carrossel','arma_xp','intro','give']) if(CMDS[k]) cprint(`${CMDS[k].cheat?'* ':'  '}${k} — ${CMDS[k].d}`); cprint('  give weapon_xbow · Besta Carcará (as outras armas novas também estão no give)','dim'); }};
   for(const k of ['vitrine','tp','carro','maquina','lab','mutante','troca','reliquia','reviver','forja','cachorro_agarrar','recompensa','recompensa_fim','arma_xp']) if(CMDS[k]) CMDS[k].cheat=1;
 })();
+/* ---- habilidade e ultimate na hora ---- */
+const V9AB={inf:false};
+CMDS.carregar={cheat:1,d:'carregar · enche a ultimate e zera a recarga da habilidade agora',f:()=>{ AB.ult=100; AB.cd=0; AB.heat=0; AB.ready=true; try{ abHud(true); }catch(e){} cprint('Habilidade (Z) e ultimate (X) prontas.'); }};
+CMDS.hab_infinita={cheat:1,d:'hab_infinita 0/1 · habilidade e ultimate sempre carregadas (recarregam na hora depois de usar)',f:a=>{ const b=bool(a[0]); V9AB.inf=b==null?!V9AB.inf:b; cprint('Habilidade infinita '+(V9AB.inf?'LIGADA':'DESLIGADA')); }};
+v9On('always',()=>{ if(!V9AB.inf||!CHEAT.on||G.state!=='playing') return; if(AB.ult<100) AB.ult=100; if(AB.cd>0) AB.cd=0; AB.heat=0; AB.ready=true; });
+v9On('reset',()=>{ if(!CHEAT.on) V9AB.inf=false; });
 
 /* ---- 20_display.js ---- */
 /* ================= v9 · MODO DE TELA E RESOLUÇÃO =================

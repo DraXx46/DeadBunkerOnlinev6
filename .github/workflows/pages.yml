@@ -32,6 +32,12 @@ jobs:
         with:
           enablement: true
 
+      - name: Copy private test build (unlisted, not linked from the site)
+        run: |
+          mkdir -p site/teste-1ff1deba5a67
+          rsync -a --exclude 'server.js' --exclude 'package*.json' --exclude 'node_modules' --exclude '*.bat' --exclude 'NOTAS_V9.txt' BunkerDosMortos/ site/teste-1ff1deba5a67/
+          sed -i 's#<head>#<head><meta name="robots" content="noindex,nofollow">#' site/teste-1ff1deba5a67/index.html
+
       - name: Upload game files
         uses: actions/upload-pages-artifact@v3
         with:

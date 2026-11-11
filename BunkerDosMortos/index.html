@@ -17406,6 +17406,8 @@ finDeath=function(z,dt){ const t=z.fxT!=null&&FX2.z===z?z.fxT:z.t*0.95, aL=z.arm
   } else { const tt=z.t; z.t=t; try{ fallFrom(z,dt,1.5,'knees'); }finally{ z.t=tt; } }
   z.g.position.x=z.pos.x; z.g.position.z=z.pos.z; z.g.rotation.y=z.yaw; };
 CMDS.finalizar={cheat:1,d:'finalizar · executa a finalização de faca no zumbi mais perto (para testar)',f:()=>{ let best=null,bd=9; for(const z of zlist()){ if(z.dead||isBossZ(z)||z.kind==='dog') continue; const d=Math.hypot(z.pos.x-P.pos.x,z.pos.z-P.pos.z); if(d<bd){ bd=d; best=z; } } if(!best){ cprint('Nenhum zumbi por perto'); return; } closeConsole(); drawKnife(); setTimeout(()=>{ Wp.kAct='stab'; Wp.kT=0.4; Wp.kHit=true; killZombie(best,'head','knife'); },250); }};
+// golpe de faca na cabeça normalmente arranca a cabeça; na finalização ela fica no lugar (é onde a lâmina entra)
+{ const _kz=killZombie; killZombie=function(z){ const r=_kz.apply(this,arguments); try{ if(z&&z.v9fin&&FX2.z===z&&z.head) z.head.visible=true; }catch(e){} return r; }; }
 
 /*</V9>*/
 /* ================= MAIN LOOP ================= */

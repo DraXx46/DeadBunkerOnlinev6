@@ -74,3 +74,16 @@ VISUAL
 - Sons gravados (Artlist e os que você mandou) para cachorros, faca na parede, padre, médica, besta, capacete, chefe, escudo,
   roleta, recompensas, carro, máquina do tempo, choque, fogo, dor e cliques de menu.
 - Mixagem com limitador e teto de vozes: o som não corta mais quando muita coisa toca junto.
+
+== v9 · mais gameplay (27_more.js) ==
+- Corrida: Shift (ou L3 com o analógico para frente) · barra de fôlego · arma abaixa · não atira correndo · FOV abre um pouco
+- Recarga tática: com bala no pente recarrega 20% mais rápido; pente vazio 10% mais lento
+- Tab: placar da partida (mapa, rodada, tempo, abates, cabeça, pontos, quedas)
+- 16 conquistas com recompensa em Drax; aparecem na aba Desafios junto com o histórico das últimas partidas
+- Dificuldade dinâmica (a partir da rodada 4, ajusta a vida dos zumbis entre 82% e 125%)
+- Console: modo umtiro | aleatorio | normal
+- Cabeça explode com escopeta/rifle de precisão a menos de 8 m
+- Música dinâmica sintetizada (camadas sobem com zumbis vivos, rodada e chefes)
+- Chuva na cidade, relâmpagos no hospício
+- Frases rápidas: N e depois 1 a 5 (vão para o squad)
+- Vídeo > Tamanho da interface

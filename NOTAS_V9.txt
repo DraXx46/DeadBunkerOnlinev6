@@ -1,0 +1,5 @@
+
+== 35/36 · carro da fuga, chuva, finalização de faca ==
+- 35_car.js: sedã novo (lataria em perfil extrudado, cabine oca), bancos por jogador, colisão do carro desligada enquanto sentado, saída pela porta do lado. Teste: carro_entrar.
+- 27_more.js: som da chuva da cidade = loops rain_city (rua) e rain_roof (telhado de zinco, dentro das lojas), mistura por dentro/fora.
+- 36_finisher.js: finalização de cinema do golpe pesado (FX2). Mão esquerda agarra, câmera lenta no impacto, lâmina cortada por plano de recorte (some dentro do crânio), empurra/torce/arranca, faixas de cinema e respingos na tela. Teste: finalizar.

@@ -64,7 +64,7 @@ function fxTip(out,dir){ const parts=fxKnifeParts(); if(!parts) return false; vm
   out.set(0,0,parts.fxTipZ).applyMatrix4(knifeModel.matrixWorld);
   _fxv2.set(0,0,0).applyMatrix4(knifeModel.matrixWorld); dir.copy(out).sub(_fxv2).normalize(); return true; }
 function fxHeadPos(z,v){ try{ (z.head&&z.head.visible?z.head:z.headP).getWorldPosition(v); }catch(e){ v.set(z.pos.x,zy(z)+1.72,z.pos.z); } return v; }
-function fxBlood(z,n,spd,toCam){ const h=fxHeadPos(z,new THREE.Vector3()); let x=h.x,y=h.y+0.05,zz=h.z; if(toCam){ const dx=P.pos.x-x, dz=P.pos.z-zz, d=Math.hypot(dx,dz)||1; x+=dx/d*0.12; zz+=dz/d*0.12; } emit('blood',x,y,zz,n,spd,0.9); }
+function fxBlood(z,n,spd,toCam){ const h=fxHeadPos(z,new THREE.Vector3()); let x=h.x,y=h.y+0.05,zz=h.z; if(toCam){ const dx=P.pos.x-x, dz=P.pos.z-zz, d=Math.hypot(dx,dz)||1; x+=dx/d*0.04; zz+=dz/d*0.04; } emit('blood',x,y,zz,n,spd,0.9); }
 function fxSnd(n,o){ try{ return Snd.sample(n,Object.assign({prio:1},o||{})); }catch(e){ return null; } }
 function fxThump(){ try{ const ctx=Snd.ctx; if(!ctx) return; const o=Snd.out(0.9,0,0.15,null); Snd.oscTo(o,{t:Snd.now,type:'sine',freq:62,freqEnd:34,dur:0.45,gain:0.75,attack:0.004}); }catch(e){} }
 // ---- início ----
@@ -90,14 +90,14 @@ v9On('always',dt=>{ if(!FX2.on) return; const z=FX2.z; if(!z||G.state!=='playing
   if(d>0.78&&t<0.4){ const m=Math.min(d-0.78,dt*6); P.pos.x+=dx/d*m; P.pos.z+=dz/d*m; }
   // impacto
   if(!FX2.impact&&t>=0.47){ FX2.impact=true; FX2.buried=true; shake(0.18); fxThump(); fxSnd(['knife_stab1','knife_stab2','knife_stab3'],{vol:1}); fxSnd('gore_splat',{vol:0.9}); fxSnd('hit_flesh1',{vol:0.8}); try{ Snd.head(); }catch(e){}
-    fxBlood(z,46,4.6,true); emit('gore',h.x,h.y,h.z,14,3.2,1); fxSplat(7,true); try{ vmBlood(1,true); }catch(e){}
-    try{ const o=h.clone(), dd=new THREE.Vector3(z.pos.x-P.pos.x,0.15,z.pos.z-P.pos.z).normalize(); emit('blood',o.x+dd.x*0.15,o.y,o.z+dd.z*0.15,30,4,0.9); const tt=rayWall(o,dd,3.5); if(tt<3.4) v9WallBlood(o.clone().addScaledVector(dd,tt),-dd.x,0,-dd.z); }catch(e){}
+    fxBlood(z,26,3.6,true); emit('gore',h.x,h.y,h.z,14,3.2,1); fxSplat(7,true); try{ vmBlood(1,true); }catch(e){}
+    try{ const o=h.clone(), dd=new THREE.Vector3(z.pos.x-P.pos.x,0.15,z.pos.z-P.pos.z).normalize(); emit('blood',o.x+dd.x*0.15,o.y,o.z+dd.z*0.15,30,4.5,0.9); const tt=rayWall(o,dd,3.5); if(tt<3.4) v9WallBlood(o.clone().addScaledVector(dd,tt),-dd.x,0,-dd.z); }catch(e){}
   }
-  if(FX2.impact&&FX2.pumps<1&&t>=0.76){ FX2.pumps=1; shake(0.1); fxSnd('knife_stab3',{vol:0.75,rate:0.9}); fxSnd('hit_flesh2',{vol:0.7}); fxBlood(z,22,3.4,true); fxSplat(3); try{ vmBlood(0.7,true); }catch(e){} }
-  if(FX2.impact&&FX2.pumps<2&&t>=1.02){ FX2.pumps=2; shake(0.08); fxSnd('knife_stab2',{vol:0.7,rate:0.85}); fxBlood(z,18,3,true); }
+  if(FX2.impact&&FX2.pumps<1&&t>=0.76){ FX2.pumps=1; shake(0.1); fxSnd('knife_stab3',{vol:0.75,rate:0.9}); fxSnd('hit_flesh2',{vol:0.7}); fxBlood(z,12,2.8,true); fxSplat(3); try{ vmBlood(0.7,true); }catch(e){} }
+  if(FX2.impact&&FX2.pumps<2&&t>=1.02){ FX2.pumps=2; shake(0.08); fxSnd('knife_stab2',{vol:0.7,rate:0.85}); fxBlood(z,10,2.6,true); }
   if(FX2.impact&&!FX2.twist&&t>=1.08){ FX2.twist=true; fxSnd('knife_twist',{vol:1}); fxSnd('gore_guts',{vol:0.45,rate:1.15}); }
   if(FX2.twist&&t<1.3&&Math.random()<dt*28) fxBlood(z,3,2.2,true);
-  if(!FX2.rip&&t>=1.33){ FX2.rip=true; shake(0.16); fxSnd('knife_stab1',{vol:0.9,rate:0.75}); fxSnd('gore_guts',{vol:0.7}); fxSnd('knife_whoosh',{vol:0.5,rate:1.2}); fxBlood(z,60,5.2,true); emit('gore',h.x,h.y,h.z,10,3.5,1); fxSplat(9,true); try{ vmBlood(1,true); }catch(e){} }
+  if(!FX2.rip&&t>=1.33){ FX2.rip=true; shake(0.16); fxSnd('knife_stab1',{vol:0.9,rate:0.75}); fxSnd('gore_guts',{vol:0.7}); fxSnd('knife_whoosh',{vol:0.5,rate:1.2}); fxBlood(z,32,4,true); emit('gore',h.x,h.y,h.z,10,3.5,1); fxSplat(9,true); try{ vmBlood(1,true); }catch(e){} }
   if(FX2.rip&&t<1.9&&Math.random()<dt*20) fxBlood(z,2,1.6,false);
   if(FX2.rip&&FX2.buried&&t>1.42) FX2.buried=false;
   if(!FX2.flick&&t>=1.72){ FX2.flick=true; fxSnd('knife_swing',{vol:0.45,rate:1.3}); const T=new THREE.Vector3(); try{ const c=camera.position, f=new THREE.Vector3(); camera.getWorldDirection(f); emit('blood',c.x+f.x*0.6+rand(-.1,.1),c.y-0.2,c.z+f.z*0.6,8,2.4,0.8); }catch(e){} }

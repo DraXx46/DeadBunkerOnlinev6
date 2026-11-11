@@ -84,20 +84,20 @@ v9On('reset',()=>fx2End());
 v9On('always',dt=>{ if(!FX2.on) return; const z=FX2.z; if(!z||G.state!=='playing'&&G.state!=='paused'||P.down){ fx2End(); return; } if(G.state==='paused') return;
   const t0=FX2.t, slow=t0>0.46&&t0<0.6?0.22:(t0>=1.36&&t0<1.42?0.4:1); FX2.t+=dt*slow; FX2.real+=dt; z.fxT=FX2.t; const t=FX2.t;
   // jogador gruda na vítima e a câmera crava na cabeça
-  const h=fxHeadPos(z,_fxv); const dx=z.pos.x-P.pos.x, dz=z.pos.z-P.pos.z, d=Math.hypot(dx,dz)||1, k=1-Math.exp(-dt*12);
+  const h=fxHeadPos(z,_fxv); const dx=z.pos.x-P.pos.x, dz=z.pos.z-P.pos.z, d=Math.hypot(dx,dz)||1, k=1-Math.exp(-dt*(FX2.buried?30:12));
   let dy=Math.atan2(-dx,-dz)-P.yaw; while(dy>Math.PI) dy-=Math.PI*2; while(dy<-Math.PI) dy+=Math.PI*2; P.yaw+=dy*k;
   const hp=Math.atan2(h.y-0.06-(P.base||0)-EYE_HEIGHT-P.y+0.6*P.crouch,d); P.pitch+=(clamp(hp,-0.7,0.7)-P.pitch)*k; P.vx=P.vz=0;
   if(d>0.78&&t<0.4){ const m=Math.min(d-0.78,dt*6); P.pos.x+=dx/d*m; P.pos.z+=dz/d*m; }
   // impacto
-  if(!FX2.impact&&t>=0.47){ FX2.impact=true; FX2.buried=true; shake(0.45); fxThump(); fxSnd(['knife_stab1','knife_stab2','knife_stab3'],{vol:1}); fxSnd('gore_splat',{vol:0.9}); fxSnd('hit_flesh1',{vol:0.8}); try{ Snd.head(); }catch(e){}
+  if(!FX2.impact&&t>=0.47){ FX2.impact=true; FX2.buried=true; shake(0.18); fxThump(); fxSnd(['knife_stab1','knife_stab2','knife_stab3'],{vol:1}); fxSnd('gore_splat',{vol:0.9}); fxSnd('hit_flesh1',{vol:0.8}); try{ Snd.head(); }catch(e){}
     fxBlood(z,46,4.6,true); emit('gore',h.x,h.y,h.z,14,3.2,1); fxSplat(7,true); try{ vmBlood(1,true); }catch(e){}
     try{ const o=h.clone(), dd=new THREE.Vector3(z.pos.x-P.pos.x,0.15,z.pos.z-P.pos.z).normalize(); emit('blood',o.x+dd.x*0.15,o.y,o.z+dd.z*0.15,30,4,0.9); const tt=rayWall(o,dd,3.5); if(tt<3.4) v9WallBlood(o.clone().addScaledVector(dd,tt),-dd.x,0,-dd.z); }catch(e){}
   }
-  if(FX2.impact&&FX2.pumps<1&&t>=0.76){ FX2.pumps=1; shake(0.25); fxSnd('knife_stab3',{vol:0.75,rate:0.9}); fxSnd('hit_flesh2',{vol:0.7}); fxBlood(z,22,3.4,true); fxSplat(3); try{ vmBlood(0.7,true); }catch(e){} }
-  if(FX2.impact&&FX2.pumps<2&&t>=1.02){ FX2.pumps=2; shake(0.22); fxSnd('knife_stab2',{vol:0.7,rate:0.85}); fxBlood(z,18,3,true); }
+  if(FX2.impact&&FX2.pumps<1&&t>=0.76){ FX2.pumps=1; shake(0.1); fxSnd('knife_stab3',{vol:0.75,rate:0.9}); fxSnd('hit_flesh2',{vol:0.7}); fxBlood(z,22,3.4,true); fxSplat(3); try{ vmBlood(0.7,true); }catch(e){} }
+  if(FX2.impact&&FX2.pumps<2&&t>=1.02){ FX2.pumps=2; shake(0.08); fxSnd('knife_stab2',{vol:0.7,rate:0.85}); fxBlood(z,18,3,true); }
   if(FX2.impact&&!FX2.twist&&t>=1.08){ FX2.twist=true; fxSnd('knife_twist',{vol:1}); fxSnd('gore_guts',{vol:0.45,rate:1.15}); }
   if(FX2.twist&&t<1.3&&Math.random()<dt*28) fxBlood(z,3,2.2,true);
-  if(!FX2.rip&&t>=1.33){ FX2.rip=true; shake(0.35); fxSnd('knife_stab1',{vol:0.9,rate:0.75}); fxSnd('gore_guts',{vol:0.7}); fxSnd('knife_whoosh',{vol:0.5,rate:1.2}); fxBlood(z,60,5.2,true); emit('gore',h.x,h.y,h.z,10,3.5,1); fxSplat(9,true); try{ vmBlood(1,true); }catch(e){} }
+  if(!FX2.rip&&t>=1.33){ FX2.rip=true; shake(0.16); fxSnd('knife_stab1',{vol:0.9,rate:0.75}); fxSnd('gore_guts',{vol:0.7}); fxSnd('knife_whoosh',{vol:0.5,rate:1.2}); fxBlood(z,60,5.2,true); emit('gore',h.x,h.y,h.z,10,3.5,1); fxSplat(9,true); try{ vmBlood(1,true); }catch(e){} }
   if(FX2.rip&&t<1.9&&Math.random()<dt*20) fxBlood(z,2,1.6,false);
   if(FX2.rip&&FX2.buried&&t>1.42) FX2.buried=false;
   if(!FX2.flick&&t>=1.72){ FX2.flick=true; fxSnd('knife_swing',{vol:0.45,rate:1.3}); const T=new THREE.Vector3(); try{ const c=camera.position, f=new THREE.Vector3(); camera.getWorldDirection(f); emit('blood',c.x+f.x*0.6+rand(-.1,.1),c.y-0.2,c.z+f.z*0.6,8,2.4,0.8); }catch(e){} }
@@ -126,11 +126,11 @@ V9VM.push(dt=>{ const lh=FX2.lh; if(!FX2.on){ if(lh) lh.visible=false; return; }
 // ---- o zumbi: agarrado, faca no crânio, convulsão, desaba ----
 finDeath=function(z,dt){ const t=z.fxT!=null&&FX2.z===z?z.fxT:z.t*0.95, aL=z.armL, aR=z.armR, L=z.legL, R=z.legR;
   if(t<1.5){ const grab=smooth(clamp(t/0.25,0,1)), hit=t>0.47?smooth(clamp((t-0.47)/0.06,0,1)):0, sag=t>0.6?smooth(clamp((t-0.6)/0.7,0,1)):0, rip=t>1.33?smooth(clamp((t-1.33)/0.1,0,1)):0;
-    const tw=FX2.z===z&&FX2.impact&&t<1.33?Math.sin(t*55)*0.06*(1-sag*0.4):0, jerk=(t>0.76&&t<0.82)||(t>1.02&&t<1.08)?0.12:0;
+    const tw=FX2.z===z&&FX2.impact&&t<1.33?Math.sin(t*55)*0.06*(1-sag*0.4):0, jerk=(t>0.76&&t<0.82)||(t>1.02&&t<1.08)?0.05:0, hs=FX2.z===z&&FX2.buried?0.25:1;
     z.g.position.y=0; z.hips.position.y=0.95-0.06*hit-0.1*sag;
-    z.g.rotation.set(-0.1*grab+0.08*hit,0,tw*0.3);
-    z.spine.rotation.set(-0.22*grab+0.25*hit+0.15*sag-jerk*0.5,tw,tw*0.5);
-    z.headP.rotation.set(-0.7*grab+0.45*hit+0.2*sag+jerk+(hit>0&&t<0.6?rand(-0.06,0.06):0)-0.25*rip,tw*1.5,0.18*hit+tw);
+    z.g.rotation.set(-0.1*grab+0.08*hit,0,tw*0.3*hs);
+    z.spine.rotation.set(-0.22*grab+0.25*hit+0.15*sag-jerk*0.5,tw*hs,tw*0.5*hs);
+    z.headP.rotation.set(-0.7*grab+0.45*hit+0.2*sag+jerk+(hit>0&&t<0.6?rand(-0.06,0.06)*hs:0)-0.25*rip,tw*1.5*hs,0.18*hit+tw*hs);
     // braços: sobem tentando agarrar você, travam no impacto, tremem e caem moles
     const up=grab*(1-hit*0.6);
     aL.sh.rotation.set(-1.3*up-0.3*hit+0.9*sag+tw*2,0,-0.35-0.5*hit*(1-sag)); aR.sh.rotation.set(-1.4*up-0.25*hit+0.85*sag-tw*2,0,0.35+0.55*hit*(1-sag));

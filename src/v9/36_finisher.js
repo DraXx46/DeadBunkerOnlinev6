@@ -8,29 +8,30 @@
    O zumbi é animado no mesmo relógio da cena, então a câmera lenta vale para os dois. */
 const FX2={on:false,z:null,t:0,real:0,impact:false,pumps:0,twist:false,rip:false,flick:false,drop:false,prevCam:null,plane:new THREE.Plane(new THREE.Vector3(0,0,1),1e6),E:new THREE.Vector3(),D:new THREE.Vector3(),buried:false,clipped:new WeakSet(),lh:null,ui:null};
 try{ renderer.localClippingEnabled=true; }catch(e){}
-const FXK=[ // poses da mão da faca (somadas à pose de repouso da faca)
+const FXK=[ // poses da mão da faca (somadas à pose de repouso), calculadas para a ponta cair no centro da cabeça
   [0.00,{x:0,y:0,z:0,rx:0,ry:0,rz:0}],
-  [0.30,{x:-0.02,y:0.13,z:0.06,rx:0.75,ry:0.1,rz:-0.25}],
-  [0.42,{x:-0.03,y:0.17,z:0.09,rx:1.0,ry:0.12,rz:-0.3}],
-  [0.47,{x:-0.12,y:0.12,z:-0.16,rx:-0.55,ry:0.25,rz:-0.1}],
-  [0.62,{x:-0.125,y:0.11,z:-0.18,rx:-0.6,ry:0.25,rz:-0.1}],
-  [0.76,{x:-0.13,y:0.1,z:-0.225,rx:-0.66,ry:0.25,rz:-0.12}],
-  [0.90,{x:-0.127,y:0.108,z:-0.2,rx:-0.62,ry:0.25,rz:-0.12}],
-  [1.02,{x:-0.13,y:0.1,z:-0.235,rx:-0.68,ry:0.25,rz:-0.15}],
-  [1.30,{x:-0.13,y:0.1,z:-0.235,rx:-0.68,ry:0.3,rz:-1.25}],
-  [1.40,{x:-0.07,y:0.21,z:-0.03,rx:0.5,ry:0.1,rz:-0.7}],
+  [0.18,{x:0,y:0.04,z:0.06,rx:0.4,ry:0,rz:-0.1}],
+  [0.34,{x:-0.074,y:0.081,z:-0.166,rx:1.349,ry:-0.103,rz:-0.202}],
+  [0.42,{x:-0.07,y:0.1,z:-0.14,rx:1.5,ry:-0.1,rz:-0.2}],
+  [0.47,{x:-0.105,y:0.236,z:-0.045,rx:-1.195,ry:0.086,rz:-0.411}],
+  [0.62,{x:-0.108,y:0.2285,z:-0.0576,rx:-1.195,ry:0.086,rz:-0.411}],
+  [0.76,{x:-0.114,y:0.2135,z:-0.0828,rx:-1.195,ry:0.086,rz:-0.411}],
+  [0.90,{x:-0.111,y:0.221,z:-0.0702,rx:-1.195,ry:0.086,rz:-0.411}],
+  [1.02,{x:-0.116,y:0.2085,z:-0.0912,rx:-1.195,ry:0.086,rz:-0.411}],
+  [1.30,{x:-0.116,y:0.2085,z:-0.0912,rx:-1.195,ry:0.086,rz:-0.411}],
+  [1.40,{x:-0.12,y:0.132,z:0.071,rx:-0.208,ry:0.379,rz:-1.141}],
   [1.62,{x:0.01,y:0.04,z:0.02,rx:0.2,ry:0,rz:-0.2}],
   [1.76,{x:0.05,y:0.02,z:0.0,rx:-0.25,ry:-0.1,rz:0.6}],
   [2.05,{x:0,y:0,z:0,rx:0,ry:0,rz:0}]];
-const FXL=[ // mão esquerda (posição em vista, rotação, quanto os dedos apertam)
-  [0.00,{x:-0.32,y:-0.42,z:-0.25,rx:-0.6,ry:0.3,rz:0.5,c:0.2}],
-  [0.22,{x:-0.07,y:0.06,z:-0.44,rx:-1.15,ry:0.15,rz:0.12,c:0.35}],
-  [0.30,{x:-0.065,y:0.045,z:-0.42,rx:-1.2,ry:0.15,rz:0.12,c:1.0}],
-  [0.47,{x:-0.07,y:0.05,z:-0.43,rx:-1.22,ry:0.16,rz:0.1,c:1.0}],
-  [0.52,{x:-0.068,y:0.035,z:-0.41,rx:-1.18,ry:0.16,rz:0.1,c:1.1}],
-  [1.30,{x:-0.07,y:0.04,z:-0.42,rx:-1.2,ry:0.16,rz:0.12,c:1.1}],
-  [1.45,{x:-0.09,y:0.0,z:-0.4,rx:-1.1,ry:0.2,rz:0.2,c:0.5}],
-  [1.75,{x:-0.34,y:-0.45,z:-0.25,rx:-0.6,ry:0.3,rz:0.5,c:0.2}]];
+const FXL=[ // mão esquerda: vem de baixo, abre e crava os dedos no topo da cabeça
+  [0.00,{x:-0.3,y:-0.4,z:-0.3,rx:-1.0,ry:-0.3,rz:-0.1,c:0.1}],
+  [0.20,{x:-0.02,y:0.1,z:-0.53,rx:-1.25,ry:-0.34,rz:-0.12,c:0.15}],
+  [0.28,{x:-0.014,y:0.074,z:-0.517,rx:-1.224,ry:-0.343,rz:-0.121,c:1.0}],
+  [0.47,{x:-0.014,y:0.068,z:-0.517,rx:-1.224,ry:-0.343,rz:-0.121,c:1.0}],
+  [0.52,{x:-0.016,y:0.058,z:-0.505,rx:-1.2,ry:-0.343,rz:-0.121,c:1.15}],
+  [1.30,{x:-0.014,y:0.066,z:-0.512,rx:-1.224,ry:-0.343,rz:-0.121,c:1.15}],
+  [1.42,{x:-0.04,y:0.06,z:-0.48,rx:-1.15,ry:-0.3,rz:-0.1,c:0.4}],
+  [1.70,{x:-0.3,y:-0.4,z:-0.3,rx:-1.0,ry:-0.3,rz:-0.1,c:0.1}]];
 function fxKey(K,t){ if(t<=K[0][0]) return K[0][1]; for(let i=1;i<K.length;i++){ if(t<=K[i][0]){ const a=K[i-1], b=K[i], k=smooth((t-a[0])/(b[0]-a[0])); const o={}; for(const n in b[1]) o[n]=lerp(a[1][n],b[1][n],k); return o; } } return K[K.length-1][1]; }
 // mão esquerda que agarra a cabeça (mesma pele/luva das mãos da arma)
 function fxLeftHand(){ if(FX2.lh) return FX2.lh; const g=new THREE.Group(); const h=makeHand(true,[0.4,0.3,0.2]); h.scale.setScalar(0.95); g.add(h); g.userData.h=h; g.visible=false; vmScene.add(g); FX2.lh=g; return g; }
@@ -67,13 +68,13 @@ function fxBlood(z,n,spd,toCam){ const h=fxHeadPos(z,new THREE.Vector3()); let x
 function fxSnd(n,o){ try{ return Snd.sample(n,Object.assign({prio:1},o||{})); }catch(e){ return null; } }
 function fxThump(){ try{ const ctx=Snd.ctx; if(!ctx) return; const o=Snd.out(0.9,0,0.15,null); Snd.oscTo(o,{t:Snd.now,type:'sine',freq:62,freqEnd:34,dur:0.45,gain:0.75,attack:0.004}); }catch(e){} }
 // ---- início ----
-function fx2Start(z){ z.v9fin=true; z.fxT=0; Object.assign(FX2,{on:true,z,t:0,real:0,impact:false,pumps:0,twist:false,rip:false,flick:false,drop:false,buried:false}); FX2.plane.constant=1e6;
+function fx2Start(z){ z.v9fin=true; z.fxT=0; Object.assign(FX2,{on:true,z,t:0,real:0,impact:false,pumps:0,twist:false,rip:false,flick:false,drop:false,buried:false,Eset:false,El:null,Dl:null}); FX2.plane.constant=1e6;
   try{ fxClipOn(); }catch(e){} const U=fxUi(); U.bars.classList.add('on'); U.vig.classList.add('on');
   try{ if(typeof hfxStart==='function') hfxStart('_fin',false); }catch(e){}
   fxSnd('knife_whoosh',{vol:0.7,rate:0.85}); fxSnd(['z_snarl1','z_snarl2','z_snarl3'],{vol:0.8,x:z.pos.x,z:z.pos.z,range:20,rate:0.8});
   if(V9CAM.fn!==fxCam){ FX2.prevCam=V9CAM.fn; V9CAM.fn=fxCam; } }
 finStart=fx2Start;
-function fx2End(){ if(!FX2.on) return; FX2.on=false; FX2.plane.constant=1e6; FX2.buried=false; if(FX2.lh) FX2.lh.visible=false; const U=FX2.ui; if(U){ U.bars.classList.remove('on'); U.vig.classList.remove('on'); }
+function fx2End(){ if(!FX2.on) return; FX2.on=false; try{ knife.position.set(0,0,0); knife.quaternion.identity(); }catch(e){} FX2.plane.constant=1e6; FX2.buried=false; if(FX2.lh) FX2.lh.visible=false; const U=FX2.ui; if(U){ U.bars.classList.remove('on'); U.vig.classList.remove('on'); }
   try{ camera.zoom=1; camera.updateProjectionMatrix(); }catch(e){} if(V9CAM.fn===fxCam) V9CAM.fn=FX2.prevCam||null; FX2.prevCam=null;
   try{ if(Wp.kAct==='stab'){ Wp.kT=Wp.kDur; } }catch(e){} }
 const _busyFx=busy; busy=function(){ return _busyFx()||FX2.on; };
@@ -91,7 +92,7 @@ v9On('always',dt=>{ if(!FX2.on) return; const z=FX2.z; if(!z||G.state!=='playing
   if(!FX2.impact&&t>=0.47){ FX2.impact=true; FX2.buried=true; shake(0.45); fxThump(); fxSnd(['knife_stab1','knife_stab2','knife_stab3'],{vol:1}); fxSnd('gore_splat',{vol:0.9}); fxSnd('hit_flesh1',{vol:0.8}); try{ Snd.head(); }catch(e){}
     fxBlood(z,46,4.6,true); emit('gore',h.x,h.y,h.z,14,3.2,1); fxSplat(7,true); try{ vmBlood(1,true); }catch(e){}
     try{ const o=h.clone(), dd=new THREE.Vector3(z.pos.x-P.pos.x,0.15,z.pos.z-P.pos.z).normalize(); emit('blood',o.x+dd.x*0.15,o.y,o.z+dd.z*0.15,30,4,0.9); const tt=rayWall(o,dd,3.5); if(tt<3.4) v9WallBlood(o.clone().addScaledVector(dd,tt),-dd.x,0,-dd.z); }catch(e){}
-    try{ const T=new THREE.Vector3(), D=new THREE.Vector3(); if(fxTip(T,D)){ FX2.D.copy(D); FX2.E.copy(T).addScaledVector(D,-0.02); } }catch(e){} }
+  }
   if(FX2.impact&&FX2.pumps<1&&t>=0.76){ FX2.pumps=1; shake(0.25); fxSnd('knife_stab3',{vol:0.75,rate:0.9}); fxSnd('hit_flesh2',{vol:0.7}); fxBlood(z,22,3.4,true); fxSplat(3); try{ vmBlood(0.7,true); }catch(e){} }
   if(FX2.impact&&FX2.pumps<2&&t>=1.02){ FX2.pumps=2; shake(0.22); fxSnd('knife_stab2',{vol:0.7,rate:0.85}); fxBlood(z,18,3,true); }
   if(FX2.impact&&!FX2.twist&&t>=1.08){ FX2.twist=true; fxSnd('knife_twist',{vol:1}); fxSnd('gore_guts',{vol:0.45,rate:1.15}); }
@@ -113,7 +114,11 @@ function fxCam(dt){ if(FX2.prevCam) try{ FX2.prevCam(dt); }catch(e){} if(!FX2.on
 // ---- mãos na tela ----
 V9VM.push(dt=>{ const lh=FX2.lh; if(!FX2.on){ if(lh) lh.visible=false; return; } const t=FX2.t, parts=fxKnifeParts();
   if(parts&&knife.visible){ const a=fxKey(FXK,t); let tr=0; if(FX2.impact&&t<1.33) tr=(t<0.62?0.006:0.0025)*Math.sin(FX2.real*90);
-    const q={x:a.x+tr,y:a.y+tr*0.5,z:a.z,rx:a.rx,ry:a.ry,rz:a.rz+(FX2.twist&&t<1.3?Math.sin(FX2.real*70)*0.03:0)}; placeKnife(knifeModel,parts,q); knife.position.set(0,0,0); knife.rotation.set(0,0,0); }
+    const q={x:a.x+tr,y:a.y+tr*0.5,z:a.z,rx:a.rx,ry:a.ry,rz:a.rz}; knife.position.set(0,0,0); knife.quaternion.identity(); placeKnife(knifeModel,parts,q);
+    if(FX2.buried&&!FX2.Eset){ FX2.Eset=true; const T=new THREE.Vector3(), D=new THREE.Vector3(); if(fxTip(T,D)){ FX2.D.copy(D); FX2.E.copy(T).addScaledVector(D,-0.025); vmRoot.updateMatrixWorld(true); _fxm.copy(vmRoot.matrixWorld).invert(); FX2.El=FX2.E.clone().applyMatrix4(_fxm); FX2.Dl=FX2.D.clone().transformDirection(_fxm); } }
+    // torção: a mão gira em volta do eixo da lâmina, com o ponto de entrada parado
+    const tw=t<1.06?0:t<1.28?-1.5*smooth((t-1.06)/0.22):t<1.33?-1.5:t<1.42?-1.5*(1-smooth((t-1.33)/0.09)):0;
+    if(tw&&FX2.El){ const qq=new THREE.Quaternion().setFromAxisAngle(FX2.Dl,tw+(t<1.3?Math.sin(FX2.real*70)*0.04:0)); knife.quaternion.copy(qq); knife.position.copy(FX2.El).sub(FX2.El.clone().applyQuaternion(qq)); } }
   // plano de corte: só enquanto a lâmina está dentro da cabeça
   if(FX2.buried){ FX2.plane.normal.copy(FX2.D).negate(); FX2.plane.constant=FX2.D.dot(FX2.E); } else FX2.plane.constant=1e6;
   const L=fxLeftHand(); const b=fxKey(FXL,t); L.visible=t<1.72&&!CINEMA.noVm; L.position.set(b.x,b.y,b.z); L.rotation.set(b.rx,b.ry,b.rz);

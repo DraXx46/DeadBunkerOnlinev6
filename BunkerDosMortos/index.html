@@ -3016,7 +3016,8 @@ function tzBusTick(dt){
       case 'wait': if(B.t>=B.dur){ tzStartPhase('arrive',6.5); tzSay('arrive0'); } break;
       case 'arrive': if(B.t>=B.dur){ tzStartPhase('stop'); B.rounds=1+Math.floor(Math.random()*3); B.seenStop.add(B.stop); tzArrived(); } break;
       case 'stop': if(B.rounds<=0) tzStartPhase('leave',30); else if(B.t>3&&!tzPeopleNear(70)){ B.rounds=0; tzStartPhase('leave',3); } break;
-      case 'leave': if(B.t>=B.dur){ tzStartPhase('depart',5.5); if(tzAnyRider()) tzSay('depart'); else if(tzPeopleNear(40)) tzSay('left'); } break;
+      case 'leave': if(B.t>=B.dur&&tzPeopleNear(70)&&!tzRoundClear()){ B.t=B.dur; B.holdT=(B.holdT||0)-dt; if(B.holdT<=0){ B.holdT=9; if(tzPeopleNear(40)) banner('O ÔNIBUS ESTÁ ESPERANDO','Ele só sai quando não sobrar nenhum zumbi vivo','gold'); } break; }
+        if(B.t>=B.dur){ tzStartPhase('depart',5.5); if(tzAnyRider()) tzSay('depart'); else if(tzPeopleNear(40)) tzSay('left'); } break;
       case 'depart': if(B.t>=B.dur){ const ride=tzAnyRider(); const old=tzPose(); tzStartPhase(ride?'road':'away',TZ_ROAD_T); if(ride){ const np=tzPose(); B.pos.set(old.x,0,old.z); tzMove(np.x-old.x,np.z-old.z,true); B.pos.set(np.x,0,np.z); tzSay('road'); } } break;
       case 'road': case 'away': if(B.t>=B.dur){ const old=tzPose(); B.stop=(B.stop+1)%TZ_N; tzStartPhase('arrive',6.5); const np=tzPose(); if(old.pres){ B.pos.set(old.x,0,old.z); tzMove(np.x-old.x,np.z-old.z,true); B.pos.set(np.x,0,np.z); } for(const r of ['Z','ZB','ZH','ZK']) G.rooms.add(r+B.stop); } break;
     }
@@ -8182,6 +8183,7 @@ function makeZombie(spawn){
     else if(!fk){ const pd=R>=6?Math.min(0.16,0.05+(R-6)*0.012):0, pb=R>=8?Math.min(0.08,0.03+(R-8)*0.005):0, pf=R>=10?Math.min(0.09,0.035+(R-10)*0.005):0;
       if(rr<pd) kind='dog'; else if(rr<pd+pb) kind='bomber'; else if(rr<pd+pb+pf) kind='fat'; } }
   if(kind==='bomber'&&tzBusBusy()) kind='normal';   // v9: sem homem-bomba enquanto tem gente no ônibus
+  if(kind==='dog'&&CUR==='tz'&&TZB.present&&(TZB.ph==='leave'||TZB.ph==='depart'||TZB.ph==='road'||tzBusBusy())) kind='normal';   // sem cachorros na viagem
   const z={id:++zidN,win,state:'rise',t:0,seed:spawn.seed||((Math.random()*99998)|0)+1,kind,boss,name:boss?(spawn.bossName||'O Guardião'):null,dead:false,crawl:false,
     runner:fk==='runner'?true:fk?false:kind==='normal'&&Math.random()<Math.min(0.96,runnerChance(G.round)+(CUR==='hosp'?0.18:0)),animT:Math.random()*10,attackT:0,hitDone:false,tearT:0,groanT:rand(1,5),flashT:0,jawT:0,tgtKey:null,tgtT:0};
   z.hp=z.maxHp=G.zhp*(brute?3.5:1)*threatHp(L)*(boss?3.5:1);
@@ -17436,6 +17438,35 @@ function cardSfx(pact){ try{ const t=Snd.now; if(!Snd.ctx) return; const smp=(n,
 // luneta da besta: mira por dentro da luneta (com o 2º nível de zoom na rodinha), como na Barrett
 WEAPONS.xbow.scope=true;
 CMDS.som_carta={d:'som_carta [pacto] · toca o som de escolher carta',f:a=>cardSfx(a[0]==='pacto')};
+
+/* ---- 38_busdog.js ---- */
+/* ================= v9 · ÔNIBUS E CACHORROS =================
+   - O ônibus só sai quando não sobra nenhum zumbi vivo (entre uma rodada e outra) — ver patch p40.
+   - Entrar no ônibus solta a mordida do cachorro; durante a saída e a viagem não existem cachorros perto do ônibus.
+   - A mordida não prende mais o jogador na parada quando o ônibus parte.
+   - Zumbi que está do lado de fora não acerta quem está dentro do ônibus em movimento.
+   - Cachorro morre com um tiro e o QTE ficou bem mais curto. */
+function tzRoundClear(){ if((G.toSpawn|0)>0) return false; for(const z of zombies){ if(!z.dead&&z.state!=='dying') return false; } return true; }
+function tzRideActive(){ return CUR==='tz'&&TZB.present&&(TZB.ph==='depart'||TZB.ph==='road'); }
+function tzShield(px,pz,z){ if(!z||!tzRideActive()) return false; if(!tzInBus(px,pz,0.35)) return false; if(tzInBus(z.pos.x,z.pos.z,0.2)) return false; if(z.win&&z.win.bus) return false; return true; }
+{ const _ht=hurtTarget; hurtTarget=function(T,amt,z){ try{ if(T){ const px=T.local?P.pos.x:(NET.players.get(T.key)||{}).x, pz=T.local?P.pos.z:(NET.players.get(T.key)||{}).z; if(px!=null&&tzShield(px,pz,z)) return; } }catch(e){} return _ht.apply(this,arguments); }; }
+{ const _hp=hurtPlayer; hurtPlayer=function(amt,z){ try{ if(z&&tzShield(P.pos.x,P.pos.z,z)) return; }catch(e){} return _hp.apply(this,arguments); }; }
+// a mordida acaba se o ônibus parte com você dentro (antes você ficava preso na parada)
+{ const _tm=tzMove; tzMove=function(dx,dz,teleport){ try{ if(DOGQ.on&&tzInBus(P.pos.x,P.pos.z,0.6)){ if(DOGQ.pos){ DOGQ.pos.x+=dx; DOGQ.pos.z+=dz; } dogGrabEnd(true,true); } }catch(e){} return _tm.apply(this,arguments); }; }
+v9On('frame',dt=>{ if(CUR!=='tz'||!TZB.present) return;
+  const inBus=tzInBus(P.pos.x,P.pos.z,0.35), rideish=TZB.ph==='leave'||TZB.ph==='depart'||TZB.ph==='road';
+  // entrou no ônibus: o cachorro solta
+  if(DOGQ.on&&inBus) dogGrabEnd(true,true);
+  if(NET.mode==='client') return;
+  for(const z of zombies.slice()){ if(z.kind!=='dog'||z.dead) continue;
+    const near=Math.hypot(z.pos.x-TZB.pos.x,z.pos.z-TZB.pos.z);
+    if((TZB.ph==='depart'||TZB.ph==='road')&&near<40){ removeZombie(z); G.toSpawn++; continue; }
+    if(rideish&&tzInBus(z.pos.x,z.pos.z,1.2)){ if(z.grabbing){ const rp=NET.players.get(z.grabbing); if(rp) rp.dogGrab=null; } removeZombie(z); G.toSpawn++; } } });
+// cachorro: um tiro basta
+{ const _dz=damageZombie; damageZombie=function(z,amt,part,src){ if(z&&z.kind==='dog'&&!z.dead&&amt>0) arguments[1]=z.hp+1; return _dz.apply(this,arguments); }; }
+// QTE bem mais rápido: poucas facadas e janela curta
+dogNeed=function(){ return (G.round||1)>=20?5:4; };
+{ const _gs=dogGrabStart; dogGrabStart=function(){ const r=_gs.apply(this,arguments); if(DOGQ.on){ DOGQ.need=dogNeed(); DOGQ.dur=2.2; dogHud(true); } return r; }; }
 
 /*</V9>*/
 /* ================= MAIN LOOP ================= */

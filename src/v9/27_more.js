@@ -105,8 +105,8 @@ v9Css(`.v9qp{position:fixed;left:24px;top:40%;z-index:30;background:rgba(10,8,6,
 .v9qpm{position:fixed;left:24px;bottom:160px;z-index:30;font:15px "Special Elite",monospace;color:#fff;text-shadow:0 1px 3px #000;animation:v9qpf 3.5s forwards}.v9qpm b{color:#ffd24a}@keyframes v9qpf{0%,80%{opacity:1}100%{opacity:0}}`);
 function qpShow(name,i){ const el=v9El('div','v9qpm',`<b>${name}:</b> ${QP[i]}`); document.body.appendChild(el); setTimeout(()=>el.remove(),3600); try{ Snd.ui('tab'); }catch(e){} }
 function qpSend(i){ const me=(SOC.acc&&SOC.acc.name)||pgPlayerName(); qpShow(me,i); if(NET.mode==='host') pushEv(['qp',me,i]); else if(NET.mode==='client') netAct(['qp',i]); }
-V9NET.ev.qp=e=>{ const me=(SOC.acc&&SOC.acc.name)||pgPlayerName(); if(e[1]!==me) qpShow(e[1],e[2]|0); };
-V9NET.act.qp=(peer,a)=>{ const rp=NET.players.get(peer); const n=(rp&&rp.name)||'Amigo'; pushEv(['qp',n,a[1]|0]); qpShow(n,a[1]|0); };
+V9NET.ev.qp=e=>{ const me=(SOC.acc&&SOC.acc.name)||pgPlayerName(); if(e[2]!==me) qpShow(e[2],e[3]|0); };
+V9NET.act.qp=(peer,a)=>{ const rp=NET.players.get(peer); const n=(rp&&rp.name)||'Amigo'; pushEv(['qp',n,a[2]|0]); qpShow(n,a[2]|0); };
 addEventListener('keydown',e=>{ if(G.state!=='playing'||(document.activeElement&&/INPUT|TEXTAREA/.test(document.activeElement.tagName))) return;
   if(e.code==='KeyN'&&!e.repeat){ QPW.hidden=!QPW.hidden; return; }
   if(!QPW.hidden&&/^Digit[1-5]$/.test(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); qpSend(+e.code.slice(5)-1); QPW.hidden=true; } },true);

@@ -80,7 +80,7 @@ function v9MakeArmor(z){ z.v9var='armor'; z.hp*=1.5; z.maxHp=z.hp; z.speed*=0.9;
 const _v9bpre=v9BulletPre; v9BulletPre=function(z,part,pt,dir,s,d){ let k=_v9bpre.apply(this,arguments); try{ if(z&&z.v9var==='armor'&&dir){ const fx=Math.sin(z.yaw), fz=Math.cos(z.yaw); const front=-(dir.x*fx+dir.z*fz); if(front>0.2){ k*=0.25; if(Math.random()<0.4) emit('spark',z.pos.x,zy(z)+1.2,z.pos.z,4,2.5,0.2); } else if(front<-0.2) k*=1.6; } }catch(e){} return k; };
 v9On('kill',(x,zz,kind,part,src,z)=>{ if(!z||z.v9var!=='gas') return; gasCloud(x,zz,true); });
 const GAS=[]; function gasCloud(x,z,real){ const g=new THREE.Group(); g.position.set(x,floorAt(x,z),z); for(let i=0;i<14;i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0x8acc3a,transparent:true,opacity:0.35,depthWrite:false})); s.position.set(rand(-1.6,1.6),rand(0.3,1.6),rand(-1.6,1.6)); s.scale.setScalar(rand(1.6,2.6)); g.add(s); } scene.add(g); GAS.push({g,x,z,t:0,real}); try{ Snd.sample('acid_sizzle',{vol:0.6,x,z,range:30}); }catch(e){} if(real) pushEv(['gas',r10(x),r10(z)]); }
-V9NET.ev.gas=e=>gasCloud(e[1]/10,e[2]/10,false);
+V9NET.ev.gas=e=>gasCloud(e[2]/10,e[3]/10,false);
 v9On('frame',dt=>{ for(let i=GAS.length-1;i>=0;i--){ const q=GAS[i]; q.t+=dt; q.g.children.forEach((s,j)=>{ s.material.opacity=0.35*Math.min(1,(6-q.t)/1.5); s.position.y+=dt*0.08; s.material.rotation+=dt*0.3*(j%2?1:-1); });
   if(!P.down&&Math.hypot(P.pos.x-q.x,P.pos.z-q.z)<2.2&&q.t<5.5){ q.tick=(q.tick||0)-dt; if(q.tick<=0){ q.tick=0.5; hurtPlayer(6,null); } }
   if(q.t>6){ scene.remove(q.g); GAS.splice(i,1); } } });
@@ -93,8 +93,8 @@ function pingMake(x,y,z,zb,who){ const el=v9El('div','v9ping'+(zb?' zb':''),`<i>
 function pingNow(){ if(G.state!=='playing'||P.down) return; camera.getWorldDirection(_pd); let best=null, bd=60; for(const z of zlist()){ if(z.dead) continue; _pv.set(z.pos.x-camera.position.x,zy(z)+1.2-camera.position.y,z.pos.z-camera.position.z); const d=_pv.length(); if(d>bd) continue; if(_pv.normalize().dot(_pd)>0.985){ best=z; bd=d; } }
   let x,y,z,zb=false; if(best){ x=best.pos.x; y=zy(best)+2.1; z=best.pos.z; zb=true; } else { const t=Math.min(rayWall(camera.position,_pd,50),50); x=camera.position.x+_pd.x*t; y=camera.position.y+_pd.y*t+0.3; z=camera.position.z+_pd.z*t; }
   pingMake(x,y,z,zb,'me'); const a=['png',r10(x),r10(y),r10(z),zb?1:0]; if(NET.mode==='host') pushEv(a.concat([NET.me||''])); else if(NET.mode==='client') netAct(a); }
-V9NET.ev.png=e=>{ if(e[5]&&String(e[5])===String(NET.me)) return; pingMake(e[1]/10,e[2]/10,e[3]/10,!!e[4],'o'); };
-V9NET.act.png=(peer,a)=>{ pushEv(['png',a[1],a[2],a[3],a[4],peer]); pingMake(a[1]/10,a[2]/10,a[3]/10,!!a[4],'o'); };
+V9NET.ev.png=e=>{ if(e[6]&&String(e[6])===String(NET.me)) return; pingMake(e[2]/10,e[3]/10,e[4]/10,!!e[5],'o'); };
+V9NET.act.png=(peer,a)=>{ pushEv(['png',a[2],a[3],a[4],a[5],peer]); pingMake(a[2]/10,a[3]/10,a[4]/10,!!a[5],'o'); };
 addEventListener('keydown',e=>{ if(e.code==='KeyB'&&!e.repeat&&!(document.activeElement&&/INPUT|TEXTAREA/.test(document.activeElement.tagName))) pingNow(); });
 addEventListener('mousedown',e=>{ if(e.button===1&&G.state==='playing'){ e.preventDefault(); pingNow(); } });
 const DOWNS=new Map();

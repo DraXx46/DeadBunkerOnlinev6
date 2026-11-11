@@ -14,7 +14,7 @@ function poolBallTex(n){ return tex(256,128,(c,w,h)=>{ const col='#'+(PCOL[n>8?n
   for(const u of [0.25,0.75]){ c.fillStyle='#f4f0e2'; c.beginPath(); c.arc(w*u,h/2,h*0.2,0,6.28); c.fill(); c.fillStyle='#111'; c.font=`bold ${h*0.24}px sans-serif`; c.textAlign='center'; c.textBaseline='middle'; c.fillText(String(n),w*u,h/2+1); } }); }
 function poolPockets(){ const L=PT.L/2, W=PT.W/2; return [[-L,-W,0.068],[0,-W-0.012,0.058],[L,-W,0.068],[-L,W,0.068],[0,W+0.012,0.058],[L,W,0.068]]; }
 /* ---------- mesa ---------- */
-function poolPlace(x,z,ry){ POOL.x=x; POOL.z=z; POOL.ry=ry; if(POOL.g) return; const g=G3(x,0,z,ry); POOL.g=g; MAPG.city.add(g);
+function poolPlace(x,z,ry,lobby){ if(!lobby) POOL.home={x,z,ry}; POOL.x=x; POOL.z=z; POOL.ry=ry; if(POOL.g){ POOL.g.position.set(x,lobby?floorAt(x,z):0,z); POOL.g.rotation.y=ry; return; } const g=G3(x,0,z,ry); POOL.g=g; scene.add(g);
   const L=PT.L, W=PT.W, H=PT.H, rw=PT.railW; const wood=v9Mat('poolWood',{color:0x3a1a0a,shininess:60,specular:0x553322}), felt=new THREE.MeshLambertMaterial({color:0x14602e}), cush=new THREE.MeshLambertMaterial({color:0x0f4a24}), blk=v9Mat('poolBlk',{color:0x070707,shininess:5});
   const st=new THREE.Group(); // parte fixa (assada)
   tzBx(st,L+rw*2+0.06,0.16,W+rw*2+0.06,wood,0,H-0.1,0); tzBx(st,L,0.02,W,felt,0,H,0);
@@ -132,19 +132,19 @@ function poolNetIn(e){ const k=e[1]; const from=e[e.length-1];
   if(k==='start'){ if(String(from)===String(NET.me)) return; const ps=JSON.parse(e[3]).map(q=>({id:q[0],name:q[1],group:null,score:0})); if(!ps.some(p=>String(p.id)===String(NET.me))) return; POOL.netId=e[2]; poolNew('online',ps); return; }
   if(k==='shot'){ if(String(from)===String(NET.me)||e[2]!==POOL.netId) return; poolDoShot(e[4]/1e5,e[5]/1e5,e[6]/1e4); return; }
   if(k==='sync'){ if(String(from)===String(NET.me)||e[2]!==POOL.netId) return; const st=JSON.parse(e[3]); st.b.forEach((q,i)=>{ const b=POOL.balls[i]; b.x=q[0]/1e4; b.z=q[1]/1e4; b.in=!!q[2]; b.vx=b.vz=0; b.drop=0; });
-    POOL.turn=st.t; st.p.forEach((q,i)=>{ if(POOL.players[i]){ POOL.players[i].group=q[0]; POOL.players[i].score=q[1]; } }); POOL.break=!!st.br; POOL.moving=false; poolSync(); if(st.o!=null) poolWin(st.o); else POOL.over=false; return; }
+    POOL.turn=st.t; POOL.inHand=!!st.ih; st.p.forEach((q,i)=>{ if(POOL.players[i]){ POOL.players[i].group=q[0]; POOL.players[i].score=q[1]; if(st.f) POOL.players[i].fouls=st.f[i]|0; } }); POOL.break=!!st.br; POOL.moving=false; poolSync(); if(st.o!=null) poolWin(st.o); else POOL.over=false; return; }
   if(k==='quit'){ if(e[2]!==POOL.netId) return; poolMsg('O outro jogador saiu da mesa',4); POOL.mode='solo'; POOL.players=[{id:NET.me,name:poolMe(),group:null,score:0}]; } }
 function poolMe(){ return (SOC.acc&&SOC.acc.name)||pgPlayerName(); }
 /* ---------- quadro a quadro ---------- */
-v9On('always',dt=>{ if(!POOL.built||CUR!=='city') return; POOL.cool=Math.max(0,POOL.cool-dt);
+v9On('always',dt=>{ try{ poolCtxSwitch(); }catch(e){} if(POOL.g) POOL.g.visible=poolCtx(); if(!POOL.built||!poolCtx()) return; POOL.cool=Math.max(0,POOL.cool-dt);
   // bolas caindo na caçapa
   for(const b of POOL.balls) if(b.drop>0){ b.drop-=dt; const k=1-b.drop/0.35; b.m.position.set(lerp(b.m.position.x,b.px,0.25),PT.H+PT.r-k*0.12,lerp(b.m.position.z,b.pz,0.25)); if(b.drop<=0) b.m.visible=false; }
   if(POOL.moving){ const m=poolStep(Math.min(dt,0.033)); poolSync(); if(!m){ POOL.moving=false; const shooterTurn=POOL.turn, shooter=POOL.players[shooterTurn];
       if(POOL.mode==='online'&&!(shooter&&String(shooter.id)===String(NET.me))){ /* espera as posições de quem jogou */ }
-      else { poolResolve(); if(POOL.mode==='online') poolNetSend(['pool','sync',POOL.netId,JSON.stringify({b:POOL.balls.map(b=>[Math.round(b.x*1e4),Math.round(b.z*1e4),b.in?1:0]),t:POOL.turn,p:POOL.players.map(p=>[p.group,p.score]),br:POOL.break?1:0,o:POOL.over?POOL.winner:null}),NET.me]); } } }
+      else { poolResolve(); if(POOL.mode==='online') poolNetSend(['pool','sync',POOL.netId,JSON.stringify({b:POOL.balls.map(b=>[Math.round(b.x*1e4),Math.round(b.z*1e4),b.in?1:0]),t:POOL.turn,p:POOL.players.map(p=>[p.group,p.score]),br:POOL.break?1:0,o:POOL.over?POOL.winner:null,ih:POOL.inHand?1:0,f:POOL.players.map(p=>p.fouls|0)}),NET.me]); } } }
   // perto da mesa: dica
-  const wp=POOL; const d=Math.hypot(P.pos.x-wp.x,P.pos.z-wp.z); POOL.near=G.state==='playing'&&d<2.4&&!POOL.on;
-  if(POOL.on){ if(G.state!=='playing'||P.down){ poolExit(); return; }
+  const wp=POOL; const d=Math.hypot(P.pos.x-wp.x,P.pos.z-wp.z); POOL.near=poolLive()&&d<2.4&&!POOL.on;
+  if(POOL.on){ if(!poolLive()||P.down){ poolExit(); return; }
     if(POOL.charging){ POOL.power=Math.min(1,POOL.power+dt*0.62); }
     poolAimVis(); }
   POOL.msgT=Math.max(0,POOL.msgT-dt); poolHud(); });
@@ -162,7 +162,8 @@ function poolCam(){ if(!POOL.on) return; const c=POOL.balls[0]; const tgt=c.in?{
   const [dx,dz]=poolAimDir(); const el=clamp(-P.pitch,0.06,1.35); const dist=POOL.dist; const lx=tgt.x-dx*Math.cos(el)*dist, lz=tgt.z-dz*Math.cos(el)*dist;
   const w=poolWorld(lx,lz), t=poolWorld(tgt.x+dx*0.25,tgt.z+dz*0.25); camera.position.set(w.x,PT.H+PT.r+Math.sin(el)*dist+0.02,w.z); camera.lookAt(t.x,PT.H+PT.r,t.z); }
 /* ---------- entrada ---------- */
-addEventListener('keydown',e=>{ if(CUR!=='city'||G.state!=='playing'||!POOL.built) return; if(document.activeElement&&/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+addEventListener('keyup',e=>{ if(POOL.hk) delete POOL.hk[e.code]; },true);
+addEventListener('keydown',e=>{ if(!poolCtx()||!poolLive()||!POOL.built) return; if(POOL.on&&POOL.inHand&&/^(Key[WASD]|Arrow)/.test(e.code)){ (POOL.hk||(POOL.hk={}))[e.code]=true; e.preventDefault(); e.stopImmediatePropagation(); return; } if(document.activeElement&&/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
   if(POOL.on){ if(e.code==='KeyE'||e.code==='Escape'){ e.preventDefault(); e.stopImmediatePropagation(); poolExit(); return; } if(e.code==='KeyF'){ e.preventDefault(); e.stopImmediatePropagation(); POOL.top=!POOL.top; return; }
     if(e.code==='KeyR'&&POOL.over){ e.stopImmediatePropagation(); poolNew(POOL.mode,POOL.players.map(p=>Object.assign(p,{group:null,score:0}))); return; }
     if(/^(Key[WASDCQGVZXRHLB]|Space|Shift|Control|Digit|Tab)/.test(e.code)){ e.preventDefault(); e.stopImmediatePropagation(); } return; }

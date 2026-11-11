@@ -5,7 +5,7 @@ P=[
  "for(const [x,r] of [[23,33],[24,33],[23,34],[24,34]]) set(x,czr(r),'k');   // estátua da praça\n"
  "// v9 · PARQUE 4FUN: área aberta + salão de jogos (FS) + arena de parkour; sem zumbis\n"
  "carve(0,FUN0,47,FUN1,'T'); carve(1,FUN0+1,46,FUN1-1,'.','FN'); OUTR.add('FN');\n"
- "carve(2,FUN0+3,18,FUN0+22,'#'); carve(3,FUN0+4,17,FUN0+21,'.','FS'); carve(18,FUN0+11,18,FUN0+14,'.','FS');"),
+ "carve(6,FUN0+18,22,FUN0+37,'#'); carve(7,FUN0+19,21,FUN0+36,'.','FS'); carve(22,FUN0+26,22,FUN0+29,'.','FS');"),
 ("  else if(CUR==='x1'){ x1Begin();","  else if(CUR==='fun'){ try{ funBegin(); }catch(e){ console.warn('[Bunker v9] 4fun',e); } }\n  else if(CUR==='x1'){ x1Begin();"),
 ("  if(NET.mode!=='client'&&CUR!=='x1') farmStart();","  if(NET.mode!=='client'&&CUR!=='x1'&&CUR!=='fun') farmStart();"),
 ("  try{ ROOT=MAPG.city; BATCH=new Batch(); buildCity(); BATCH.flush(MAPG.city); }catch(e){ console.warn('[Bunker v9] cidade',e); } ROOT=MAPG.bunker;",

@@ -1,20 +1,20 @@
 /* ================= v9 · CIDADE: CADA PRÉDIO COM CARA PRÓPRIA =================
    Delegacia, mercado, farmácia, armaria, bar e banco deixam de ser a mesma caixa com letreiro: cada um ganha fachada, letreiro,
    objetos na calçada, pintura interna e móveis do seu tipo. Tudo respeita portas, janelas, pontos de compra e de nascimento. */
-const CL={anim:[],t:0};
+const CL={anim:[],t:0,spots:{},used:{}};
 const clM=(k,o)=>v9Mat('cl_'+k,o);
 const clEm=(k,c,e)=>v9Mat('cl_'+k,{color:c,emissive:e==null?c:e,shininess:30});
 const clBX=(g,w,h,d,m,x,y,z,ry)=>tzBx(g,w,h,d,m,x,y,z,ry);
 const clCY=(g,rt,rb,h,m,x,y,z,seg,rx,rz)=>{ const c=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg||10),m); c.position.set(x,y,z); if(rx) c.rotation.x=rx; if(rz) c.rotation.z=rz; g.add(c); return c; };
 const clPL=(g,w,h,m,x,y,z,ry,rx)=>tzPl(g,w,h,m,x,y,z,rx||0,ry||0);
 function clTex(w,h,fn){ return tex(w,h,fn); }
-function clSignTex(txt,o){ o=o||{}; return clTex(o.w||1024,o.h||192,(c,w,h)=>{ if(o.bg){ c.fillStyle=o.bg; c.fillRect(0,0,w,h); } else c.clearRect(0,0,w,h);
-  if(o.border){ c.strokeStyle=o.border; c.lineWidth=10; c.strokeRect(8,8,w-16,h-16); }
-  c.font=`${o.weight||'bold'} ${o.size||96}px ${o.font||'"Stardos Stencil", Impact, sans-serif'}`; c.textAlign='center'; c.textBaseline='middle';
-  { let sz=o.size||96; while(sz>20&&c.measureText(txt).width>w*0.9){ sz-=4; c.font=`${o.weight||'bold'} ${sz}px ${o.font||'"Stardos Stencil", Impact, sans-serif'}`; } }
-  if(o.glow){ c.shadowColor=o.glow; c.shadowBlur=30; } c.fillStyle=o.fg||'#fff'; c.fillText(txt,w/2+(o.dx||0),h/2+(o.dy||0));
-  if(o.sub){ c.shadowBlur=0; c.font=`bold ${o.subSize||40}px sans-serif`; c.fillStyle=o.subFg||o.fg||'#fff'; c.fillText(o.sub,w/2,h*0.82); }
-  if(o.grime!==false){ c.globalCompositeOperation='source-atop'; for(let i=0;i<60;i++){ c.fillStyle=`rgba(20,12,6,${Math.random()*0.25})`; c.beginPath(); c.arc(Math.random()*w,Math.random()*h,Math.random()*40,0,6.28); c.fill(); } c.globalCompositeOperation='source-over'; } }); }
+function clSignTex(txt,o){ o=o||{}; return clTex(Math.round((o.w||1024)/2),Math.round((o.h||192)/2),(c,w,h)=>{ if(o.bg){ c.fillStyle=o.bg; c.fillRect(0,0,w,h); } else c.clearRect(0,0,w,h);
+  if(o.border){ c.strokeStyle=o.border; c.lineWidth=5; c.strokeRect(4,4,w-8,h-8); }
+  c.font=`${o.weight||'bold'} ${(o.size||96)/2}px ${o.font||'"Stardos Stencil", Impact, sans-serif'}`; c.textAlign='center'; c.textBaseline='middle';
+  { let sz=(o.size||96)/2; while(sz>10&&c.measureText(txt).width>w*0.9){ sz-=2; c.font=`${o.weight||'bold'} ${sz}px ${o.font||'"Stardos Stencil", Impact, sans-serif'}`; } }
+  if(o.glow){ c.shadowColor=o.glow; c.shadowBlur=15; } c.fillStyle=o.fg||'#fff'; c.fillText(txt,w/2+(o.dx||0)/2,h/2+(o.dy||0)/2);
+  if(o.sub){ c.shadowBlur=0; c.font=`bold ${(o.subSize||40)/2}px sans-serif`; c.fillStyle=o.subFg||o.fg||'#fff'; c.fillText(o.sub,w/2,h*0.82); }
+  if(o.grime!==false){ c.globalCompositeOperation='source-atop'; for(let i=0;i<60;i++){ c.fillStyle=`rgba(20,12,6,${Math.random()*0.25})`; c.beginPath(); c.arc(Math.random()*w,Math.random()*h,Math.random()*20,0,6.28); c.fill(); } c.globalCompositeOperation='source-over'; } }); }
 function clGrime(c,w,h,a){ for(let i=0;i<90;i++){ c.fillStyle=`rgba(${20+Math.random()*20|0},${12+Math.random()*12|0},6,${Math.random()*(a||0.18)})`; c.beginPath(); c.ellipse(Math.random()*w,Math.random()*h,Math.random()*60+10,Math.random()*30+6,Math.random()*3,0,6.28); c.fill(); }
   const g=c.createLinearGradient(0,h*0.55,0,h); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(20,12,6,.55)'); c.fillStyle=g; c.fillRect(0,0,w,h); }
 /* fachadas e paredes internas desenhadas para cada tipo de prédio */
@@ -117,8 +117,8 @@ function clShop(s,M3){ const side=s.side, frontW=side>0?(s.x1+1)*S:s.x0*S, zA=cx
         tzBx(g,dx?0.04:S,0.06,dz?0.04:S,clM('trim'+s.id,{color:0x1a1612}),px,1.15,pz); } }
     bake(g); }
   // 3) o tema
-  const R=clReserved(); const wall=clWallCells(s,R); const used=new Set();
-  const atWall=(n,fn,fd,want,coll)=>{ const run=clTake(wall,used,n,want); if(run) clWallProp(run,fn,fd,coll); return !!run; };
+  const R=clReserved(); const wall=clWallCells(s,R); const used=new Set(); CL.used[s.id]=used; CL.wall=CL.wall||{}; CL.wall[s.id]=wall;
+  const atWall=(n,fn,fd,want,coll,tag)=>{ const run=clTake(wall,used,n,want); if(run){ clWallProp(run,fn,fd,coll); if(tag) CL.spots[tag]={run,fd}; } return !!run; };
   const back=c=>(side>0?c.x<=s.x0+2:c.x>=s.x1-2), front=c=>(side>0?c.x>=s.x1-2:c.x<=s.x0+2), sideW=c=>c.n[0]===0;
   const T=CL_THEME[s.id]; if(T) T({s,F,A,M3,W,D,H,side,zm,frontW,lxOf,clearAt,atWall,back,front,sideW,R,used,wall});
   bake(F);
@@ -151,7 +151,7 @@ const CL_THEME={
     for(const [lx,lz,a] of [[-W*0.28,5.2,0.08],[W*0.25,5.6,-0.25]]){ const [wx,wz]=P(lx,lz); const gx=Math.floor(wx/S), gz=Math.floor(wz/S); if(grid[gz]&&grid[gz][gx]==='.') clPoliceCar(MAPG.city,CL.anim,wx,wz,o.side>0?Math.PI/2+a:-Math.PI/2+a); }
     // por dentro: balcão de atendimento com vidro, bancos de espera, cartazes de procurado
     atWall(3,(g,w)=>{ CLP.counter(g,w,0x6a6a66,0x1d3a7a); const gl=CLP.glass(); clPL(g,w,1.0,gl,0,1.56,-0.25,0); clBX(g,w,0.05,0.05,clM('steelPole',{color:0x8a8e90,shininess:60}),0,2.08,-0.25);
-      clBX(g,0.5,0.35,0.06,clM('monitor',{color:0x111111,shininess:60}),-w/4,1.3,-0.7); clPL(g,0.44,0.28,clEm('screenBlue',0x0a2a5a,0x0a2a6a),-w/4,1.3,-0.665,0); },1.0,c=>!back(c));
+      clBX(g,0.5,0.35,0.06,clM('monitor',{color:0x111111,shininess:60}),-w/4,1.3,-0.7); clPL(g,0.44,0.28,clEm('screenBlue',0x0a2a5a,0x0a2a6a),-w/4,1.3,-0.665,0); },1.0,c=>!back(c),undefined,'cp_counter');
     atWall(2,(g,w)=>{ const m=clM('benchSeat',{color:0x3a4a6a,shininess:20}); for(let x=-w/2+0.4;x<w/2-0.3;x+=0.55){ clBX(g,0.48,0.06,0.45,m,x,0.46,-0.6); clBX(g,0.48,0.45,0.05,m,x,0.72,-0.82); } clBX(g,w-0.4,0.05,0.4,clM('steelPole',{color:0x8a8e90,shininess:60}),0,0.4,-0.6); },0.6,c=>!back(c));
     for(let i=0;i<3;i++) atWall(1,(g)=>{ for(let k=-1;k<=1;k++) CLP.poster(g,k*0.6,1.65+rand(-0.08,0.08),-0.93,0.5,0.66,(c,w,h)=>{ c.fillStyle='#e8dcc0'; c.fillRect(0,0,w,h); c.fillStyle='#1a1a1a'; c.font='bold 40px Impact'; c.textAlign='center'; c.fillText('PROCURADO',w/2,46); c.fillStyle='#3a3530'; c.beginPath(); c.arc(w/2,150,52,0,6.28); c.fill(); c.fillRect(w/2-70,200,140,90); c.fillStyle='#1a1a1a'; c.font='bold 22px sans-serif'; c.fillText('RECOMPENSA',w/2,h-36); clGrime(c,w,h,0.2); }); },0.1,null,false);
     // fundos: celas com grade, mesas com computadores, arquivos e armário de armas
@@ -181,7 +181,7 @@ const CL_THEME={
     // dentro: gôndolas, caixas registradoras, geladeiras e estoque
     const PRODS=[0xc8301a,0xe0a020,0x3a8a20,0x2a5ab8,0xe8e0c8,0x8a2a8a,0xf0f0f0];
     for(let i=0;i<4;i++) atWall(3,(g,w)=>CLP.shelf(g,w,PRODS),0.8,c=>!front(c)&&c.room==='CM');
-    for(let i=0;i<2;i++) atWall(2,(g,w)=>{ const m=clM('fridge',{color:0xd8dcdc,shininess:60}); clBX(g,w-0.1,2.2,0.8,m,0,1.1,-0.55); const gl=clEm('fridgeGlow',0xc8e8ff,0x5a7a8a); for(let x=-w/2+0.5;x<w/2-0.3;x+=0.95){ clPL(g,0.85,1.8,gl,x,1.15,-0.14,0); clBX(g,0.04,0.5,0.06,clM('steelPole',{color:0x8a8e90,shininess:60}),x+0.38,1.2,-0.1); } },0.85,c=>c.room==='CM');
+    for(let i=0;i<2;i++) atWall(2,(g,w)=>{ const m=clM('fridge',{color:0xd8dcdc,shininess:60}); clBX(g,w-0.1,2.2,0.8,m,0,1.1,-0.55); const gl=clEm('fridgeGlow',0xc8e8ff,0x5a7a8a); for(let x=-w/2+0.5;x<w/2-0.3;x+=0.95){ clPL(g,0.85,1.8,gl,x,1.15,-0.14,0); clBX(g,0.04,0.5,0.06,clM('steelPole',{color:0x8a8e90,shininess:60}),x+0.38,1.2,-0.1); } },0.85,c=>c.room==='CM',undefined,'cm_fridge');
     atWall(2,(g,w)=>{ CLP.counter(g,w,0x2a2a2a,0x8a1a10); clBX(g,w-0.4,0.04,0.45,clM('belt',{color:0x111111}),0,1.07,-0.55); clBX(g,0.4,0.25,0.35,clM('register',{color:0x2a2e30,shininess:40}),w/2-0.4,1.2,-0.6); clPL(g,0.3,0.12,clEm('regScreen',0x2aff6a,0x0a6a2a),w/2-0.4,1.33,-0.42,0); },0.85,front);
     for(let i=0;i<3;i++) atWall(1,(g)=>{ const m=clM('pallet',{color:0x7a5a30}); clBX(g,1.2,0.14,1.0,m,0,0.07,-0.4); for(let k=0;k<6;k++) CLP.crate(g,rand(-0.35,0.35),0.14+Math.floor(k/2)*0.45,-0.4+rand(-0.2,0.2),0.5,0x8a6a40); },1.0,c=>c.room==='CM2');
     // produtos caídos no chão
@@ -199,7 +199,7 @@ const CL_THEME={
     // dentro: prateleiras brancas de remédio, balcão com vidro, maca, cadeira de rodas e soro
     const PILLS=[0xf0f0f0,0x2a6ab8,0xd8302a,0xe8e0a0,0x7ac8a0];
     for(let i=0;i<4;i++) atWall(2,(g,w)=>{ const m=clM('pharmShelf',{color:0xeef2ee,shininess:40}); clBX(g,w-0.1,2.3,0.05,m,0,1.15,-0.95); for(let y=0.2;y<2.3;y+=0.36){ clBX(g,w-0.12,0.03,0.4,m,0,y,-0.78); for(let x=-w/2+0.15;x<w/2-0.1;x+=rand(0.08,0.16)){ if(Math.random()<0.25) continue; clBX(g,0.07,rand(0.1,0.18),0.12,clM('pill'+(Math.random()*5|0),{color:pick(PILLS),shininess:40}),x,y+0.1,-0.8); } } },0.5,c=>!front(c));
-    atWall(3,(g,w)=>{ CLP.counter(g,w,0xe8eee8,0x0e6a38); const gl=CLP.glass(); clPL(g,w-0.2,0.5,gl,0,1.3,-0.2,0); clBX(g,0.38,0.26,0.32,clM('register',{color:0x2a2e30,shininess:40}),-w/3,1.2,-0.6); const sg=clSignTex('MEDICAMENTOS',{w:1024,h:128,bg:'#0e6a38',fg:'#fff',size:80}); clPL(g,w*0.8,0.4,new THREE.MeshLambertMaterial({map:sg}),0,2.9,-0.94,0); },0.85,back);
+    atWall(3,(g,w)=>{ CLP.counter(g,w,0xe8eee8,0x0e6a38); const gl=CLP.glass(); clPL(g,w-0.2,0.5,gl,0,1.3,-0.2,0); clBX(g,0.38,0.26,0.32,clM('register',{color:0x2a2e30,shininess:40}),-w/3,1.2,-0.6); const sg=clSignTex('MEDICAMENTOS',{w:1024,h:128,bg:'#0e6a38',fg:'#fff',size:80}); clPL(g,w*0.8,0.4,new THREE.MeshLambertMaterial({map:sg}),0,2.9,-0.94,0); },0.85,back,undefined,'cf_counter');
     atWall(2,(g,w)=>{ const st=clM('steelPole',{color:0x8a8e90,shininess:60}); clBX(g,1.9,0.08,0.7,st,0,0.85,-0.45); clBX(g,1.85,0.12,0.65,clM('stretcher',{color:0x5a8aa0,shininess:30}),0,0.95,-0.45); for(const [a,b] of [[-.85,-.75],[.85,-.75],[-.85,-.15],[.85,-.15]]) clBX(g,0.04,0.85,0.04,st,a,0.42,b);
       clCY(g,0.015,0.015,1.9,st,w/2-0.3,0.95,-0.3,6); const bag=clBX(g,0.16,0.26,0.05,clM('ivBag',{color:0xc8e0f0,transparent:true,opacity:0.7}),w/2-0.3,1.8,-0.3); bag.rotation.z=0.1; },0.8,c=>!front(c));
     atWall(1,(g)=>{ const m=clM('wheelchair',{color:0x2a2a2a,shininess:40}); clCY(g,0.3,0.3,0.03,m,-0.28,0.3,-0.4,16,0,Math.PI/2); clCY(g,0.3,0.3,0.03,m,0.28,0.3,-0.4,16,0,Math.PI/2); clBX(g,0.5,0.05,0.45,clM('wcSeat',{color:0x2a3a6a}),0,0.5,-0.4); clBX(g,0.5,0.5,0.05,clM('wcSeat',{color:0x2a3a6a}),0,0.78,-0.63); },0.6,null,false);
@@ -220,7 +220,7 @@ const CL_THEME={
     for(let i=0;i<3;i++) atWall(2,(g,w)=>{ const pb=clTex(256,256,(c,w2,h2)=>{ c.fillStyle='#8a7050'; c.fillRect(0,0,w2,h2); c.fillStyle='#4a3a28'; for(let y=8;y<h2;y+=16) for(let x=8;x<w2;x+=16){ c.beginPath(); c.arc(x,y,2.5,0,6.28); c.fill(); } }); pb.wrapS=pb.wrapT=THREE.RepeatWrapping; pb.repeat.set(w/1.2,1.5);
       clPL(g,w-0.2,2.2,new THREE.MeshLambertMaterial({map:pb}),0,1.6,-0.93,0); for(let y=1.0;y<2.6;y+=0.5) for(let x=-w/2+0.5;x<w/2-0.4;x+=0.9){ if(Math.random()<0.15) continue; CLP.rifle(g,x,y,-0.85,0,1.1); clBX(g,0.04,0.05,0.12,clM('steelPole',{color:0x8a8e90,shininess:60}),x-0.25,y-0.06,-0.88); clBX(g,0.04,0.05,0.12,clM('steelPole',{color:0x8a8e90,shininess:60}),x+0.35,y-0.06,-0.88); } },0.3,c=>!front(c),false);
     atWall(3,(g,w)=>{ const m=clM('caCase',{color:0x2a2622,shininess:40}); clBX(g,w-0.1,0.9,0.75,m,0,0.45,-0.55); const gl=CLP.glass(); clBX(g,w-0.12,0.35,0.73,gl,0,1.08,-0.55); clBX(g,w-0.12,0.02,0.7,clM('felt',{color:0x6a1a14}),0,0.91,-0.55);
-      for(let x=-w/2+0.35;x<w/2-0.3;x+=0.45){ const p=G3(x,0.95,-0.55,rand(-0.4,0.4)); clBX(p,0.22,0.05,0.035,clM('gunDark',{color:0x161616,shininess:50}),0,0,0); clBX(p,0.05,0.035,0.11,clM('gunDark',{color:0x161616,shininess:50}),-0.07,0,0.06); g.add(p); } },0.85,back);
+      for(let x=-w/2+0.35;x<w/2-0.3;x+=0.45){ const p=G3(x,0.95,-0.55,rand(-0.4,0.4)); clBX(p,0.22,0.05,0.035,clM('gunDark',{color:0x161616,shininess:50}),0,0,0); clBX(p,0.05,0.035,0.11,clM('gunDark',{color:0x161616,shininess:50}),-0.07,0,0.06); g.add(p); } },0.85,back,undefined,'ca_case');
     for(let i=0;i<2;i++) atWall(1,(g)=>{ for(let k=0;k<5;k++) CLP.crate(g,rand(-0.4,0.4),Math.floor(k/2)*0.36,-0.55+rand(-0.15,0.15),0.45,0x3a4a2a); const lb=clSignTex('7.62',{w:256,h:128,bg:'#3a4a2a',fg:'#e8e0a0',size:70,grime:false}); clPL(g,0.4,0.2,new THREE.MeshLambertMaterial({map:lb}),0,0.2,-0.32,0); },0.8,null);
     atWall(2,(g,w)=>{ const wd=clM('workbench',{color:0x5a4228}); clBX(g,w-0.3,0.08,0.75,wd,0,0.9,-0.5); for(const x of [-w/2+0.3,w/2-0.3]) clBX(g,0.08,0.9,0.7,wd,x,0.45,-0.5); clBX(g,0.25,0.18,0.2,clM('vise',{color:0x3a5a8a,shininess:50}),-w/3,1.03,-0.4); CLP.rifle(g,0.2,0.97,-0.5,0.3,1); clBX(g,0.4,0.1,0.25,clM('toolbox',{color:0xb8180c,shininess:30}),w/3,1.0,-0.6); },0.8,back);
     atWall(1,(g)=>{ CLP.poster(g,0,1.7,-0.93,0.8,1.1,(c,w,h)=>{ c.fillStyle='#f0ead8'; c.fillRect(0,0,w,h); c.fillStyle='#1a1a1a'; c.beginPath(); c.arc(w/2,80,46,0,6.28); c.fill(); c.beginPath(); c.moveTo(w/2-90,h); c.lineTo(w/2-70,150); c.lineTo(w/2+70,150); c.lineTo(w/2+90,h); c.fill(); c.strokeStyle='#e8e0d0'; c.lineWidth=4; for(let r=20;r<120;r+=24){ c.beginPath(); c.arc(w/2,190,r,0,6.28); c.stroke(); } c.fillStyle='#c81d1d'; for(let i=0;i<7;i++){ c.beginPath(); c.arc(w/2+rand(-40,40),rand(60,230),5,0,6.28); c.fill(); } }); },0.1,null,false); },
@@ -241,7 +241,7 @@ const CL_THEME={
     atWall(4,(g,w)=>{ const wd=clM('barWood',{color:0x3a2010,shininess:40}); clBX(g,w-0.2,1.1,0.6,wd,0,0.55,0.3); clBX(g,w,0.07,0.8,clM('barTop',{color:0x1a0c06,shininess:90,specular:0x664422}),0,1.13,0.3);
       const sh=clM('barShelf',{color:0x2a1608}); for(const y of [1.3,1.75,2.2]){ clBX(g,w-0.4,0.04,0.3,sh,0,y,-0.8); for(let x=-w/2+0.4;x<w/2-0.35;x+=rand(0.12,0.2)){ const col=pick([0x2a6a2a,0x5a3010,0xc8c8b0,0x8a1a1a,0x1a4a6a]); const b=clCY(g,0.035,0.04,rand(0.22,0.32),clM('bt'+col,{color:col,transparent:true,opacity:0.85,shininess:110,specular:0xffffff}),x,y+0.15,-0.78,8); } }
       clPL(g,w-0.4,1.3,clEm('barBack',0x2a0a14,0x3a0818),0,1.75,-0.94,0);
-      for(let x=-w/2+0.6;x<w/2-0.4;x+=0.85){ clCY(g,0.2,0.2,0.06,clM('stool',{color:0x8a1a1a,shininess:40}),x,0.75,1.0,12); clCY(g,0.03,0.03,0.72,clM('steelPole',{color:0x8a8e90,shininess:60}),x,0.37,1.0,6); } },1.7,back,true);
+      for(let x=-w/2+0.6;x<w/2-0.4;x+=0.85){ clCY(g,0.2,0.2,0.06,clM('stool',{color:0x8a1a1a,shininess:40}),x,0.75,1.0,12); clCY(g,0.03,0.03,0.72,clM('steelPole',{color:0x8a8e90,shininess:60}),x,0.37,1.0,6); } },1.7,back,true,'cb_bar');
     atWall(2,(g,w)=>{ const m=clM('jukebox',{color:0x5a1a10,shininess:60}); clBX(g,0.8,1.5,0.5,m,-w/4,0.75,-0.65); const jt=new THREE.MeshBasicMaterial({color:0xffa040}); clPL(g,0.6,0.5,jt,-w/4,1.2,-0.39,0); CL.anim.push({k:'neon',m:jt,base:0xffa040,ph:1});
       clBX(g,1.0,0.6,0.06,clM('tv',{color:0x111111,shininess:60}),w/4,2.2,-0.9); clPL(g,0.92,0.52,clEm('tvStatic',0x6a7a8a,0x2a3038),w/4,2.2,-0.865,0); },0.6,null,false);
     atWall(1,(g)=>{ const db=clTex(256,256,(c,w,h)=>{ const cols=['#111','#e8d8b0']; for(let i=0;i<20;i++){ c.fillStyle=cols[i%2]; c.beginPath(); c.moveTo(w/2,h/2); c.arc(w/2,h/2,120,i/20*6.28,(i+1)/20*6.28); c.fill(); } c.strokeStyle='#c81d1d'; c.lineWidth=10; c.beginPath(); c.arc(w/2,h/2,80,0,6.28); c.stroke(); c.fillStyle='#2a8a2a'; c.beginPath(); c.arc(w/2,h/2,14,0,6.28); c.fill(); });
@@ -271,7 +271,7 @@ const CL_THEME={
     atWall(3,(g,w)=>{ const st2=clM('vaultSteel',{color:0x8a8e92,shininess:110,specular:0xbbbbbb}); clBX(g,w-0.2,ROOM_CEIL-0.2,0.3,clM('vaultFrame',{color:0x4a4e52,shininess:60}),0,(ROOM_CEIL-0.2)/2,-0.85);
       const door=new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.25,0.35,32),st2); door.rotation.x=Math.PI/2; door.position.set(0,1.5,-0.6); g.add(door); const ring=new THREE.Mesh(new THREE.TorusGeometry(1.25,0.08,8,32),clM('vaultRing',{color:0x5a5e62,shininess:90})); ring.position.set(0,1.5,-0.42); g.add(ring);
       const wheel=new THREE.Group(); wheel.position.set(0,1.5,-0.38); for(let k=0;k<3;k++){ const sp=clBX(wheel,0.9,0.06,0.06,clM('brass',{color:0xb8902a,shininess:90}),0,0,0); sp.rotation.z=k*Math.PI/3; } clCY(wheel,0.12,0.12,0.12,clM('brass',{color:0xb8902a,shininess:90}),0,0,0,12,Math.PI/2); g.add(wheel);
-      for(let k=0;k<8;k++) clCY(g,0.07,0.07,0.1,st2,Math.cos(k/8*6.28)*1.05,1.5+Math.sin(k/8*6.28)*1.05,-0.4,10,Math.PI/2); },0.7,c=>c.room==='CK2');
+      for(let k=0;k<8;k++) clCY(g,0.07,0.07,0.1,st2,Math.cos(k/8*6.28)*1.05,1.5+Math.sin(k/8*6.28)*1.05,-0.4,10,Math.PI/2); },0.7,c=>c.room==='CK2',undefined,'ck_vault');
     atWall(2,(g,w)=>{ const m=clM('depositBox',{color:0x9a8a5a,shininess:80,specular:0x887755}); for(let y=0.35;y<2.9;y+=0.32) for(let x=-w/2+0.3;x<w/2-0.2;x+=0.42){ clBX(g,0.38,0.28,0.05,m,x,y,-0.93); clCY(g,0.02,0.02,0.03,clM('brass',{color:0xb8902a,shininess:90}),x+0.12,y,-0.89,6,Math.PI/2); } },0.15,c=>c.room==='CK2',false);
     atWall(1,(g)=>{ const bag=clM('moneyBag',{color:0x8a7a50,shininess:5}); for(let k=0;k<4;k++){ const b=new THREE.Mesh(new THREE.SphereGeometry(0.28,10,8),bag); b.scale.set(1,1.15,1); b.position.set(rand(-0.5,0.5),0.3,-0.5+rand(-0.2,0.2)); g.add(b); } for(let k=0;k<6;k++) clBX(g,0.25,0.08,0.12,clM('goldBar',{color:0xd8a830,shininess:120,specular:0xffe080,emissive:0x2a1a00}),rand(-0.3,0.3),0.04+Math.floor(k/3)*0.08,-0.2+rand(-0.1,0.1)); },0.9,c=>c.room==='CK2');
     // cordões de fila (postes de latão)

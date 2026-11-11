@@ -3,102 +3,167 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' file: data:">
-<title>Dead Bunker - Launcher</title>
+<title>Dead Bunker</title>
 <style>
-  :root { --blood: #8b0000; --blood-bright: #c81d1d; --wine: #5a0a14; --bone: #f5f0e8; --muted: #a89a88; }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; overflow: hidden; color: var(--bone); font-family: "Segoe UI", Tahoma, Arial, sans-serif; user-select: none; }
-  body {
-    display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px; text-align: center;
-    background:
-      radial-gradient(ellipse at 50% 35%, rgba(200, 29, 29, 0.28), transparent 60%),
-      radial-gradient(ellipse at 50% 120%, rgba(139, 0, 0, 0.45), transparent 55%),
-      linear-gradient(180deg, #120507, #070203);
-  }
-  /* névoa que se move devagar */
-  body::before {
-    content: ""; position: fixed; inset: -20%; pointer-events: none;
-    background: radial-gradient(circle at 30% 60%, rgba(139, 0, 0, 0.18), transparent 40%),
-                radial-gradient(circle at 70% 40%, rgba(90, 10, 20, 0.22), transparent 45%);
-    animation: drift 12s ease-in-out infinite alternate;
-  }
-  @keyframes drift { from { transform: translate(-4%, 2%); } to { transform: translate(4%, -2%); } }
+  :root { --blood:#b3201a; --blood-hi:#e0301f; --ember:#ff7a3a; --bone:#f4ead2; --muted:#a89a88; --line:rgba(255,255,255,.08); --panel:#140d0b; --rail:#0d0807; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; overflow:hidden; background:#070404; color:var(--bone); font-family:"Segoe UI",Tahoma,Arial,sans-serif; user-select:none; }
+  button { font:inherit; color:inherit; cursor:pointer; border:0; background:none; }
+  .disp { font-family:Impact,"Arial Black",sans-serif; letter-spacing:.03em; text-transform:uppercase; }
 
-  .logo {
-    width: 96px; height: 96px; border-radius: 22px; position: relative; z-index: 1;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 40px rgba(200, 29, 29, 0.35);
-    animation: float 3.6s ease-in-out infinite;
-  }
-  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  /* moldura sem barra do Windows */
+  .app { position:fixed; inset:0; display:grid; grid-template-columns:76px 1fr 320px; grid-template-rows:34px 1fr; background:#0a0606; }
+  .tb { grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; padding-left:16px; -webkit-app-region:drag; background:#070404; border-bottom:1px solid var(--line); font-size:12px; letter-spacing:.3em; color:var(--muted); }
+  .tb b { color:var(--bone); letter-spacing:.35em; } .tb .wc { display:flex; -webkit-app-region:no-drag; }
+  .tb .wc button { width:46px; height:34px; display:grid; place-items:center; color:var(--muted); } .tb .wc button:hover { background:rgba(255,255,255,.07); color:#fff; } .tb .wc .x:hover { background:#c42b1c; }
 
-  h1 {
-    position: relative; z-index: 1; margin: 16px 0 2px;
-    font-family: Impact, "Arial Black", sans-serif; font-size: 2rem; letter-spacing: 0.04em; text-transform: uppercase;
-    text-shadow: 0 0 14px rgba(200, 29, 29, 0.55);
-  }
-  .sub {
-    position: relative; z-index: 1; font-size: 0.72rem; letter-spacing: 0.4em; text-transform: uppercase;
-    color: var(--blood-bright); margin-bottom: 26px;
-  }
+  /* trilho de ícones */
+  .rail { background:var(--rail); border-right:1px solid var(--line); display:flex; flex-direction:column; align-items:center; padding:14px 0; gap:6px; }
+  .rail .logo { width:44px; height:44px; border-radius:10px; margin-bottom:22px; box-shadow:0 0 22px rgba(224,48,31,.45); }
+  .rail .nv { position:relative; width:48px; height:48px; border-radius:10px; display:grid; place-items:center; color:#7a6e62; transition:background .15s,color .15s; }
+  .rail .nv:hover { color:var(--bone); background:rgba(255,255,255,.05); } .rail .nv.on { color:#fff; background:rgba(224,48,31,.16); }
+  .rail .nv.on:before { content:""; position:absolute; left:-14px; top:12px; bottom:12px; width:4px; border-radius:2px; background:var(--blood-hi); }
+  .rail .nv svg { width:22px; height:22px; } .rail .sp { flex:1; }
+  .rail .nv .tip { position:absolute; left:58px; padding:5px 10px; white-space:nowrap; font-size:12px; background:#000; border:1px solid var(--line); opacity:0; pointer-events:none; transform:translateX(-6px); transition:.15s; z-index:5; }
+  .rail .nv:hover .tip { opacity:1; transform:none; }
 
-  .progress {
-    position: relative; z-index: 1; width: 86%; height: 18px; border-radius: 3px;
-    background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7); overflow: hidden;
-  }
-  .fill {
-    position: absolute; top: 0; bottom: 0; left: 0; width: 0%;
-    background: linear-gradient(90deg, #5a0a14, var(--blood), var(--blood-bright));
-    box-shadow: 0 0 14px rgba(200, 29, 29, 0.7);
-    transition: width 0.25s ease;
-  }
-  .fill::after {
-    content: ""; position: absolute; inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
-    transform: translateX(-100%); animation: shine 1.8s linear infinite;
-  }
-  @keyframes shine { to { transform: translateX(100%); } }
-  .fill.indet { width: 32% !important; left: -32%; animation: slide 1.3s ease-in-out infinite; }
-  @keyframes slide { to { left: 100%; } }
-  .pct {
-    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    font-size: 0.7rem; letter-spacing: 0.12em; color: var(--bone); text-shadow: 0 1px 2px #000;
-  }
+  /* conteúdo */
+  main { position:relative; overflow-y:auto; overflow-x:hidden; scroll-behavior:smooth; }
+  main::-webkit-scrollbar { width:8px; } main::-webkit-scrollbar-thumb { background:#2a1e18; }
+  .hero { position:relative; height:min(66vh,560px); min-height:420px; overflow:hidden; }
+  .hero .sl { position:absolute; inset:-3%; background:center/cover no-repeat; opacity:0; transition:opacity 1s, transform .3s ease-out; }
+  .hero .sl.on { opacity:1; animation:kb 14s ease-in-out forwards; } @keyframes kb { from { scale:1.02; } to { scale:1.12; } }
+  .hero:after { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(0deg,#0a0606 0%,rgba(10,6,6,.55) 32%,rgba(10,6,6,0) 60%),linear-gradient(90deg,rgba(10,6,6,.85) 0%,rgba(10,6,6,.2) 55%,transparent); }
+  .hero canvas { position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none; }
+  .hero h1 { position:absolute; top:24px; left:40px; z-index:2; margin:0; font-size:34px; font-weight:600; font-family:Georgia,serif; letter-spacing:.01em; }
+  .hero .ct { position:absolute; left:40px; bottom:60px; z-index:2; max-width:620px; }
+  .hero .tag { display:inline-block; padding:3px 10px; font-size:11px; letter-spacing:.25em; background:var(--blood); margin-bottom:10px; }
+  .hero h2 { margin:0 0 8px; font-size:clamp(34px,4vw,54px); line-height:1; text-shadow:0 4px 18px #000; }
+  .hero p { margin:0 0 22px; font-size:15px; line-height:1.5; color:#d6c9b6; text-shadow:0 2px 8px #000; }
+  .btns { display:flex; gap:12px; align-items:center; }
+  .play { position:relative; overflow:hidden; min-width:230px; padding:16px 34px; border-radius:6px; background:linear-gradient(180deg,#ef3a2a,#a8150f); color:#fff; font-size:22px; box-shadow:0 8px 30px rgba(224,48,31,.45),inset 0 1px 0 rgba(255,255,255,.25); transition:transform .12s, box-shadow .2s, filter .2s; }
+  .play:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 12px 40px rgba(224,48,31,.6),inset 0 1px 0 rgba(255,255,255,.25); }
+  .play:disabled { filter:grayscale(.7) brightness(.7); cursor:default; }
+  .play .fill { position:absolute; left:0; bottom:0; height:4px; width:0; background:#ffd0a0; transition:width .3s; }
+  .play.ready:after { content:""; position:absolute; inset:0; background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.25) 50%,transparent 70%); background-size:250% 100%; animation:shine 3.2s ease-in-out infinite; }
+  @keyframes shine { from { background-position:150% 0; } to { background-position:-100% 0; } }
+  .sec { white-space:nowrap; padding:15px 24px; border-radius:6px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); font-weight:600; backdrop-filter:blur(6px); transition:background .15s; display:flex; align-items:center; gap:8px; }
+  .sec:hover { background:rgba(255,255,255,.16); } .sec svg { width:18px; height:18px; }
+  .dots { position:absolute; right:30px; bottom:30px; z-index:2; display:flex; gap:8px; }
+  .dots button { width:34px; height:4px; background:rgba(255,255,255,.25); position:relative; overflow:hidden; } .dots button i { position:absolute; inset:0; width:0; background:#fff; }
+  .dots button.on i { animation:dot 7s linear forwards; } @keyframes dot { to { width:100%; } }
+  .stat { position:absolute; left:40px; bottom:18px; z-index:2; display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted); }
+  .stat .bar { width:220px; height:3px; background:rgba(255,255,255,.12); } .stat .bar i { display:block; height:100%; width:0; background:var(--ember); transition:width .3s; }
+  .stat .bar.ind i { width:30%; animation:ind 1.2s ease-in-out infinite; } @keyframes ind { from { transform:translateX(-100%); } to { transform:translateX(330%); } }
+  .stat.err { color:#ff8a7a; } .stat button { color:#fff; text-decoration:underline; }
 
-  #txt {
-    position: relative; z-index: 1; margin-top: 16px; min-height: 2.6rem; max-width: 92%;
-    font-size: 0.92rem; line-height: 1.4; color: var(--muted);
-  }
-  #txt.err { color: #ff7b7b; }
+  .blk { padding:20px 40px 10px; } .blk h3 { margin:0 0 14px; font-size:22px; font-family:Georgia,serif; font-weight:600; }
+  .notes { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .note { position:relative; display:grid; grid-template-columns:1fr 46%; min-height:140px; background:var(--panel); border:1px solid var(--line); border-radius:8px; overflow:hidden; transition:transform .15s,border-color .15s; cursor:pointer; }
+  .note:hover { transform:translateY(-3px); border-color:rgba(224,48,31,.6); }
+  .note .tx { padding:14px 16px; } .note small { font-size:10px; letter-spacing:.2em; color:var(--blood-hi); } .note b { display:block; margin:6px 0; font-size:17px; line-height:1.2; } .note span { font-size:12px; color:var(--muted); line-height:1.4; }
+  .note .im { background:center/cover; mask-image:linear-gradient(90deg,transparent,#000 35%); -webkit-mask-image:linear-gradient(90deg,transparent,#000 35%); }
+  .maps { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; padding-bottom:30px; }
+  .mp { position:relative; height:150px; border-radius:8px; overflow:hidden; border:1px solid var(--line); cursor:pointer; }
+  .mp:before { content:""; position:absolute; inset:0; background:var(--i) center/cover; transition:transform .5s; } .mp:hover:before { transform:scale(1.08); }
+  .mp:after { content:""; position:absolute; inset:0; background:linear-gradient(0deg,rgba(0,0,0,.9),transparent 65%); }
+  .mp b { position:absolute; left:12px; right:12px; bottom:28px; line-height:1.05; z-index:1; font-size:18px; } .mp span { position:absolute; left:12px; right:12px; bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; z-index:1; font-size:11px; color:var(--muted); }
 
-  button {
-    position: relative; z-index: 1; margin-top: 14px; padding: 0.7rem 2.2rem;
-    font-family: Impact, "Arial Black", sans-serif; font-size: 1.05rem; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--bone); background: linear-gradient(180deg, var(--blood-bright), var(--blood));
-    border: 1px solid #3a0000; border-radius: 3px; cursor: pointer;
-    box-shadow: 0 0 22px rgba(200, 29, 29, 0.4), inset 0 -3px 0 rgba(0, 0, 0, 0.35);
-    transition: transform 0.12s ease, box-shadow 0.12s ease;
-  }
-  button:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(200, 29, 29, 0.6), inset 0 -3px 0 rgba(0, 0, 0, 0.35); }
-  button[hidden] { display: none; }
+  /* painel da direita */
+  aside { background:var(--panel); border-left:1px solid var(--line); display:flex; flex-direction:column; overflow:hidden; }
+  .me { display:flex; align-items:center; gap:12px; padding:18px; border-bottom:1px solid var(--line); }
+  .me img { width:44px; height:44px; border-radius:50%; border:2px solid var(--blood-hi); } .me b { display:block; letter-spacing:.25em; font-size:14px; }
+  .me small { display:flex; align-items:center; gap:6px; color:var(--muted); font-size:12px; } .led { width:8px; height:8px; border-radius:50%; background:#666; } .led.on { background:#3ad14a; box-shadow:0 0 8px #3ad14a; animation:pulse 2s infinite; } .led.off { background:#d13a3a; }
+  @keyframes pulse { 50% { opacity:.4; } }
+  .tabs { display:flex; margin:12px 14px 6px; background:rgba(0,0,0,.35); border-radius:8px; padding:4px; } .tabs button { flex:1; padding:7px 0; border-radius:6px; font-size:12px; color:var(--muted); } .tabs button.on { background:rgba(255,255,255,.08); color:#fff; box-shadow:inset 0 -2px 0 var(--blood-hi); }
+  .pane { flex:1; overflow-y:auto; padding:6px 14px 14px; } .pane::-webkit-scrollbar { width:6px; } .pane::-webkit-scrollbar-thumb { background:#2a1e18; }
+  .card { background:rgba(255,255,255,.035); border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:10px; }
+  .card h4 { margin:0 0 6px; font-size:11px; letter-spacing:.2em; color:var(--blood-hi); text-transform:uppercase; }
+  .season b { display:block; font-size:20px; } .cd { display:flex; gap:8px; margin-top:8px; } .cd div { flex:1; text-align:center; padding:6px 0; background:rgba(0,0,0,.4); border-radius:6px; } .cd b { font-size:18px; } .cd small { font-size:10px; color:var(--muted); }
+  .chr { display:flex; align-items:center; gap:10px; padding:7px 6px; border-radius:6px; cursor:default; } .chr:hover { background:rgba(255,255,255,.05); }
+  .chr img { width:36px; height:36px; border-radius:50%; object-fit:cover; border:1px solid var(--line); } .chr b { display:block; font-size:13px; } .chr small { font-size:11px; color:var(--muted); }
+  .tip { font-size:13px; line-height:1.45; color:#d6c9b6; min-height:56px; transition:opacity .4s; }
+  .ver { font-size:11px; color:#6a5e52; padding:10px 14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; }
 
-  .foot {
-    position: absolute; bottom: 10px; left: 0; right: 0; z-index: 1;
-    font-size: 0.66rem; letter-spacing: 0.12em; color: #5f5246; text-transform: uppercase;
-  }
+  /* configurações */
+  .modal { position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.7); display:grid; place-items:center; } .modal[hidden] { display:none; }
+  .modal .box { width:min(460px,92vw); background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:22px; }
+  .modal h3 { margin:0 0 14px; } .modal label { display:block; margin-bottom:12px; font-size:13px; color:var(--muted); }
+  .modal select { display:block; width:100%; margin-top:6px; padding:9px; background:#0a0606; color:var(--bone); border:1px solid var(--line); border-radius:6px; }
+  .modal .row { display:flex; justify-content:flex-end; gap:10px; margin-top:16px; }
 </style>
 </head>
 <body>
-  <img class="logo" src="build/icon.png" alt="">
-  <h1>Dead <span style="color:var(--blood-bright)">Bunker</span></h1>
-  <div class="sub">Launcher</div>
-  <div class="progress">
-    <div id="fill" class="fill indet"></div>
-    <div id="pct" class="pct"></div>
-  </div>
-  <div id="txt">Iniciando...</div>
-  <button id="retry" hidden>Tentar de novo</button>
-  <div class="foot">feito por Drax</div>
-  <script src="renderer.js"></script>
+<div class="app">
+  <div class="tb"><span><b>DEAD BUNKER</b> &nbsp;·&nbsp; LAUNCHER</span>
+    <div class="wc"><button data-w="min" title="Minimizar"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 5h10" stroke="currentColor"/></svg></button><button data-w="max" title="Maximizar"><svg width="10" height="10" viewBox="0 0 10 10"><rect x=".5" y=".5" width="9" height="9" fill="none" stroke="currentColor"/></svg></button><button class="x" data-w="close" title="Fechar"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 0l10 10M10 0L0 10" stroke="currentColor"/></svg></button></div></div>
+
+  <nav class="rail">
+    <img class="logo" src="img/icon.png" alt="">
+    <button class="nv on" data-go="top"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg><span class="tip">Início</span></button>
+    <button class="nv" data-go="notes"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3h10l4 4v14H5zM14 4v4h4M8 12h8M8 16h8M8 8h4" stroke="#0d0807" stroke-width="1.4"/></svg><span class="tip">Novidades</span></button>
+    <button class="nv" data-go="maps"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15" stroke="#0d0807" stroke-width="1.4"/></svg><span class="tip">Mapas</span></button>
+    <button class="nv" data-go="site"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span class="tip">Site oficial</span></button>
+    <div class="sp"></div>
+    <button class="nv" data-go="cfg"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 4l-2.2.8-.6 1.5 1 2.1-1.6 1.6-2.1-1-1.5.6L13 21h-2l-.8-2.2-1.5-.6-2.1 1-1.6-1.6 1-2.1-.6-1.5L3 12v-2l2.2-.8.6-1.5-1-2.1 1.6-1.6 2.1 1 1.5-.6L11 3h2l.8 2.2 1.5.6 2.1-1 1.6 1.6-1 2.1.6 1.5L21 10z" fill-rule="evenodd"/></svg><span class="tip">Configurações</span></button>
+  </nav>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="sl" style="background-image:url(img/boss.jpg)"></div><div class="sl" style="background-image:url(img/city.jpg)"></div><div class="sl" style="background-image:url(img/hosp.jpg)"></div><div class="sl" style="background-image:url(img/menu.jpg)"></div>
+      <canvas id="fx"></canvas>
+      <h1>Início</h1>
+      <div class="ct"><span class="tag" id="s-tag">NOVO</span><h2 class="disp" id="s-title">Dead Bunker</h2><p id="s-text"></p>
+        <div class="btns"><button class="play disp" id="play" disabled><span id="play-t">Verificando…</span><i class="fill" id="play-f"></i></button>
+          <button class="sec" id="site"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>Site oficial</button>
+          <button class="sec" id="seenotes">Notas da atualização</button></div></div>
+      <div class="dots" id="dots"></div>
+      <div class="stat" id="stat"><span id="txt">Iniciando…</span><span class="bar ind" id="bar"><i id="fill"></i></span><span id="pct"></span><button id="retry" hidden>Tentar de novo</button></div>
+    </section>
+
+    <section class="blk" id="notes"><h3>Notas da atualização mais recentes</h3>
+      <div class="notes">
+        <div class="note" data-s="0"><div class="tx"><small>TEMPORADA 1</small><b>Passe Cinzas e prestígio</b><span>50 níveis de recompensas, camuflagem exclusiva e 10 prestígios.</span></div><div class="im" style="background-image:url(img/boss.jpg)"></div></div>
+        <div class="note" data-s="1"><div class="tx"><small>GAMEPLAY</small><b>Corrida, loadout e salas públicas</b><span>Shift para correr, arma inicial à sua escolha e partidas com desconhecidos.</span></div><div class="im" style="background-image:url(img/city.jpg)"></div></div>
+        <div class="note" data-s="2"><div class="tx"><small>MORTES</small><b>Fogo, choque e explosões</b><span>Novas mortes com gore, finalização com a faca e pernas quebradas.</span></div><div class="im" style="background-image:url(img/hosp.jpg)"></div></div>
+      </div>
+    </section>
+
+    <section class="blk" id="maps"><h3>Mapas</h3>
+      <div class="maps">
+        <div class="mp" style="--i:url(img/bunker.jpg)"><b class="disp">Dead Bunker</b><span>máquina do tempo · Mutante Ácido</span></div>
+        <div class="mp" style="--i:url(img/farm.jpg)"><b class="disp">Fazenda Santa Luzia</b><span>mansão · laboratório secreto</span></div>
+        <div class="mp" style="--i:url(img/hosp.jpg)"><b class="disp">Hospício Vale Negro</b><span>celas · necrotério · 2087</span></div>
+        <div class="mp" style="--i:url(img/city.jpg)"><b class="disp">Cidade destruída</b><span>de carro, saindo do bunker</span></div>
+      </div>
+    </section>
+  </main>
+
+  <aside>
+    <div class="me"><img src="img/icon.png" alt=""><div><b>DEAD BUNKER</b><small><i class="led" id="led"></i><span id="srv">Verificando servidor…</span></small></div></div>
+    <div class="tabs"><button class="on" data-p="p1">Temporada</button><button data-p="p2">Sobreviventes</button></div>
+    <div class="pane" id="p1">
+      <div class="card season"><h4>Temporada 1 · Cinzas</h4><b class="disp">Passe de temporada</b><small style="color:var(--muted)">termina em</small><div class="cd" id="cd"></div></div>
+      <div class="card"><h4>Online agora</h4><div id="online" style="font-size:13px;color:#d6c9b6">—</div></div>
+      <div class="card"><h4>Dica de sobrevivência</h4><div class="tip" id="tipx"></div></div>
+    </div>
+    <div class="pane" id="p2" hidden>
+      <div class="chr"><img src="img/recruta_face.jpg" alt=""><div><b>Recruta Ramos</b><small>deixado para trás no bunker</small></div></div>
+      <div class="chr"><img src="img/iara_face.jpg" alt=""><div><b>Iara “Raposa” Tavares</b><small>atiradora de reconhecimento</small></div></div>
+      <div class="chr"><img src="img/helena_face.jpg" alt=""><div><b>Dra. Helena Vargas</b><small>psiquiatra do Hospício Vale Negro</small></div></div>
+      <div class="chr"><img src="img/viktor_face.jpg" alt=""><div><b>V.I.K.T.O.R</b><small>reconstruído com implantes militares</small></div></div>
+      <div class="chr"><img src="img/moreira_face.jpg" alt=""><div><b>Sargento Moreira</b><small>“Tanque”, comandante de blindado</small></div></div>
+      <div class="chr"><img src="img/tomas_face.jpg" alt=""><div><b>Padre Tomás</b><small>exorcista da diocese</small></div></div>
+    </div>
+    <div class="ver"><span id="v-game">jogo —</span><span id="v-l">launcher —</span></div>
+  </aside>
+</div>
+
+<div class="modal" id="cfg" hidden><div class="box"><h3>Configurações</h3>
+  <label>Modo de tela do jogo<select id="c-mode"><option value="full">Tela cheia</option><option value="window">Janela</option><option value="max">Janela maximizada</option></select></label>
+  <label>Tamanho da janela<select id="c-res"><option value="1280x720">1280 × 720</option><option value="1600x900">1600 × 900</option><option value="1920x1080">1920 × 1080</option></select></label>
+  <div class="row"><button class="sec" id="c-close">Fechar</button></div></div></div>
+
+<script src="renderer.js"></script>
 </body>
 </html>

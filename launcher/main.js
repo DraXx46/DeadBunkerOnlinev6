@@ -3,7 +3,7 @@
    1. Consulta o manifesto da última versão do jogo (release "game-latest" no GitHub).
    2. Se houver versão nova, baixa o zip, confere o SHA-256 e substitui a pasta do jogo.
    3. Abre o jogo numa janela própria, servido pelo esquema bunker:// (sem servidor local). */
-const { app, BrowserWindow, ipcMain, net, protocol, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, net, protocol, screen, shell } = require('electron');
 /* O jogo agora se chama Dead Bunker, mas a pasta de dados continua a antiga ("Bunker dos Mortos"):
    assim quem já tinha o launcher não perde o jogo baixado nem o progresso salvo (localStorage fica nessa pasta). */
 try { app.setPath('userData', require('path').join(app.getPath('appData'), 'Bunker dos Mortos')); } catch (e) {}
@@ -20,6 +20,10 @@ const REPO = 'DraXx46/DeadBunkerOnlinev6';
 const MANIFEST_URL = `https://github.com/${REPO}/releases/download/game-latest/manifest.json`;
 const SCHEME = 'bunker';
 const GAME_URL = `${SCHEME}://jogo/index.html`;
+const SITE_URL = 'https://draxx46.github.io/DeadBunkerOnlinev6/';
+const HEALTH_URL = 'https://bunker-server.wincklerleonardo12.workers.dev/api/health';
+let ready = false;
+let readyVersion = null;
 
 /* Precisa ser registrado antes de app.whenReady(). "standard" + "secure" deixa o jogo usar
    localStorage, fetch e áudio como faria numa página https. */
@@ -36,7 +40,7 @@ let installedFile = '';
 
 function status(text, percent = null, error = false) {
   if (launcherWin && !launcherWin.isDestroyed()) {
-    launcherWin.webContents.send('status', { text, percent, error });
+    launcherWin.webContents.send('status', { text, percent, error, ready, version: readyVersion });
   }
 }
 
@@ -147,7 +151,10 @@ async function update() {
       status('Sem conexão: abrindo a última versão instalada.');
     }
 
-    launchGame();
+    /* não abre sozinho: o jogador aperta JOGAR na tela do launcher */
+    ready = true;
+    readyVersion = readInstalledVersion() || (manifest && manifest.version) || null;
+    status(manifest ? 'Pronto para jogar' : 'Sem conexão · a última versão instalada está pronta', 100);
   } catch (err) {
     status(err.message || String(err), null, true);
   } finally {
@@ -239,9 +246,10 @@ function launchGame() {
   blockCtrlW(gameWin);
   allowDualSense(gameWin);
   gameWin.loadURL(GAME_URL);
-  gameWin.on('closed', () => { gameWin = null; });
+  /* enquanto o jogo roda o launcher fica escondido; ao fechar o jogo, ele volta */
+  gameWin.on('closed', () => { gameWin = null; if (launcherWin && !launcherWin.isDestroyed()) { launcherWin.show(); launcherWin.focus(); } else app.quit(); });
 
-  if (launcherWin && !launcherWin.isDestroyed()) launcherWin.close();
+  if (launcherWin && !launcherWin.isDestroyed()) launcherWin.hide();
 }
 
 if (!app.requestSingleInstanceLock()) {
@@ -271,12 +279,28 @@ if (!app.requestSingleInstanceLock()) {
     });
 
     ipcMain.on('retry', () => update());
+    ipcMain.on('play', () => { if (ready && !gameWin) launchGame(); else if (gameWin) gameWin.focus(); });
+    ipcMain.on('site', () => { shell.openExternal(SITE_URL); });
+    ipcMain.on('win', (_e, a) => {
+      if (!launcherWin || launcherWin.isDestroyed()) return;
+      if (a === 'min') launcherWin.minimize();
+      else if (a === 'max') { if (launcherWin.isMaximized()) launcherWin.unmaximize(); else launcherWin.maximize(); }
+      else if (a === 'close') { if (gameWin) launcherWin.hide(); else app.quit(); }
+    });
+    ipcMain.handle('info', () => ({ launcher: app.getVersion(), game: readInstalledVersion(), ready, playing: !!gameWin }));
+    ipcMain.handle('health', async () => {
+      const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 5000);
+      try { const r = await net.fetch(HEALTH_URL, { signal: ctl.signal }); if (!r.ok) return { ok: false }; const j = await r.json(); return { ok: !!j.ok, clients: j.clients | 0, rooms: j.rooms | 0 }; }
+      catch (e) { return { ok: false }; } finally { clearTimeout(t); }
+    });
 
     launcherWin = new BrowserWindow({
-      width: 560,
-      height: 340,
-      resizable: false,
-      maximizable: false,
+      width: 1280,
+      height: 760,
+      minWidth: 1000,
+      minHeight: 620,
+      frame: false,
+      show: false,
       backgroundColor: '#0a0606',
       title: 'Dead Bunker - Launcher',
       icon: path.join(__dirname, 'build', 'icon.png'),
@@ -288,6 +312,7 @@ if (!app.requestSingleInstanceLock()) {
       }
     });
     blockCtrlW(launcherWin);
+    launcherWin.once('ready-to-show', () => launcherWin.show());
     launcherWin.loadFile(path.join(__dirname, 'index.html'));
     launcherWin.on('closed', () => { launcherWin = null; });
     launcherWin.webContents.once('did-finish-load', () => update());

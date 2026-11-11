@@ -227,7 +227,7 @@ function launchGame() {
     minHeight: 500,
     backgroundColor: '#0a0606',
     title: 'Dead Bunker',
-    icon: path.join(__dirname, 'build', 'icon.png'),
+    icon: path.join(__dirname, 'build', process.platform==='win32'?'icon.ico':'icon.png'),
     autoHideMenuBar: true,
     webPreferences: { sandbox: true, contextIsolation: true, preload: path.join(__dirname, 'gamepreload.js') }
   });
@@ -262,6 +262,8 @@ if (!app.requestSingleInstanceLock()) {
     }
   });
 
+  // no Windows a barra de tarefas usa o mesmo ícone do atalho (o id precisa ser igual ao appId do instalador)
+  if (process.platform === 'win32') app.setAppUserModelId('com.draxx46.bunkerdosmortos.launcher');
   app.whenReady().then(() => {
     gameDir = path.join(app.getPath('userData'), 'game');
     stagingDir = path.join(app.getPath('userData'), 'game-new');
@@ -303,7 +305,7 @@ if (!app.requestSingleInstanceLock()) {
       show: false,
       backgroundColor: '#0a0606',
       title: 'Dead Bunker - Launcher',
-      icon: path.join(__dirname, 'build', 'icon.png'),
+      icon: path.join(__dirname, 'build', process.platform==='win32'?'icon.ico':'icon.png'),
       autoHideMenuBar: true,
       webPreferences: {
         preload: path.join(__dirname, 'preload.js'),

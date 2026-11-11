@@ -1,7 +1,7 @@
 {
   "name": "bunker-dos-mortos-launcher",
   "productName": "Dead Bunker",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "Launcher do Dead Bunker: baixa e atualiza o jogo, e abre numa janela própria.",
   "main": "main.js",
@@ -16,10 +16,20 @@
   "build": {
     "appId": "com.draxx46.bunkerdosmortos.launcher",
     "productName": "Dead Bunker",
-    "files": ["main.js", "preload.js", "gamepreload.js", "index.html", "renderer.js", "build/icon.png", "img/**", "video/**"],
+    "files": [
+      "main.js",
+      "preload.js",
+      "gamepreload.js",
+      "index.html",
+      "renderer.js",
+      "img/**",
+      "video/**",
+      "build/icon.png",
+      "build/icon.ico"
+    ],
     "win": {
       "target": "nsis",
-      "icon": "build/icon.png"
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "artifactName": "BunkerLauncher-Setup.exe",
@@ -28,7 +38,10 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
-      "uninstallDisplayName": "Dead Bunker"
+      "uninstallDisplayName": "Dead Bunker",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
     }
   }
 }

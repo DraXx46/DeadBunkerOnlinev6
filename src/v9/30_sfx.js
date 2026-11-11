@@ -1,7 +1,7 @@
 /* ================= v9 · SONS DO ARTLIST =================
    50 efeitos gravados (audio/sfx) entram no lugar dos sons sintetizados. Se algum arquivo ainda não carregou,
    o som antigo toca no lugar, então nada fica mudo. */
-const SFX_NEW=['z_death','z_groan_big','z_groan_long','z_scream','z_attack','z_snarl1','z_snarl2','z_snarl3',
+const SFX_NEW=['rain_city','rain_roof','z_death','z_groan_big','z_groan_long','z_scream','z_attack','z_snarl1','z_snarl2','z_snarl3',
   'knife_stab1','knife_stab2','knife_stab3','knife_twist','knife_swing','knife_whoosh',
   'step_walk1','step_walk2','step_walk3','step_walk4','step_walk5','step_run1','step_run2','step_run3','step_run4','step_run5','jump_land',
   'hit_metal','hit_flesh1','hit_flesh2','hit_punch','gore_guts','gore_splat','expl_sharp','expl_big',

@@ -92,7 +92,20 @@ v9On('always',dt=>{ let inside=false; try{ const gx=Math.floor(P.pos.x/S), gz=Ma
     const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); RAIN.m=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x8a98a8,transparent:true,opacity:0.35})); RAIN.m.frustumCulled=false; scene.add(RAIN.m); }
   if(!RAIN.m) return; RAIN.m.visible=on; if(!on) return; RAIN.m.position.set(P.pos.x,0,P.pos.z); const p=RAIN.m.geometry.attributes.position, a=p.array;
   for(let i=0;i<a.length;i+=6){ a[i+1]-=dt*22; a[i+4]-=dt*22; if(a[i+1]<0){ a[i+1]+=16; a[i+4]+=16; } } p.needsUpdate=true;
-  RAIN.snd=(RAIN.snd||0)-dt; if(RAIN.snd<=0){ RAIN.snd=0.09; try{ const o=Snd.out(0.06,rand(-0.6,0.6),0.3,null); Snd.burstTo(o,{type:'highpass',freq:rand(3500,6000),dur:0.12,gain:0.3}); }catch(e){} } });
+  });
+/* som da chuva: dois loops gravados (Artlist) — rua com chuva forte lá fora e chuva no telhado de zinco dentro das lojas.
+   Os dois tocam juntos e o volume de cada um acompanha onde você está (dentro/fora), com transição suave. */
+const RSND={out:null,roof:null,mix:0};
+function rsStart(n){ const h=Snd.sample(n,{loop:true,vol:1,wet:0.08,prio:1}); if(!h) return null; try{ const b=h.src.buffer; h.src.loopStart=0.06; h.src.loopEnd=b.duration-0.06; h.g.gain.value=0.0001; }catch(e){} return h; }
+function rsStop(){ for(const k of ['out','roof']) if(RSND[k]){ RSND[k].stop(1.2); RSND[k]=null; } }
+v9On('always',dt=>{ const ctx=Snd.ctx; if(!ctx) return; const play=CUR==='city'&&(G.state==='playing'||G.state==='paused'||G.state==='dying');
+  if(!play){ if(RSND.out||RSND.roof) rsStop(); return; }
+  if(!RSND.out||RSND.out.dead) RSND.out=rsStart('rain_city'); if(!RSND.roof||RSND.roof.dead) RSND.roof=rsStart('rain_roof');
+  let inside=false; try{ const gx=Math.floor(P.pos.x/S), gz=Math.floor(P.pos.z/S), r=roomOf[gz]&&roomOf[gz][gx]; inside=!!(r&&r!=='CS'); }catch(e){}
+  RSND.mix=lerp(RSND.mix,inside?1:0,Math.min(1,dt*2.2)); const paused=G.state==='paused'?0.35:1, t=ctx.currentTime;
+  try{ if(RSND.out&&!RSND.out.dead) RSND.out.g.gain.setTargetAtTime((0.62*(1-RSND.mix)+0.1*RSND.mix)*paused,t,0.08); }catch(e){}
+  try{ if(RSND.roof&&!RSND.roof.dead) RSND.roof.g.gain.setTargetAtTime((0.06*(1-RSND.mix)+0.55*RSND.mix)*paused,t,0.08); }catch(e){} });
+v9On('reset',()=>rsStop());
 const LIT={t:12};
 v9On('always',dt=>{ if(G.state!=='playing'||CUR!=='hosp') return; LIT.t-=dt; if(LIT.t>0) return; LIT.t=rand(14,32);
   const flash=n=>{ if(!hemi) return; const i0=hemi.intensity; hemi.intensity=i0+2.6; setTimeout(()=>{ hemi.intensity=i0; },70+n*30); };

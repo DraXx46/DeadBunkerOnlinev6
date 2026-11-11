@@ -16799,6 +16799,25 @@ function poolMenu(){ if(POOL.menu) return; try{ document.exitPointerLock(); }cat
     if(m==='join'&&inv){ close(); POOL.netId=inv.id; poolNetSend(['pool','join',inv.id,me.name,NET.me]); POOL.invite=null; poolMsg('Entrando na partida…',4); poolEnter(); return; } }); }
 v9On('reset',()=>{ if(POOL.on) poolExit(); POOL.invite=null; });
 CMDS.sinuca={d:'sinuca · vai até a mesa do bar (na cidade) · sinuca reset arruma as bolas',f:a=>{ if(CUR!=='city'||!POOL.built){ cprint('A mesa fica no bar da cidade. Use "map cidade".'); return; } if(a[0]==='reset'){ poolRack(); poolSync(); cprint('Bolas arrumadas.'); return; } const w=poolWorld(-PT.L/2-0.9,0); P.pos.x=w.x; P.pos.z=w.z; cprint('No bar. Aperte E perto da mesa.'); }};
+/* ---- correções: o menu da mesa não pausa o jogo; durante a partida o bar fecha (portas e janelas de aço) ---- */
+{ const _np=v9NoPause; v9NoPause=function(){ return !!(POOL.menu||POOL.on||POOL.cool>0)||_np(); }; }
+const PDOOR={closed:false,cells:[],sh:[],t:0};
+function poolBar(){ return CITY_SHOPS.find(q=>q.id==='CB'); }
+function poolInBar(x,z){ const s=poolBar(); if(!s) return false; const gx=Math.floor(x/S), gz=Math.floor(z/S); return gx>=s.x0&&gx<=s.x1&&gz>=czr(s.r0)&&gz<=czr(s.r1); }
+function poolDoors(close){ const s=poolBar(); if(!s||PDOOR.closed===close) return; PDOOR.closed=close;
+  if(close){ PDOOR.cells=[]; const z0=czr(s.r0), z1=czr(s.r1);
+    for(let z=z0;z<=z1;z++) for(let x=s.x0;x<=s.x1;x++){ if(!(x===s.x0||x===s.x1||z===z0||z===z1)) continue; const ch=grid[z][x]; if(ch==='#') continue; PDOOR.cells.push([x,z,ch]); grid[z][x]='#'; }
+    for(const [x,z] of PDOOR.cells){ const m=new THREE.Mesh(new THREE.BoxGeometry(S,1,S*0.3),stM('shutter',{color:0x5a5e60,shininess:40})); m.position.set(cx(x),WH,cx(z)); m.scale.y=0.01; MAPG.city.add(m); PDOOR.sh.push(m); }
+    PDOOR.t=0; flowDirty=true;
+    // zumbi que estava lá dentro é jogado para fora (volta a nascer em outro lugar)
+    for(const z of zombies.slice()) if(!z.dead&&poolInBar(z.pos.x,z.pos.z)){ removeZombie(z); G.toSpawn=(G.toSpawn|0)+1; }
+    try{ Snd.sample('door_metal',{vol:0.9,prio:true}); }catch(e){} poolMsg('O bar foi fechado: os zumbis não entram enquanto vocês jogam',3); }
+  else { for(const [x,z,ch] of PDOOR.cells) grid[z][x]=ch; PDOOR.cells=[]; for(const m of PDOOR.sh) MAPG.city.remove(m); PDOOR.sh=[]; flowDirty=true; try{ Snd.sample('door_metal',{vol:0.7}); }catch(e){} } }
+{ const _sp=spawnPoints; spawnPoints=function(){ const out=_sp.apply(this,arguments); if(!PDOOR.closed) return out; return out.filter(p=>!poolInBar(p.x,p.z)&&!(p.win&&poolInBar(p.win.wx,p.win.wz))); }; }
+v9On('always',dt=>{ if(!PDOOR.sh.length) return; PDOOR.t=Math.min(1,PDOOR.t+dt*1.6); const k=PDOOR.t; for(const m of PDOOR.sh){ m.scale.y=Math.max(0.01,k*WH*1.25); m.position.y=WH*1.25-k*WH*1.25/2; } });
+{ const _pe=poolEnter; poolEnter=function(){ _pe.apply(this,arguments); if(POOL.on&&poolInBar(P.pos.x,P.pos.z)) poolDoors(true); }; }
+{ const _px=poolExit; poolExit=function(){ _px.apply(this,arguments); poolDoors(false); }; }
+v9On('reset',()=>{ if(PDOOR.closed) poolDoors(false); });
 
 /* ---- 32_street.js ---- */
 /* ================= v9 · CIDADE: RUA E IMERSÃO =================

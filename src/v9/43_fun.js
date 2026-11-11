@@ -198,7 +198,11 @@ v9On('frame',dt=>{ if(FUN.mode!=='zip') return; const Z=FUN.zip; FUN.zipT+=dt/3.
   if(k>=1){ FUN.mode=null; P.y=0; } });
 
 /* ======================== FERRAMENTAS NA MÃO ======================== */
-function funVmSync(){ if(FUN.vm0==null) FUN.vm0=!!CINEMA.noVm; CINEMA.noVm=FUN.vm0||!!FUN.tool||!!FUN.anim; if(!FUN.tool&&!FUN.anim){ CINEMA.noVm=FUN.vm0; FUN.vm0=null; } }
+function funVmSync(){ if(FUN.vm0==null) FUN.vm0=!!CINEMA.noVm; CINEMA.noVm=FUN.vm0||!!FUN.anim; if(!FUN.anim){ CINEMA.noVm=FUN.vm0; FUN.vm0=null; } }
+// com a ferramenta na mão, só a arma some (a cena da mão continua sendo desenhada)
+V9VM.push(()=>{ const on=CUR==='fun'&&!!FUN.tool&&!FUN.anim; if(on){ vmRoot.visible=false; FUN.hidVm=true; } else if(FUN.hidVm){ vmRoot.visible=true; FUN.hidVm=false; } });
+{ const _oc=offerCards; offerCards=function(){ if(CUR==='fun') return; return _oc.apply(this,arguments); }; }
+v9On('always',()=>{ const m=document.getElementById('mission'); if(m){ if(CUR==='fun'){ if(!m.hidden){ m.hidden=true; FUN.misHid=true; } } else if(FUN.misHid){ m.hidden=false; FUN.misHid=false; } } });
 const TOOL={tele:null,portal:null,kick:0,sw:0};
 function funToolModel(k){ if(TOOL[k]) return TOOL[k]; const g=new THREE.Group(); const W=funMat(0xeef0f2,{e:0x202224}), B=funMat(0x1c1e22), G=funMat(0x9aa0a8);
   if(k==='portal'){ // ferramenta de portais (design próprio): carenagem branca, garras escuras, núcleo de energia aceso

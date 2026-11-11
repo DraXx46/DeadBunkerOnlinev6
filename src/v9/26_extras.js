@@ -7,10 +7,7 @@
 
 /* ---------------- sensação ---------------- */
 const SWAY={yaw:null,pitch:null,x:0,y:0,vx:0,vy:0};
-V9VM.push(dt=>{ if(SWAY.yaw==null){ SWAY.yaw=P.yaw; SWAY.pitch=P.pitch; return; } let dy=P.yaw-SWAY.yaw; while(dy>Math.PI) dy-=Math.PI*2; while(dy<-Math.PI) dy+=Math.PI*2; const dp=P.pitch-SWAY.pitch; SWAY.yaw=P.yaw; SWAY.pitch=P.pitch;
-  const k=Wp.scoped||P.ads>0.6?0.15:1; SWAY.vx+=(-dy*0.9*k-SWAY.x*60)*dt*0+(-dy*0.9*k); SWAY.vy+=(dp*0.7*k);
-  SWAY.x+=SWAY.vx; SWAY.y+=SWAY.vy; SWAY.vx*=0.55; SWAY.vy*=0.55; SWAY.x*=Math.exp(-dt*9); SWAY.y*=Math.exp(-dt*9); SWAY.x=clamp(SWAY.x,-0.12,0.12); SWAY.y=clamp(SWAY.y,-0.1,0.1);
-  vmRoot.rotation.y+=SWAY.x*0.9; vmRoot.position.x+=SWAY.x*0.12; vmRoot.rotation.x+=SWAY.y*0.6; vmRoot.position.y-=SWAY.y*0.08; vmRoot.rotation.z+=SWAY.x*0.5; });
+/* (balanço da arma removido: deixava os braços atrasados em relação à mira) */
 v9Css(`#hitm.on{animation:v9hm .14s ease-out}#hitm.kill{animation:v9hm .2s ease-out}#hitm.v9head::before,#hitm.v9head::after{background:#ff3a2a!important}
 @keyframes v9hm{0%{transform:scale(1.7) rotate(8deg)}100%{transform:none}}
 #v9headx{position:fixed;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;pointer-events:none;z-index:6;opacity:0}

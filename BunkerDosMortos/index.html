@@ -15723,10 +15723,7 @@ const _v9animC=animateZombie; animateZombie=function(z,dt){ _v9animC.apply(this,
 
 /* ---------------- sensação ---------------- */
 const SWAY={yaw:null,pitch:null,x:0,y:0,vx:0,vy:0};
-V9VM.push(dt=>{ if(SWAY.yaw==null){ SWAY.yaw=P.yaw; SWAY.pitch=P.pitch; return; } let dy=P.yaw-SWAY.yaw; while(dy>Math.PI) dy-=Math.PI*2; while(dy<-Math.PI) dy+=Math.PI*2; const dp=P.pitch-SWAY.pitch; SWAY.yaw=P.yaw; SWAY.pitch=P.pitch;
-  const k=Wp.scoped||P.ads>0.6?0.15:1; SWAY.vx+=(-dy*0.9*k-SWAY.x*60)*dt*0+(-dy*0.9*k); SWAY.vy+=(dp*0.7*k);
-  SWAY.x+=SWAY.vx; SWAY.y+=SWAY.vy; SWAY.vx*=0.55; SWAY.vy*=0.55; SWAY.x*=Math.exp(-dt*9); SWAY.y*=Math.exp(-dt*9); SWAY.x=clamp(SWAY.x,-0.12,0.12); SWAY.y=clamp(SWAY.y,-0.1,0.1);
-  vmRoot.rotation.y+=SWAY.x*0.9; vmRoot.position.x+=SWAY.x*0.12; vmRoot.rotation.x+=SWAY.y*0.6; vmRoot.position.y-=SWAY.y*0.08; vmRoot.rotation.z+=SWAY.x*0.5; });
+/* (balanço da arma removido: deixava os braços atrasados em relação à mira) */
 v9Css(`#hitm.on{animation:v9hm .14s ease-out}#hitm.kill{animation:v9hm .2s ease-out}#hitm.v9head::before,#hitm.v9head::after{background:#ff3a2a!important}
 @keyframes v9hm{0%{transform:scale(1.7) rotate(8deg)}100%{transform:none}}
 #v9headx{position:fixed;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;pointer-events:none;z-index:6;opacity:0}
@@ -15840,7 +15837,7 @@ const TIPS=['Tiro na perna quebra a perna: o zumbi passa a mancar. Nas duas, ele
    modos (um tiro, arma aleatória) · cabeça explodindo com escopeta e rifle de precisão de perto */
 
 /* ---------------- corrida ---------------- */
-const SPRINT={on:false,b:0,st:1,rest:0,raise:0};
+const SPRINT={on:false,b:0,st:1,rest:0,raise:0,air:0};
 function v9SprPad(){ if((IN.my||0)<-0.5&&!Wp.knifeOut&&G.state==='playing'){ SPRINT.pad=true; return true; } return false; }   // L3 com o analógico para frente = correr (senão continua sendo a faca)
 function v9SprFov(){ try{ return SPRINT.b*7; }catch(e){ return 0; } }   // o campo de visão abre um pouco na corrida (usado na linha do fovT)
 v9On('always',dt=>{ if((IN.my||0)>-0.35) SPRINT.pad=false;
@@ -15853,7 +15850,7 @@ v9On('always',dt=>{ if((IN.my||0)>-0.35) SPRINT.pad=false;
   sprintHud(); });
 const _v9spk=v9SpeedK; v9SpeedK=function(){ return _v9spk()*(1+0.55*SPRINT.b*(Wp.knifeOut?1.05:1)); };
 const _v9fire=fire; fire=function(){ if(SPRINT.on||SPRINT.raise>0) return; return _v9fire.apply(this,arguments); };
-V9VM.push(dt=>{ const b=SPRINT.b; if(b<0.01) return; const t=performance.now()/1000*11; vmRoot.rotation.z+=0.45*b; vmRoot.rotation.y+=0.35*b; vmRoot.rotation.x-=0.25*b; vmRoot.position.y-=0.05*b+Math.abs(Math.sin(t))*0.02*b; vmRoot.position.x+=0.03*b+Math.sin(t)*0.012*b; });
+V9VM.push(dt=>{ SPRINT.air+=((P.y>0.02?1:0)-SPRINT.air)*Math.min(1,dt*14); const b=SPRINT.b*(1-SPRINT.air); if(b<0.01) return;   /* no ar a pose de corrida some: braços voltam ao normal durante o pulo */ const t=performance.now()/1000*11; vmRoot.rotation.z+=0.45*b; vmRoot.rotation.y+=0.35*b; vmRoot.rotation.x-=0.25*b; vmRoot.position.y-=0.05*b+Math.abs(Math.sin(t))*0.02*b; vmRoot.position.x+=0.03*b+Math.sin(t)*0.012*b; });
 const SPH=v9El('div','v9sprint','<i></i>'); document.body.appendChild(SPH);
 v9Css(`.v9sprint{position:fixed;left:50%;bottom:86px;width:160px;height:4px;margin-left:-80px;background:rgba(0,0,0,.45);opacity:0;transition:opacity .4s;z-index:5;pointer-events:none}.v9sprint i{display:block;height:100%;background:#e8e2d4}.v9sprint.low i{background:#e0301f}`);
 function sprintHud(){ const show=G.state==='playing'&&SPRINT.st<0.999; SPH.style.opacity=show?1:0; SPH.firstChild.style.width=(SPRINT.st*100)+'%'; SPH.classList.toggle('low',SPRINT.st<0.25); }

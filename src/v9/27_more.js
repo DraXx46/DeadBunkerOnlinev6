@@ -4,7 +4,7 @@
    modos (um tiro, arma aleatória) · cabeça explodindo com escopeta e rifle de precisão de perto */
 
 /* ---------------- corrida ---------------- */
-const SPRINT={on:false,b:0,st:1,rest:0,raise:0};
+const SPRINT={on:false,b:0,st:1,rest:0,raise:0,air:0};
 function v9SprPad(){ if((IN.my||0)<-0.5&&!Wp.knifeOut&&G.state==='playing'){ SPRINT.pad=true; return true; } return false; }   // L3 com o analógico para frente = correr (senão continua sendo a faca)
 function v9SprFov(){ try{ return SPRINT.b*7; }catch(e){ return 0; } }   // o campo de visão abre um pouco na corrida (usado na linha do fovT)
 v9On('always',dt=>{ if((IN.my||0)>-0.35) SPRINT.pad=false;
@@ -17,7 +17,7 @@ v9On('always',dt=>{ if((IN.my||0)>-0.35) SPRINT.pad=false;
   sprintHud(); });
 const _v9spk=v9SpeedK; v9SpeedK=function(){ return _v9spk()*(1+0.55*SPRINT.b*(Wp.knifeOut?1.05:1)); };
 const _v9fire=fire; fire=function(){ if(SPRINT.on||SPRINT.raise>0) return; return _v9fire.apply(this,arguments); };
-V9VM.push(dt=>{ const b=SPRINT.b; if(b<0.01) return; const t=performance.now()/1000*11; vmRoot.rotation.z+=0.45*b; vmRoot.rotation.y+=0.35*b; vmRoot.rotation.x-=0.25*b; vmRoot.position.y-=0.05*b+Math.abs(Math.sin(t))*0.02*b; vmRoot.position.x+=0.03*b+Math.sin(t)*0.012*b; });
+V9VM.push(dt=>{ SPRINT.air+=((P.y>0.02?1:0)-SPRINT.air)*Math.min(1,dt*14); const b=SPRINT.b*(1-SPRINT.air); if(b<0.01) return;   /* no ar a pose de corrida some: braços voltam ao normal durante o pulo */ const t=performance.now()/1000*11; vmRoot.rotation.z+=0.45*b; vmRoot.rotation.y+=0.35*b; vmRoot.rotation.x-=0.25*b; vmRoot.position.y-=0.05*b+Math.abs(Math.sin(t))*0.02*b; vmRoot.position.x+=0.03*b+Math.sin(t)*0.012*b; });
 const SPH=v9El('div','v9sprint','<i></i>'); document.body.appendChild(SPH);
 v9Css(`.v9sprint{position:fixed;left:50%;bottom:86px;width:160px;height:4px;margin-left:-80px;background:rgba(0,0,0,.45);opacity:0;transition:opacity .4s;z-index:5;pointer-events:none}.v9sprint i{display:block;height:100%;background:#e8e2d4}.v9sprint.low i{background:#e0301f}`);
 function sprintHud(){ const show=G.state==='playing'&&SPRINT.st<0.999; SPH.style.opacity=show?1:0; SPH.firstChild.style.width=(SPRINT.st*100)+'%'; SPH.classList.toggle('low',SPRINT.st<0.25); }

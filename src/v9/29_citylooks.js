@@ -248,9 +248,7 @@ const CL_THEME={
       const d=new THREE.Mesh(new THREE.CircleGeometry(0.28,24),new THREE.MeshLambertMaterial({map:db})); d.position.set(0,1.75,-0.93); g.add(d); },0.1,null,false);
     // sinuca no meio
     { const c=o.wall.find(q=>!o.used.has(q.x+','+q.z)&&!front(q)); const cxx=cx(Math.round((o.s.x0+o.s.x1)/2)), czz=cx(czr(Math.round((o.s.r0+o.s.r1)/2))); const gx=Math.floor(cxx/S), gz=Math.floor(czz/S);
-      if(grid[gz][gx]==='.'&&!o.R.has(gx+','+gz)){ const g=G3(cxx,0,czz,o.side>0?Math.PI/2:-Math.PI/2); clBX(g,1.3,0.12,2.4,clM('poolRail',{color:0x3a1a0a,shininess:50}),0,0.82,0); clBX(g,1.12,0.02,2.2,clM('felt2',{color:0x1a5a2a}),0,0.885,0); for(const [a,b] of [[-.55,-1.1],[.55,-1.1],[-.55,1.1],[.55,1.1]]) clBX(g,0.12,0.76,0.12,clM('poolRail',{color:0x3a1a0a}),a,0.38,b);
-        for(let i=0;i<9;i++){ const b=new THREE.Mesh(new THREE.SphereGeometry(0.03,8,6),clM('ball'+i,{color:i?pick([0xe0c020,0x2040c0,0xc02020,0x6a2a8a,0xe06010,0x208040,0x8a1a1a,0x111111]):0xf0f0f0,shininess:100})); b.position.set(rand(-0.45,0.45),0.92,rand(-0.9,0.9)); g.add(b); }
-        const cue=clCY(g,0.012,0.02,1.4,clM('cue',{color:0xc8a070,shininess:40}),0.2,0.93,0.2,6,Math.PI/2); cue.rotation.z=0.4; bake(g); addPropBox(cxx,czz,o.side?1.25:0.7,o.side?0.7:1.25); } }
+      if(grid[gz][gx]==='.'&&!o.R.has(gx+','+gz)){ poolPlace(cxx,czz,o.side>0?Math.PI/2:-Math.PI/2); } }   /* mesa de sinuca de verdade (31_pool.js) */
     for(let i=0;i<2;i++) atWall(1,(g)=>{ CLP.table(g,0,0.1,0.4,0x3a2010); CLP.chair(g,-0.5,0.1,Math.PI/2,0x3a2010); CLP.chair(g,0.5,0.1,-Math.PI/2,0x3a2010); },1.2,c=>!back(c),false); },
 
   /* ---------- BANCO ---------- */

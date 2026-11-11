@@ -87,7 +87,7 @@ v9On('kill',(x,zz,kind,part,src,z)=>{ if(part!=='head'||!z||src!=='gun'||kind===
 
 /* ---------------- clima: chuva na cidade, relâmpagos no hospício ---------------- */
 const RAIN={m:null};
-v9On('always',dt=>{ const on=G.state==='playing'&&CUR==='city'&&!CFG.potato;
+v9On('always',dt=>{ let inside=false; try{ const gx=Math.floor(P.pos.x/S), gz=Math.floor(P.pos.z/S), r=roomOf[gz]&&roomOf[gz][gx]; inside=!!(r&&r!=='CS'); }catch(e){} const on=G.state==='playing'&&CUR==='city'&&!CFG.potato&&!inside;   /* sem chuva dentro dos prédios */
   if(!RAIN.m&&on){ const n=1400, pos=new Float32Array(n*6); for(let i=0;i<n;i++){ const x=rand(-25,25), y=rand(0,16), z=rand(-25,25); pos.set([x,y,z,x+0.02,y-0.55,z],i*6); }
     const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); RAIN.m=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x8a98a8,transparent:true,opacity:0.35})); RAIN.m.frustumCulled=false; scene.add(RAIN.m); }
   if(!RAIN.m) return; RAIN.m.visible=on; if(!on) return; RAIN.m.position.set(P.pos.x,0,P.pos.z); const p=RAIN.m.geometry.attributes.position, a=p.array;

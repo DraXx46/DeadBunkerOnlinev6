@@ -87,3 +87,16 @@ VISUAL
 - Chuva na cidade, relâmpagos no hospício
 - Frases rápidas: N e depois 1 a 5 (vão para o squad)
 - Vídeo > Tamanho da interface
+
+== v9 · meta e cidade (28_meta.js, 29_citylooks.js) ==
+- Passe de temporada (Temporada 1 · Cinzas): 50 níveis, recompensa em destaque + trilha com páginas, resgate manual, aviso no menu
+- Prestígio (até 10): volta a conta ao nível 1, +5% de XP por prestígio, ◆ 5.000 e ♦ 20
+- Desafios: botão Receber no menu e aviso (pin) até receber
+- Loadout: arma inicial e vantagem na escolha de mapa
+- Escolha de mapa: vitrine grande do mapa, cartões com foto, clique duplo ou Jogar para entrar
+- Salas públicas (precisa atualizar o servidor da Cloudflare: cd worker && npx wrangler deploy)
+- Teclas remapeáveis em Configurações > Controles
+- Modo cinema: 1 = sem mãos e braços, 2 = sem arma, 3 = com as mãos
+- Sem música durante as partidas
+- Cidade: delegacia, mercado, farmácia, armaria, bar e banco com fachada, letreiro, calçada e interior próprios
+- O save agora guarda os dados da v9 (antes recordes, desafios, conquistas e camuflagens se perdiam ao reabrir)

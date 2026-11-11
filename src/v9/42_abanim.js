@@ -68,7 +68,7 @@ const HQS={q:null,hand:{R:null,L:null},prop:{R:null,L:null},fired:new Set(),prev
 function hqLerp(a,b,k){ if(!a&&!b) return null; if(!a) return k>0.5?b:null; if(!b) return k<0.5?a:null; const o=[]; for(let i=0;i<6;i++) o.push(lerp(a[i],b[i],k)); const fa=a[6], fb=b[6]; o.push([0,1,2,3].map(i=>lerp(fa[i],fb[i],k))); o.push(lerp(a[7],b[7],k)); o.push(lerp(a[8]||0,b[8]||0,k)); return o; }
 function hqAt(keys,t){ if(!keys) return null; if(t<=keys[0][0]) return keys[0][1]; for(let i=1;i<keys.length;i++){ if(t<=keys[i][0]){ const a=keys[i-1], b=keys[i]; const k=smooth((t-a[0])/Math.max(1e-4,b[0]-a[0])); return hqLerp(a[1],b[1],k); } } return keys[keys.length-1][1]; }
 function hqApply(h,p,side,trem){ if(!p){ h.visible=false; return; } h.visible=true; const s=side==='L'?-1:1;
-  h.position.set(p[0]+trem*Math.sin(G.t*41+s),p[1]+trem*Math.sin(G.t*37),p[2]); h.rotation.set(p[3],p[4],p[5]);
+  h.position.set(p[0]+trem*Math.sin(G.t*41+s),p[1]+trem*Math.sin(G.t*37),p[2]*1.1); h.rotation.set(p[3]>-0.6?p[3]-0.45:p[3],p[4],p[5]);   // antebraço vem de baixo, na direção da câmera
   const U=h.userData, sx=U.sx||1; for(let i=0;i<4;i++){ const c=p[6][i]; for(let k=0;k<3;k++) U.fingers[i][k].rotation.x=-c*[1,0.92,0.72][k]; if(U.fingers[i].root) U.fingers[i].root.rotation.z=(i-1.5)*p[8]*0.5*sx; }
   if(U.thumb){ U.thumb.rotation.set(-0.7-p[7]*0.5,0,0.75*sx*(1-p[7]*0.45)); if(U.thumbSegs&&U.thumbSegs[1]) U.thumbSegs[1].rotation.x=-0.5-p[7]*0.6; } }
 function hqSnd(k,dt){ try{ const t=Snd.now; const o=()=>Snd.out(0.7,0,0.25,null); const smp=(n,op)=>Snd.sample(n,Object.assign({prio:1,wet:0.15},op||{}));
@@ -103,7 +103,7 @@ function hqProp(side,k){ const h=HFX.hands[side]; const cur=HQS.prop[side]; if(c
 // substitui o início e o quadro da animação de mão
 hfxStart=function(c,ult){ const q=HQ[c+'.'+(ult?'u':'a')];
   if(!q){ const G2=HFX_GESTURE[c]; const d=G2&&G2[ult?'u':'a']; if(!d) return; hfxBuild(); HQS.q=null; Object.assign(HFX,{on:true,t:0,dur:d.dur,c,ult,pose:d.pose,kind:d.fx}); return hfxOld(c,ult); }
-  hfxBuild(); HQS.q=q; HQS.fired.clear(); Object.assign(HFX,{on:true,t:0,dur:q.dur,c,ult,pose:'hq',kind:q.fx==='gold'?'mark':q.fx==='holy'?'heal':q.fx});
+  hfxBuild(); if(!HQS.slim){ HQS.slim=true; for(const h of [HFX.hands.R,HFX.hands.L]) for(const c of h.children) if(c.geometry===HG.sleeve){ c.scale.set(0.7,0.85,0.7); c.position.y*=0.88; } } HQS.q=q; HQS.fired.clear(); Object.assign(HFX,{on:true,t:0,dur:q.dur,c,ult,pose:'hq',kind:q.fx==='gold'?'mark':q.fx==='holy'?'heal':q.fx});
   const col={gold:0xffcf72,mark:0xff9a59,heal:0x6affb5,dust:0xffb070,fire:0xff6a2a,holy:0x9ae8ff,elec:0x6ae8ff}[q.fx]||0xffffff; HFX.light.color.setHex(col); for(const p of HFX.parts){ p.s.material.color.setHex(col); p.s.visible=false; p.life=0; }
   hqProp('R',q.props&&q.props.R); hqProp('L',q.props&&q.props.L); };
 const hfxOld=(function(){ const src=HFX_GESTURE; return function(c,ult){ const d=src[c]&&src[c][ult?'u':'a']; const col=HFX_COL[d.fx]; HFX.light.color.setHex(col); for(const p of HFX.parts){ p.s.material.color.setHex(col); p.s.visible=false; p.life=0; }
@@ -124,7 +124,7 @@ hfxFrame=function(dt){ const q=HQS.q; if(!HFX.on||!q||HFX.pose!=='hq') return _h
   if(pf&&pf.userData.k==='flask') pf.userData.cork.visible=k<0.28;
   // brilho, partículas e raios (mesmo sistema de antes, mas mais intenso nos picos)
   const up=smooth(clamp(k/0.18,0,1))*(1-smooth(clamp((k-0.85)/0.15,0,1))); HFX.burst=Math.max(0,(HFX.burst||0)-dt*3);
-  const hs=[R,L].filter(h=>h.visible); if(hs.length){ HFX.light.intensity=up*(1.4+Math.sin(G.t*25)*0.3+HFX.burst*3); hs[0].getWorldPosition(_hv); HFX.g.worldToLocal(_hv); HFX.light.position.copy(_hv).add(new THREE.Vector3(0,0.05,-0.05)); }
+  const hs=[R,L].filter(h=>h.visible); if(hs.length){ HFX.light.intensity=up*(2.2+Math.sin(G.t*25)*0.3+HFX.burst*3); HFX.light.distance=1.6; hs[0].getWorldPosition(_hv); HFX.g.worldToLocal(_hv); HFX.light.position.copy(_hv).add(new THREE.Vector3(0,0.05,-0.05)); }
   const kind=HFX.kind, rate=(kind==='elec'?10:kind==='dust'?30:55)*(1+HFX.burst*4);
   HFX.acc=(HFX.acc||0)+dt*rate*up; while(HFX.acc>=1&&hs.length){ HFX.acc--; const p=HFX.parts.find(q2=>q2.life<=0); if(!p) break; const h=pick(hs); h.getWorldPosition(_hv); HFX.g.worldToLocal(_hv);
     p.s.position.set(_hv.x+rand(-0.03,0.03),_hv.y+rand(0,0.06),_hv.z+rand(-0.03,0.03)); p.life=p.t=rand(0.25,0.55); p.sz=kind==='fire'?rand(0.04,0.09):rand(0.02,0.05);

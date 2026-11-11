@@ -17334,15 +17334,22 @@ function fxHeadPos(z,v){ try{ (z.head&&z.head.visible?z.head:z.headP).getWorldPo
 function fxBlood(z,n,spd,toCam){ const h=fxHeadPos(z,new THREE.Vector3()); let x=h.x,y=h.y+0.05,zz=h.z; if(toCam){ const dx=P.pos.x-x, dz=P.pos.z-zz, d=Math.hypot(dx,dz)||1; x+=dx/d*0.04; zz+=dz/d*0.04; } emit('blood',x,y,zz,n,spd,0.9); }
 function fxSnd(n,o){ try{ return Snd.sample(n,Object.assign({prio:1},o||{})); }catch(e){ return null; } }
 function fxThump(){ try{ const ctx=Snd.ctx; if(!ctx) return; const o=Snd.out(0.9,0,0.15,null); Snd.oscTo(o,{t:Snd.now,type:'sine',freq:62,freqEnd:34,dur:0.45,gain:0.75,attack:0.004}); }catch(e){} }
+// a cena usa sempre a faca padrão do jogo; ao terminar volta a faca que o jogador tem equipada
+function fxSwapKnife(on){ try{
+  if(on){ if(FX2.saved||!knifeModel) return; const it=equippedItem(); if(it&&it.t===BASE_ITEM.t&&it.s===BASE_ITEM.s) return;
+    if(!FX2.defModel){ FX2.defModel=buildKnifeModel(BASE_ITEM,true); }
+    FX2.saved=knifeModel; knifeMount.remove(knifeModel); knifeModel=FX2.defModel; knifeModel.rotation.set(KHOLD[BASE_ITEM.t]||0,0,0); knifeMount.add(knifeModel); attachGrip(knifeModel,knifeHand,knifeArm); fxClipOn(); }
+  else { if(!FX2.saved) return; knifeMount.remove(knifeModel); knifeModel=FX2.saved; FX2.saved=null; knifeModel.rotation.set(KHOLD[(equippedItem()||BASE_ITEM).t]||0,0,0); knifeMount.add(knifeModel); attachGrip(knifeModel,knifeHand,knifeArm); }
+}catch(e){ console.warn('[Bunker v9] faca da finalização',e); } }
 // ---- início ----
 function fx2Start(z){ z.v9fin=true; z.fxT=0; Object.assign(FX2,{on:true,z,t:0,real:0,impact:false,pumps:0,twist:false,rip:false,flick:false,drop:false,buried:false,Eset:false,El:null,Dl:null}); FX2.plane.constant=1e6;
-  try{ fxClipOn(); }catch(e){} const U=fxUi(); U.bars.classList.add('on'); U.vig.classList.add('on');
+  const U=fxUi(); U.vig.classList.add('on'); fxSwapKnife(true); try{ fxClipOn(); }catch(e){}
   try{ if(typeof hfxStart==='function') hfxStart('_fin',false); }catch(e){}
   fxSnd('knife_whoosh',{vol:0.7,rate:0.85}); fxSnd(['z_snarl1','z_snarl2','z_snarl3'],{vol:0.8,x:z.pos.x,z:z.pos.z,range:20,rate:0.8});
   if(V9CAM.fn!==fxCam){ FX2.prevCam=V9CAM.fn; V9CAM.fn=fxCam; } }
 finStart=fx2Start;
 function fx2End(){ if(!FX2.on) return; FX2.on=false; try{ const z=FX2.z; if(z&&z.fxT!=null) z.fxOff=z.fxT-z.t; }catch(e){} try{ knife.position.set(0,0,0); knife.quaternion.identity(); }catch(e){} FX2.plane.constant=1e6; FX2.buried=false; if(FX2.lh) FX2.lh.visible=false; const U=FX2.ui; if(U){ U.bars.classList.remove('on'); U.vig.classList.remove('on'); }
-  try{ camera.zoom=1; camera.updateProjectionMatrix(); }catch(e){} if(V9CAM.fn===fxCam) V9CAM.fn=FX2.prevCam||null; FX2.prevCam=null;
+  try{ camera.zoom=1; camera.updateProjectionMatrix(); }catch(e){} if(V9CAM.fn===fxCam) V9CAM.fn=FX2.prevCam||null; FX2.prevCam=null; fxSwapKnife(false);
   try{ if(Wp.kAct==='stab'){ Wp.kT=Wp.kDur; } }catch(e){} }
 const _busyFx=busy; busy=function(){ return _busyFx()||FX2.on; };
 { const _hp=hurtPlayer; hurtPlayer=function(a,b,c,d){ if(FX2.on&&FX2.t<1.7) return; return _hp.apply(this,arguments); }; }

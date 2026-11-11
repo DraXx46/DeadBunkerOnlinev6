@@ -83,23 +83,7 @@ v9On('kill',(x,zz,kind,part,src,z)=>{ if(part!=='head'||!z||src!=='gun'||kind===
   const y=zy(z)+1.75; emit('gore',x,y,zz,18,5,1.1); emit('blood',x,y,zz,34,5.5,1); for(let i=0;i<4;i++) gibChunk(z,x+rand(-.1,.1),y,zz+rand(-.1,.1),rand(0.5,0.9)); try{ Snd.head(); }catch(e){}
   try{ const o=new THREE.Vector3(x,y,zz), dd=new THREE.Vector3(x-P.pos.x,0.05,zz-P.pos.z).normalize(); const t=rayWall(o,dd,4); if(t<3.9) v9WallBlood(o.clone().addScaledVector(dd,t),-dd.x,0,-dd.z); }catch(e){} });
 
-/* ---------------- música dinâmica (camadas sintetizadas que sobem com a tensão) ---------------- */
-const DM={on:false,nodes:null,int:0};
-function dmBuild(){ const ctx=Snd.ctx; if(!ctx||DM.nodes) return; const out=Snd.out(1,0,0.4,null); if(!out) return; const N={};
-  const mk=(type,f,g,lp)=>{ const o=ctx.createOscillator(); o.type=type; o.frequency.value=f; const gg=ctx.createGain(); gg.gain.value=0; const fl=ctx.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=lp; o.connect(fl); fl.connect(gg); gg.connect(out); o.start(); return {o,g:gg,max:g,fl}; };
-  N.drone=[mk('sawtooth',41.2,0.05,240),mk('sawtooth',41.7,0.05,240),mk('triangle',82.4,0.03,400)];
-  N.tense=[mk('sawtooth',155.6,0.018,900),mk('sawtooth',164.8,0.018,900)];
-  N.boss=[mk('sawtooth',58.3,0.035,700),mk('square',87.3,0.02,500),mk('sawtooth',116.5,0.02,1200)];
-  N.kick=0; DM.nodes=N; }
-v9On('always',dt=>{ const ctx=Snd.ctx; if(!ctx) return; const play=G.state==='playing'||G.state==='paused';
-  if(!play){ if(DM.nodes) for(const k of ['drone','tense','boss']) for(const n of DM.nodes[k]) n.g.gain.setTargetAtTime(0,ctx.currentTime,0.5); return; }
-  dmBuild(); if(!DM.nodes) return; const N=DM.nodes; const nz=zlist().filter(z=>!z.dead).length; const boss=!!(G.boss||CITY.boss&&!CITY.boss.dead||V9EV.sosia&&!V9EV.sosia.dead);
-  const tgt=Math.min(1,0.25+nz/18+(G.round|0)/40); DM.int+=(tgt-DM.int)*Math.min(1,dt*0.6); const vol=musicVol;
-  for(const n of N.drone) n.g.gain.setTargetAtTime(n.max*vol*(0.4+0.6*DM.int),ctx.currentTime,0.8);
-  for(const n of N.tense) n.g.gain.setTargetAtTime(n.max*vol*Math.max(0,DM.int-0.45)*1.8,ctx.currentTime,1.2);
-  for(const n of N.boss) n.g.gain.setTargetAtTime(boss?n.max*vol:0,ctx.currentTime,boss?0.6:2);
-  // batida grave quando a coisa aperta
-  N.kick-=dt; if(DM.int>0.6&&N.kick<=0){ N.kick=boss?0.42:0.62; try{ const o=Snd.out(0.6*vol,0,0.2,null); Snd.oscTo(o,{freq:62,freqEnd:38,dur:0.22,gain:0.5}); }catch(e){} } });
+/* (música dinâmica removida: as partidas ficam sem música, só com os sons do jogo) */
 
 /* ---------------- clima: chuva na cidade, relâmpagos no hospício ---------------- */
 const RAIN={m:null};

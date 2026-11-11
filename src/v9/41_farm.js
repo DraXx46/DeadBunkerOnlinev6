@@ -81,8 +81,8 @@ function farmBarn2(){ const T=fbMats(); const X=x=>x*S, ZR=r=>FR(r);   // X: bor
   const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
   const dust=new THREE.Points(geo,new THREE.PointsMaterial({color:0xffe6b8,size:0.03,transparent:true,opacity:0.55,depthWrite:false})); fx.add(dust); fx.userData.dust=dust;
   (MAPG.farm||scene).add(fx); FB2.fx=fx;
-  const L=lightTake(0xffb05a,1.1,16,1.6); if(L){ L.position.set(47.6,3.2,ZR(70)); FB2.light=L; } }
+  const L=lightTake(0xffb05a,1.6,24,1.5); if(L){ L.position.set(47.6,3.2,ZR(70)); FB2.light=L; } }
 const FB2={fx:null,light:null};
 v9On('always',dt=>{ const fx=FB2.fx; if(!fx||CUR!=='farm') return; const d=fx.userData.dust; if(!d) return; const a=d.geometry.attributes.position.array, t=G.t||0;
   for(let i=0;i<a.length;i+=3){ a[i]+=Math.sin(t*0.3+i)*0.0015; a[i+1]+=Math.sin(t*0.5+i*0.7)*0.0012-0.0004; if(a[i+1]<0.15) a[i+1]=4.5; } d.geometry.attributes.position.needsUpdate=true;
-  if(FB2.light) FB2.light.intensity=1.0+Math.sin(t*7.3)*0.05+Math.sin(t*13.1)*0.04; });
+  if(FB2.light) FB2.light.intensity=1.5+Math.sin(t*7.3)*0.05+Math.sin(t*13.1)*0.04; });

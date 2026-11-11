@@ -77,7 +77,6 @@ function fxSwapKnife(on){ try{
 // ---- início ----
 function fx2Start(z){ z.v9fin=true; z.fxT=0; Object.assign(FX2,{on:true,z,t:0,real:0,impact:false,pumps:0,twist:false,rip:false,flick:false,drop:false,buried:false,Eset:false,El:null,Dl:null}); FX2.plane.constant=1e6;
   const U=fxUi(); U.vig.classList.add('on'); fxSwapKnife(true); try{ fxClipOn(); }catch(e){}
-  try{ if(typeof hfxStart==='function') hfxStart('_fin',false); }catch(e){}
   fxSnd('knife_whoosh',{vol:0.7,rate:0.85}); fxSnd(['z_snarl1','z_snarl2','z_snarl3'],{vol:0.8,x:z.pos.x,z:z.pos.z,range:20,rate:0.8});
   if(V9CAM.fn!==fxCam){ FX2.prevCam=V9CAM.fn; V9CAM.fn=fxCam; } }
 finStart=fx2Start;

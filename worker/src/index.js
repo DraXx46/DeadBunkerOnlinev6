@@ -143,6 +143,7 @@ function publicRoom(room) {
     difficulty: room.difficulty,
     hostId: room.hostId,
     started: room.started,
+    public: !!room.public,
     players: Array.from(room.players.values()).map(p => ({
       id: p.id, name: p.name, role: p.role, ready: p.ready, presence: p.presence || null
     }))
@@ -208,13 +209,33 @@ async function onMessage(client, ws, buffer) {
       catch (e) { sendError(ws, reqId, e.message); return; }
       const room = {
         code, map, maxPlayers, difficulty, hostId: client.id,
-        started: false, createdAt: now, players: new Map()
+        started: false, createdAt: now, players: new Map(), public: !!msg.public && map !== 'x1'
       };
       client.name = cleanName(msg.name || client.name);
       client.roomCode = code; client.role = 'host'; client.ready = true; client.presence = null;
       room.players.set(client.id, client); rooms.set(code, room);
       send(ws, { type: 'roomCreated', reqId, room: publicRoom(room) });
       broadcastRoom(room); socialChanged();
+      return;
+    }
+    if (msg.type === 'listRooms') {
+      /* salas públicas: só as que ainda estão no lobby e têm vaga */
+      const list = [];
+      for (const r of rooms.values()) {
+        if (!r.public || r.started || r.pick || r.players.size >= r.maxPlayers) continue;
+        const host = r.players.get(r.hostId);
+        list.push({ code: r.code, map: r.map, difficulty: r.difficulty, players: r.players.size, max: r.maxPlayers, host: host ? (host.user || host.name) : '', age: Math.round((now - r.createdAt) / 1000) });
+        if (list.length >= 40) break;
+      }
+      send(ws, { type: 'ok', reqId, rooms: list });
+      return;
+    }
+    if (msg.type === 'setPublic') {
+      const room = roomOf(client);
+      if (!room || room.hostId !== client.id) { sendError(ws, reqId, 'Somente o anfitrião pode mudar isso.'); return; }
+      room.public = !!msg.public && room.map !== 'x1';
+      send(ws, { type: 'ok', reqId, public: room.public });
+      broadcastRoom(room);
       return;
     }
     if (msg.type === 'joinRoom') {

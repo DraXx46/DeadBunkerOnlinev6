@@ -43,16 +43,7 @@ function fireDeath(z,dt){ const t=z.t, aL=z.armL, aR=z.armR, L=z.legL, R=z.legR;
   const y=zy(z); if(t<2.4&&Math.random()<dt*34) emit('fire',z.pos.x+rand(-.25,.25),y+rand(0.2,1.8),z.pos.z+rand(-.25,.25),1,0.9,0.6,-2.8);
   if(Math.random()<dt*(t<2?6:3)) wPuff(z.pos.x,y+(t<1.7?1.7:0.5),z.pos.z,1,0x2a2622,0.22,1.6,1,0.3);
   deathChar(z,Math.min(0.85,t/2.2)); if(z.mats&&z.mats[2]&&z.mats[2].emissive) z.mats[2].emissive.setHex(t<2.2&&Math.random()<0.5?0x5a1a00:0x200800);
-  if(t<1.6){ const k=Math.min(1,t*4);
-    z.g.rotation.x=0; z.g.rotation.z=Math.sin(t*6)*0.08; z.g.position.y=0; z.hips.position.y=0.95-Math.abs(Math.sin(t*7))*0.04;
-    z.spine.rotation.set(0.15+Math.sin(t*5)*0.25,Math.sin(t*9)*0.35*k,Math.sin(t*7)*0.2);
-    z.headP.rotation.set(-0.5+Math.sin(t*13)*0.35,Math.sin(t*11)*0.5,Math.sin(t*8)*0.3);
-    aL.sh.rotation.set(-1.9+Math.sin(t*15)*0.7,0.4,-0.6+Math.sin(t*12)*0.5); aR.sh.rotation.set(-1.7+Math.sin(t*14+1)*0.7,-0.4,0.6+Math.sin(t*11)*0.5);
-    aL.el.rotation.x=-1.1+Math.sin(t*16)*0.5; aR.el.rotation.x=-1.0+Math.sin(t*17)*0.5;
-    L.th.rotation.x=Math.sin(t*9)*0.45; R.th.rotation.x=-Math.sin(t*9)*0.45; L.kn.rotation.x=Math.max(0,Math.sin(t*9))*0.7; R.kn.rotation.x=Math.max(0,-Math.sin(t*9))*0.7;
-    z.yaw+=Math.sin(t*3)*dt*2.4; z.pos.x+=Math.sin(z.yaw)*dt*0.5; z.pos.z+=Math.cos(z.yaw)*dt*0.5;
-    if(t>0.3&&t<0.33) try{ zvoice(z,'pain',1.2); }catch(e){}
-  } else fallFrom(z,dt,1.6,'knees');
+  fallFrom(z,dt,0,'knees');   /* sem girar nem se debater: cai direto, queimando e escurecendo */
   z.g.position.x=z.pos.x; z.g.position.z=z.pos.z; z.g.rotation.y=z.yaw; }
 /* ---- choque ---- */
 const _ea=new THREE.Vector3(), _eb=new THREE.Vector3();

@@ -381,14 +381,14 @@ function funPortalMesh(col,i){ const g=new THREE.Group(); const ring=new THREE.M
   return g; }
 function funPortalShoot(i){ const o=camera.position.clone(), d=new THREE.Vector3(); camera.getWorldDirection(d); let t=40, n=null; try{ const tw=rayWall(o,d,40); if(tw<t){ t=tw; } }catch(e){}
   if(d.y<-0.05){ const tf=(floorAt(o.x,o.z)+0.02-o.y)/d.y; if(tf>0&&tf<t){ t=tf; n=new THREE.Vector3(0,1,0); } }
-  if(t>=40) return; const p=o.addScaledVector(d,t-0.05); if(!n){ const fx=Math.abs(d.x)>Math.abs(d.z); n=fx?new THREE.Vector3(-Math.sign(d.x),0,0):new THREE.Vector3(0,0,-Math.sign(d.z)); p.y=Math.max(1.1,Math.min(p.y,2.2)); }
+  if(t>=40) return; const p=o.addScaledVector(d,t-0.05); if(!n){ const fx=Math.abs(d.x)>Math.abs(d.z); n=fx?new THREE.Vector3(-Math.sign(d.x),0,0):new THREE.Vector3(0,0,-Math.sign(d.z)); p.y=floorAt(p.x+n.x*0.5,p.z+n.z*0.5)+1.0; }   // portal de parede encostado no chão: dá para atravessar andando
   const col=i?0xff8a1a:0x2a9aff; if(PORT.p[i]) MAPG.fun.remove(PORT.p[i].g); const g=funPortalMesh(col,i); g.position.copy(p).addScaledVector(n,0.03); g.lookAt(g.position.clone().add(n)); MAPG.fun.add(g); PORT.p[i]={g,p:g.position.clone(),n};
   const T=TOOL.portal; if(T){ T.userData.core.material.color.setHex(col); T.userData.tip.material.color.setHex(col); } TOOL.kick=1;
   try{ const s=Snd.out(0.7,0,0.3,null); Snd.oscTo(s,{type:'sine',freq:i?500:800,freqEnd:i?1200:1600,dur:0.18,gain:0.2}); }catch(e){} emit('spark',p.x,p.y,p.z,14,2,0.4,0); }
 v9On('frame',dt=>{ PORT.cd=Math.max(0,PORT.cd-dt); for(let i=0;i<2;i++){ const q=PORT.p[i]; if(q){ q.g.userData.inner.material.opacity=0.28+Math.sin(G.t*6+i)*0.1; } }
-  if(CUR!=='fun'||PORT.cd>0||!PORT.p[0]||!PORT.p[1]) return; const eye=new THREE.Vector3(P.pos.x,floorAt(P.pos.x,P.pos.z)+P.y+(PORT.p[0].n.y>0.5||PORT.p[1].n.y>0.5?0.3:0.9),P.pos.z);
+  if(CUR!=='fun'||PORT.cd>0||!PORT.p[0]||!PORT.p[1]) return; const eye=new THREE.Vector3(P.pos.x,floorAt(P.pos.x,P.pos.z)+P.y+1.0,P.pos.z);
   for(let i=0;i<2;i++){ const a=PORT.p[i], b=PORT.p[1-i]; const d=eye.clone().sub(a.p), along=d.dot(a.n), lat=d.clone().addScaledVector(a.n,-along).length();
-    if(along<0.45&&along>-0.6&&lat<(a.n.y>0.5?0.75:0.62)){ const M=prtLink(i);
+    if(a.n.y>0.5){ const fd=Math.hypot(P.pos.x-a.p.x,P.pos.z-a.p.z); if(!(fd<0.6&&P.y<0.25)) continue; } else if(!(along<0.45&&along>-0.6&&lat<0.62)) continue; { const M=prtLink(i);
       const f=new THREE.Vector3(-Math.sin(P.yaw),0,-Math.cos(P.yaw)).transformDirection(M), v=new THREE.Vector3(P.vx||0,P.vy||0,P.vz||0).transformDirection(M).multiplyScalar(Math.hypot(P.vx||0,P.vy||0,P.vz||0));
       const out=b.p.clone().addScaledVector(b.n,b.n.y>0.5?0.15:0.75); P.pos.x=out.x; P.pos.z=out.z; FUN.tpJust=true;
       if(Math.abs(f.y)<0.8) P.yaw=Math.atan2(-f.x,-f.z); else if(b.n.y<0.5) P.yaw=Math.atan2(-b.n.x,-b.n.z);

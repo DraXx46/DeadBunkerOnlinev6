@@ -5,7 +5,8 @@
      levar 4 bolas à tabela ou encaçapar; toda falta dá BOLA NA MÃO ao adversário (WASD posiciona a branca);
      3 faltas seguidas perde a partida. No modo sozinho, falta custa 2 tacadas.
    - Fim de partida com tela de vencedor, confete e fanfarra. */
-function poolCtx(){ if(G.state==='lobby') return !!POOL.inLobby; return CUR==='city'; }
+function poolWant(){ if(G.state==='lobby') return 'lobby:'+CUR; if(CUR==='fun') return 'fun'; if(CUR==='city') return 'city'; return null; }
+function poolCtx(){ const w=poolWant(); return !!w&&POOL.at===w; }
 function poolLive(){ return G.state==='playing'||G.state==='lobby'; }
 function poolLobbySpot(){ const sp=MAPS[CUR]&&MAPS[CUR].start; if(!sp) return null; const sx=sp[0], sz=sp[1];
   const r0=roomOf[Math.floor(sz/S)]&&roomOf[Math.floor(sz/S)][Math.floor(sx/S)];
@@ -15,13 +16,12 @@ function poolLobbySpot(){ const sp=MAPS[CUR]&&MAPS[CUR].start; if(!sp) return nu
       for(let u=-hl;u<=hl&&ok;u+=0.5) for(let v=-hw;v<=hw&&ok;v+=0.5){ const c=Math.cos(ry), s=Math.sin(ry); if(!free(x+u*c+v*s,z-u*s+v*c)) ok=false; }
       if(!ok) continue; if(lobbyInteractables.some(q=>Math.hypot(q.x-x,q.z-z)<PT.L/2+1.6)) continue; return {x,z,ry}; } }
   return null; }
-function poolCtxSwitch(){
-  if(G.state==='lobby'){ if((POOL.inLobby&&POOL.lobbyMap===CUR)||POOL.lobbyFail===CUR) return; const s=poolLobbySpot(); if(!s){ POOL.lobbyFail=CUR; return; }
-    poolPlace(s.x,s.z,s.ry,true); POOL.inLobby=true; POOL.lobbyMap=CUR; POOL.lobbyFail=null; POOL.mode=null; POOL.over=false; POOL.players=[]; poolRack(); poolSync(); return; }
-  if(POOL.inLobby){ POOL.inLobby=false; POOL.lobbyMap=null; if(POOL.on) poolExit(); if(POOL.menu){ try{ POOL.menu.remove(); }catch(e){} POOL.menu=null; } POOL.mode=null; POOL.players=[];
-    if(POOL.home) poolPlace(POOL.home.x,POOL.home.z,POOL.home.ry); poolRack(); poolSync(); }
-  if(G.state==='menu') POOL.lobbyFail=null; }
-
+function poolCtxSwitch(){ const w=poolWant(); if(w===POOL.at||(w&&w===POOL.fail)) return;
+  if(POOL.on) poolExit(); if(POOL.menu){ try{ POOL.menu.remove(); }catch(e){} POOL.menu=null; }
+  if(!w){ POOL.at=null; POOL.inLobby=false; return; }
+  let s=null; if(w==='city') s=POOL.home; else if(w==='fun') s=(typeof FUN!=='undefined'&&FUN.poolSpot)||null; else s=poolLobbySpot();
+  if(!s){ POOL.fail=w; return; } POOL.fail=null;
+  poolPlace(s.x,s.z,s.ry,w!=='city'); POOL.at=w; POOL.inLobby=w.startsWith('lobby'); POOL.mode=null; POOL.over=false; POOL.players=[]; poolRack(); poolSync(); }
 /* ---------- efeitos ao encaçapar ---------- */
 v9Css(`#poolPop{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);z-index:26;pointer-events:none;opacity:0;text-align:center;transition:transform .35s cubic-bezier(.2,1.6,.4,1),opacity .25s}
 #poolPop.on{opacity:1;transform:translate(-50%,-50%) scale(1)}#poolPop .bb{width:74px;height:74px;border-radius:50%;margin:0 auto 6px;display:grid;place-items:center;font:700 28px sans-serif;color:#111;box-shadow:0 0 30px rgba(255,220,120,.6),inset -10px -12px 20px rgba(0,0,0,.35)}

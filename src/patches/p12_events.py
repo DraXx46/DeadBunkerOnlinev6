@@ -1,7 +1,7 @@
 P=[]
 P.append(("""  EVT.next-=dt; if(EVT.next>0) return; EVT.next=rand(60,110);""","""  EVT.next-=dt; if(EVT.next>0) return; EVT.next=rand(32,62);   // v9: eventos mais frequentes"""))
 P.append(("""  const opts=['neblina','furia','suprimento','armamento']; if(G.power) opts.push('apagao','apagao');""","""  const opts=['neblina','furia','suprimento','armamento']; if(G.power) opts.push('apagao','apagao');
-  opts.push('troca','sosia','roleta','roleta','chuva','eclipse');   // v9"""))
+  opts.push('troca','roleta','roleta','chuva','eclipse');   // v9"""))
 P.append(("""  const k=pick(opts.filter(q=>q!=='armamento')); const I=EVT_INFO[k];""","""  const k=pick(opts.filter(q=>q!=='armamento')); const I=EVT_INFO[k];
   if(k==='roleta'){ const sp=portalSpot(); EVT.px=sp[0]; EVT.pz=sp[1]; }"""))
 P.append(("""EVT.k=null; EVT.t=0; EVT.next=rand(55,85); document.body.classList.remove('furia');""","""EVT.k=null; EVT.t=0; EVT.next=rand(30,50); document.body.classList.remove('furia');"""))

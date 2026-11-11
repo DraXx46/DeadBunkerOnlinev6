@@ -8418,7 +8418,7 @@ function eventsHost(dt){
   EVT.next-=dt; if(EVT.next>0) return; EVT.next=rand(32,62);   // v9: eventos mais frequentes
   if(G.round>=6&&Math.random()<0.1){ const sp=portalSpot(); EVT.px=sp[0]; EVT.pz=sp[1]; evStart('portal',EVT_INFO.portal[2],true); return; }
   const opts=['neblina','furia','suprimento','armamento']; if(G.power) opts.push('apagao','apagao');
-  opts.push('troca','sosia','roleta','roleta','chuva','eclipse');   // v9
+  opts.push('troca','roleta','roleta','chuva','eclipse');   // v9
   if(pick(opts)==='armamento'&&Math.random()<0.6){ const sp=portalSpot(); EVT.px=sp[0]; EVT.pz=sp[1]; evStart('armamento',EVT_INFO.armamento[2],true); return; }
   const k=pick(opts.filter(q=>q!=='armamento')); const I=EVT_INFO[k];
   if(k==='roleta'){ const sp=portalSpot(); EVT.px=sp[0]; EVT.pz=sp[1]; }

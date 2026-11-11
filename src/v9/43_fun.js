@@ -230,7 +230,7 @@ function funSetTool(k){ if(k&&FUN.anim) return; for(const kk of ['tele','portal'
   FUN.tool=k||null; if(k){ FUN.lastTool=k; funToolModel(k).visible=true; TOOL.sw=1; try{ Snd.sample('rl_slide',{vol:0.5,rate:1.3}); }catch(e){} } funVmSync(); }
 // pose na tela: balanço ao andar, tranco ao atirar, troca subindo de baixo
 v9On('always',dt=>{ const k=FUN.tool; if(!k||!TOOL[k]) return; const g=TOOL[k]; const sp=Math.hypot(P.vx||0,P.vz||0), t=G.t||0; TOOL.kick=Math.max(0,TOOL.kick-dt*5); TOOL.sw=Math.max(0,TOOL.sw-dt*4);
-  g.position.set(0.17+Math.sin(t*8)*0.006*Math.min(1,sp/4),-0.17+Math.abs(Math.cos(t*8))*0.008*Math.min(1,sp/4)-TOOL.sw*0.25,-0.36+TOOL.kick*0.06); g.rotation.set(TOOL.kick*0.3-TOOL.sw*0.6,0.05,0);
+  g.scale.setScalar(0.62); g.position.set(0.15+Math.sin(t*8)*0.005*Math.min(1,sp/4),-0.145+Math.abs(Math.cos(t*8))*0.006*Math.min(1,sp/4)-TOOL.sw*0.25,-0.42+TOOL.kick*0.05); g.rotation.set(TOOL.kick*0.3-TOOL.sw*0.6+0.04,0.1,0);
   if(k==='portal'&&g.userData.claws) g.userData.claws.forEach((c,i)=>{ c.position.z=-0.15-Math.sin(t*3+i)*0.004-TOOL.kick*0.02; });
   if(k==='tele'&&g.userData.ball){ g.userData.ball.visible=!FUN.balls.length&&TOOL.kick<0.5; g.userData.ball.rotation.y+=dt*3; } });
 { const _f=fire; fire=function(){ if(CUR==='fun'&&(FUN.mode==='dart'||FUN.mode==='cups'||FUN.anim||FUN.tool)) return; return _f.apply(this,arguments); }; }

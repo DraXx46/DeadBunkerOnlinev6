@@ -44,6 +44,7 @@ function finishPick(room) {
     const c = own.find(c => !taken.has(c)) || CHAR_IDS.find(c => !taken.has(c)) || 'recruta';
     pk.picks.set(p.id, c); taken.add(c);
   }
+  room.charOf = new Map(pk.picks);   // guardado para quem reconectar no meio da partida
   const msg = { type: 'pickDone', picks: Object.fromEntries(pk.picks) };
   for (const p of room.players.values()) send(p.ws, msg);
 }
@@ -132,6 +133,10 @@ function makeCode() {
   }
   throw new Error('Não foi possível gerar um código livre. Tente novamente.');
 }
+function setRid(client, rid) {
+  rid = String(rid || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40);
+  if (rid.length >= 8) client.rid = rid;
+}
 function roomOf(client) {
   return client && client.roomCode ? rooms.get(client.roomCode) || null : null;
 }
@@ -194,7 +199,7 @@ async function onMessage(client, ws, buffer) {
     const reqId = Number(msg.reqId) || 0;
 
     if (msg.type === 'hello') {
-      client.name = cleanName(msg.name);
+      client.name = cleanName(msg.name); setRid(client, msg.rid);
       const room = roomOf(client);
       if (room) broadcastRoom(room);
       return;
@@ -211,7 +216,7 @@ async function onMessage(client, ws, buffer) {
         code, map, maxPlayers, difficulty, hostId: client.id,
         started: false, createdAt: now, players: new Map(), public: !!msg.public && map !== 'x1'
       };
-      client.name = cleanName(msg.name || client.name);
+      client.name = cleanName(msg.name || client.name); setRid(client, msg.rid);
       client.roomCode = code; client.role = 'host'; client.ready = true; client.presence = null;
       room.players.set(client.id, client); rooms.set(code, room);
       send(ws, { type: 'roomCreated', reqId, room: publicRoom(room) });
@@ -243,12 +248,19 @@ async function onMessage(client, ws, buffer) {
       const code = String(msg.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
       const room = rooms.get(code);
       if (!room) { sendError(ws, reqId, 'Não encontramos uma sala com esse código. Confira e tente novamente.'); return; }
-      if (room.started || room.pick) { sendError(ws, reqId, 'Essa partida já começou. Peça ao anfitrião para criar outra sala.'); return; }
+      setRid(client, msg.rid);
+      /* reconexão: quem começou a partida pode voltar para ela mesmo com o jogo em andamento */
+      const seat = room.started && client.rid && room.seats ? room.seats.get(client.rid) : null;
+      if (room.pick) { sendError(ws, reqId, 'A escolha de personagens está acontecendo. Tente de novo em alguns segundos.'); return; }
+      if (room.started && !seat) { sendError(ws, reqId, 'Essa partida já começou. Só quem começou a partida pode voltar para ela.'); return; }
+      if (seat) for (const old of Array.from(room.players.values())) if (old !== client && old.rid === client.rid && old.id !== room.hostId) {
+        room.players.delete(old.id); old.roomCode = null; old.presence = null;   // conexão antiga que ainda não caiu
+      }
       if (room.players.size >= room.maxPlayers) { sendError(ws, reqId, 'Essa sala está cheia.'); return; }
       client.name = cleanName(msg.name || client.name);
-      client.roomCode = room.code; client.role = 'player'; client.ready = false; client.presence = null;
+      client.roomCode = room.code; client.role = 'player'; client.ready = !!seat; client.presence = null;
       room.players.set(client.id, client);
-      send(ws, { type: 'roomJoined', reqId, room: publicRoom(room) });
+      send(ws, { type: 'roomJoined', reqId, room: publicRoom(room), rejoin: !!seat, char: seat ? seat.char || null : null, you: client.id });
       broadcastRoom(room); socialChanged();
       return;
     }
@@ -302,6 +314,8 @@ async function onMessage(client, ws, buffer) {
       const notReady = Array.from(room.players.values()).filter(p => p.id !== room.hostId && !p.ready);
       if (notReady.length) { sendError(ws, reqId, 'Ainda há jogadores que não estão prontos.'); return; }
       room.started = true; socialChanged();
+      room.seats = new Map();
+      for (const p of room.players.values()) if (p.rid) room.seats.set(p.rid, { name: p.name, char: room.charOf ? room.charOf.get(p.id) || null : null });
       for (const p of room.players.values()) send(p.ws, { type: 'roomStarted', room: publicRoom(room) });
       send(ws, { type: 'startAck', reqId });
       broadcastRoom(room);
@@ -310,7 +324,7 @@ async function onMessage(client, ws, buffer) {
     if (msg.type === 'backToLobby') {
       const room = roomOf(client);
       if (!room || room.hostId !== client.id) { sendError(ws, reqId, 'Somente o anfitrião pode voltar ao lobby.'); return; }
-      room.started = false;
+      room.started = false; room.seats = null;
       for (const p of room.players.values()) p.ready = p.id === room.hostId;
       send(ws, { type: 'startAck', reqId });
       broadcastRoom(room);

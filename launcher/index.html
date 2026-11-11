@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' file: data:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' file: data:; media-src 'self' file:">
 <title>Dead Bunker</title>
 <style>
   :root { --blood:#b3201a; --blood-hi:#e0301f; --ember:#ff7a3a; --bone:#f4ead2; --muted:#a89a88; --line:rgba(255,255,255,.08); --panel:#140d0b; --rail:#0d0807; }
@@ -31,9 +31,10 @@
   main { position:relative; overflow-y:auto; overflow-x:hidden; scroll-behavior:smooth; }
   main::-webkit-scrollbar { width:8px; } main::-webkit-scrollbar-thumb { background:#2a1e18; }
   .hero { position:relative; height:min(66vh,560px); min-height:420px; overflow:hidden; }
+  .hero video { position:absolute; inset:-3%; width:106%; height:106%; object-fit:cover; transition:transform .3s ease-out; filter:brightness(1.45) saturate(1.1) contrast(1.08); }
   .hero .sl { position:absolute; inset:-3%; background:center/cover no-repeat; opacity:0; transition:opacity 1s, transform .3s ease-out; }
   .hero .sl.on { opacity:1; animation:kb 14s ease-in-out forwards; } @keyframes kb { from { scale:1.02; } to { scale:1.12; } }
-  .hero:after { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(0deg,#0a0606 0%,rgba(10,6,6,.55) 32%,rgba(10,6,6,0) 60%),linear-gradient(90deg,rgba(10,6,6,.85) 0%,rgba(10,6,6,.2) 55%,transparent); }
+  .hero:after { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(0deg,#0a0606 0%,rgba(10,6,6,.35) 26%,rgba(10,6,6,0) 50%),linear-gradient(90deg,rgba(10,6,6,.6) 0%,rgba(10,6,6,.1) 45%,transparent); }
   .hero canvas { position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none; }
   .hero h1 { position:absolute; top:24px; left:40px; z-index:2; margin:0; font-size:34px; font-weight:600; font-family:Georgia,serif; letter-spacing:.01em; }
   .hero .ct { position:absolute; left:40px; bottom:60px; z-index:2; max-width:620px; }
@@ -110,7 +111,7 @@
 
   <main id="main">
     <section class="hero" id="top">
-      <div class="sl" style="background-image:url(img/boss.jpg)"></div><div class="sl" style="background-image:url(img/city.jpg)"></div><div class="sl" style="background-image:url(img/hosp.jpg)"></div><div class="sl" style="background-image:url(img/menu.jpg)"></div>
+      <video id="bgv" src="video/fundo.mp4" autoplay muted loop playsinline preload="auto"></video>
       <canvas id="fx"></canvas>
       <h1>Início</h1>
       <div class="ct"><span class="tag" id="s-tag">NOVO</span><h2 class="disp" id="s-title">Dead Bunker</h2><p id="s-text"></p>

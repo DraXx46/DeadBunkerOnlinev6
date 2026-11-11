@@ -12,20 +12,20 @@ const SLIDES = [
   { tag: '2087', title: 'Laboratório de testes', text: 'Junte as peças da máquina do tempo no Hospício Vale Negro e veja o que fizeram com ele no futuro.' },
   { tag: 'ONLINE', title: 'Chame o esquadrão', text: 'Até 4 sobreviventes por sala. Use um código para chamar amigos ou entre numa sala pública.' }
 ];
-const sl = [...document.querySelectorAll('.hero .sl')];
+const bgv = $('#bgv');
 const dots = $('#dots');
 let cur = -1, timer = 0;
 SLIDES.forEach((_, i) => { const b = document.createElement('button'); b.innerHTML = '<i></i>'; b.addEventListener('click', () => show(i)); dots.appendChild(b); });
 function show(i) {
   cur = (i + SLIDES.length) % SLIDES.length; const s = SLIDES[cur];
-  sl.forEach((e, k) => e.classList.toggle('on', k === cur));
   [...dots.children].forEach((d, k) => { d.classList.remove('on'); if (k === cur) { void d.offsetWidth; d.classList.add('on'); } });
   $('#s-tag').textContent = s.tag; $('#s-title').textContent = s.title; $('#s-text').textContent = s.text;
   clearTimeout(timer); timer = setTimeout(() => show(cur + 1), 7000);
 }
 show(0);
+bgv.play().catch(() => {});
 // a imagem acompanha o mouse de leve
-$('.hero').addEventListener('mousemove', (e) => { const r = e.currentTarget.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; sl[cur].style.transform = `translate(${-x * 18}px,${-y * 12}px)`; });
+$('.hero').addEventListener('mousemove', (e) => { const r = e.currentTarget.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; bgv.style.transform = `translate(${-x * 18}px,${-y * 12}px)`; });
 
 /* ---------- brasas e cinzas subindo ---------- */
 const cv = $('#fx'), cx = cv.getContext('2d'); let W = 0, H = 0; const P = [];

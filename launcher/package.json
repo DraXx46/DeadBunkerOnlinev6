@@ -16,7 +16,7 @@
   "build": {
     "appId": "com.draxx46.bunkerdosmortos.launcher",
     "productName": "Dead Bunker",
-    "files": ["main.js", "preload.js", "gamepreload.js", "index.html", "renderer.js", "build/icon.png", "img/**"],
+    "files": ["main.js", "preload.js", "gamepreload.js", "index.html", "renderer.js", "build/icon.png", "img/**", "video/**"],
     "win": {
       "target": "nsis",
       "icon": "build/icon.png"

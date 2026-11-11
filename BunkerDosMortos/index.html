@@ -17301,7 +17301,7 @@ const FXL=[ // mão esquerda: vem de baixo, abre e crava os dedos no topo da cab
   [1.70,{x:-0.3,y:-0.4,z:-0.3,rx:-1.0,ry:-0.3,rz:-0.1,c:0.1}]];
 function fxKey(K,t){ if(t<=K[0][0]) return K[0][1]; for(let i=1;i<K.length;i++){ if(t<=K[i][0]){ const a=K[i-1], b=K[i], k=smooth((t-a[0])/(b[0]-a[0])); const o={}; for(const n in b[1]) o[n]=lerp(a[1][n],b[1][n],k); return o; } } return K[K.length-1][1]; }
 // mão esquerda que agarra a cabeça (mesma pele/luva das mãos da arma)
-function fxLeftHand(){ if(FX2.lh) return FX2.lh; const g=new THREE.Group(); const h=makeHand(true,[0.4,0.3,0.2]); h.scale.setScalar(0.95); g.add(h); g.userData.h=h; g.visible=false; vmScene.add(g); FX2.lh=g; return g; }
+function fxLeftHand(){ if(FX2.lh) return FX2.lh; const g=new THREE.Group(); const h=makeHand(true,[0.4,0.3,0.2]); h.scale.setScalar(0.95); for(const c of h.children) if(c.geometry===HG.sleeve){ c.scale.set(0.72,0.8,0.72); c.position.y*=0.85; } g.add(h); g.userData.h=h; g.visible=false; vmScene.add(g); FX2.lh=g; return g; }
 // faixas de cinema + respingos na tela
 function fxUi(){ if(FX2.ui) return FX2.ui; const st=document.createElement('style'); st.textContent=`
 #fxbars{position:fixed;inset:0;pointer-events:none;z-index:40}
@@ -17341,7 +17341,7 @@ function fx2Start(z){ z.v9fin=true; z.fxT=0; Object.assign(FX2,{on:true,z,t:0,re
   fxSnd('knife_whoosh',{vol:0.7,rate:0.85}); fxSnd(['z_snarl1','z_snarl2','z_snarl3'],{vol:0.8,x:z.pos.x,z:z.pos.z,range:20,rate:0.8});
   if(V9CAM.fn!==fxCam){ FX2.prevCam=V9CAM.fn; V9CAM.fn=fxCam; } }
 finStart=fx2Start;
-function fx2End(){ if(!FX2.on) return; FX2.on=false; try{ knife.position.set(0,0,0); knife.quaternion.identity(); }catch(e){} FX2.plane.constant=1e6; FX2.buried=false; if(FX2.lh) FX2.lh.visible=false; const U=FX2.ui; if(U){ U.bars.classList.remove('on'); U.vig.classList.remove('on'); }
+function fx2End(){ if(!FX2.on) return; FX2.on=false; try{ const z=FX2.z; if(z&&z.fxT!=null) z.fxOff=z.fxT-z.t; }catch(e){} try{ knife.position.set(0,0,0); knife.quaternion.identity(); }catch(e){} FX2.plane.constant=1e6; FX2.buried=false; if(FX2.lh) FX2.lh.visible=false; const U=FX2.ui; if(U){ U.bars.classList.remove('on'); U.vig.classList.remove('on'); }
   try{ camera.zoom=1; camera.updateProjectionMatrix(); }catch(e){} if(V9CAM.fn===fxCam) V9CAM.fn=FX2.prevCam||null; FX2.prevCam=null;
   try{ if(Wp.kAct==='stab'){ Wp.kT=Wp.kDur; } }catch(e){} }
 const _busyFx=busy; busy=function(){ return _busyFx()||FX2.on; };
@@ -17391,7 +17391,7 @@ V9VM.push(dt=>{ const lh=FX2.lh; if(!FX2.on){ if(lh) lh.visible=false; return; }
   const L=fxLeftHand(); const b=fxKey(FXL,t); L.visible=t<1.72&&!CINEMA.noVm; L.position.set(b.x,b.y,b.z); L.rotation.set(b.rx,b.ry,b.rz);
   const U=L.userData.h.userData; if(U&&U.fingers){ const sh=FX2.impact&&t<1.3?Math.sin(FX2.real*60)*0.05:0; for(let i=0;i<4;i++) for(let k=0;k<3;k++) U.fingers[i][k].rotation.x=-(0.35+b.c*[1.0,0.85,0.7][k])-sh; U.thumb.rotation.x=-0.7-b.c*0.4; } });
 // ---- o zumbi: agarrado, faca no crânio, convulsão, desaba ----
-finDeath=function(z,dt){ const t=z.fxT!=null&&FX2.z===z?z.fxT:z.t*0.95, aL=z.armL, aR=z.armR, L=z.legL, R=z.legR;
+finDeath=function(z,dt){ const t=FX2.on&&FX2.z===z?z.fxT:z.fxOff!=null?z.t+z.fxOff:z.t*0.95, aL=z.armL, aR=z.armR, L=z.legL, R=z.legR;
   if(t<1.5){ const grab=smooth(clamp(t/0.25,0,1)), hit=t>0.47?smooth(clamp((t-0.47)/0.06,0,1)):0, sag=t>0.6?smooth(clamp((t-0.6)/0.7,0,1)):0, rip=t>1.33?smooth(clamp((t-1.33)/0.1,0,1)):0;
     const tw=FX2.z===z&&FX2.impact&&t<1.33?Math.sin(t*55)*0.06*(1-sag*0.4):0, jerk=(t>0.76&&t<0.82)||(t>1.02&&t<1.08)?0.05:0, hs=FX2.z===z&&FX2.buried?0.25:1;
     z.g.position.y=0; z.hips.position.y=0.95-0.06*hit-0.1*sag;

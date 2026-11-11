@@ -230,3 +230,5 @@ v9On('always',dt=>{ if(!PDOOR.sh.length) return; PDOOR.t=Math.min(1,PDOOR.t+dt*1
 { const _pe=poolEnter; poolEnter=function(){ _pe.apply(this,arguments); if(POOL.on&&poolInBar(P.pos.x,P.pos.z)) poolDoors(true); }; }
 { const _px=poolExit; poolExit=function(){ _px.apply(this,arguments); poolDoors(false); }; }
 v9On('reset',()=>{ if(PDOOR.closed) poolDoors(false); });
+/* as cartas de fim de rodada esperam a partida de sinuca acabar (não abrem por cima da mesa) */
+{ const _oc=offerCards; offerCards=function(){ if(POOL.on||POOL.menu){ setTimeout(()=>{ if(G.state==='playing'||G.state==='paused') offerCards(); },1500); return; } return _oc.apply(this,arguments); }; }

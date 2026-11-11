@@ -36,7 +36,7 @@ function car2Body(g){ const M=car2Mats(); const B=(w,h,d,m,x,y,z,rx,ry,rz)=>{ co
   // assoalho, painel, bancos (cabine oca)
   B(1.66,0.05,2.5,M.carpet,0,0.42,0.12); B(1.7,0.3,0.32,M.dash,0,0.92,-0.98); B(1.6,0.06,0.3,M.dash,0,1.07,-0.9,0.25);
   for(let i=0;i<3;i++) Cy(0.035,0.035,0.01,M.chrome,0.36+i*0.09,1.0,-0.82,Math.PI/2);                                   // relógios do painel
-  for(const sx of [-0.4,0.4]){ B(0.56,0.12,0.55,M.seat,sx,0.7,-0.18); B(0.54,0.62,0.12,M.seat,sx,1.02,0.12,-0.12); B(0.3,0.16,0.1,M.seat,sx,1.4,0.16,-0.12); }
+  for(const sx of [-0.4,0.4]){ B(0.56,0.12,0.55,M.seat,sx,0.7,-0.04); B(0.54,0.62,0.12,M.seat,sx,1.02,0.28,-0.12); B(0.3,0.16,0.1,M.seat,sx,1.4,0.32,-0.12); }
   B(1.5,0.12,0.6,M.seat,0,0.7,0.86); B(1.5,0.6,0.12,M.seat,0,1.0,1.18,-0.15);
   B(0.05,0.32,0.05,M.black,0.4,0.96,-0.7,0.9);                                                                           // coluna da direção
   // colunas, teto, vidros laterais e traseiro (o para-brisa é a peça "vidro")
@@ -51,23 +51,23 @@ function car2Body(g){ const M=car2Mats(); const B=(w,h,d,m,x,y,z,rx,ry,rz)=>{ co
   // ferrugem, sujeira e marcas de tiro
   for(let i=0;i<16;i++){ const sx=Math.random()<0.5?-1:1; const p=new THREE.Mesh(new THREE.CircleGeometry(rand(0.04,0.16),8),Math.random()<0.7?M.rust:M.black); p.position.set(sx*0.945,rand(0.4,0.95),rand(-2,2)); p.rotation.y=sx*Math.PI/2; g.add(p); }
   return M; }
-const _car2B=carBuild; carBuild=function(){ const r=_car2B.apply(this,arguments); try{ const g=CAR.g; if(!g) return r; const keep=new Set(CAR.meshes);
+const _car2B=carBuild; carBuild=function(){ try{ CAR_SLOT.wheel=[0.4,1.08,-0.64,-0.6,0,0]; CAR_SLOT.key=[0.26,0.98,-0.76,0.5,0,0]; CAR_SLOT.glass=[0,1.3,-0.72,-0.55,0,0]; }catch(e){} const r=_car2B.apply(this,arguments); try{ const g=CAR.g; if(!g) return r; const keep=new Set(CAR.meshes);
     for(let i=g.children.length-1;i>=0;i--){ const c=g.children[i]; if(!keep.has(c)) g.remove(c); }
     const M=car2Body(g);
     // rodas que já estão no lugar (as outras duas são peças a instalar) e o macaco no lugar da que falta
     for(const [sx,sz] of [[-0.86,-1.25],[-0.86,1.3]]){ const w=new THREE.Mesh(new THREE.TorusGeometry(0.28,0.12,10,24),M.rubber); w.position.set(sx,0.4,sz); w.rotation.y=Math.PI/2; g.add(w); const hb=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,0.16,16),M.chrome); hb.rotation.z=Math.PI/2; hb.position.set(sx-0.02,0.4,sz); g.add(hb); }
     const jack=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3),v9Mat('carJack',{color:0x8a7a2a})); jack.position.set(0.86,0.15,-1.25); g.add(jack);
     CAR2.box=propBoxes.find(b=>Math.abs(b.x0-(CAR.x-2.3))<0.02&&Math.abs(b.z0-(CAR.z-1.05))<0.02)||null;
-    CAR.seats=[[0.4,-0.12],[-0.4,-0.12],[0.4,0.86],[-0.4,0.86]];
+    CAR.seats=[[0.4,0.0],[-0.4,0.0],[0.4,0.86],[-0.4,0.86]];
   }catch(e){ console.warn('[Bunker v9] carro novo',e); } return r; };
 // cada jogador no seu banco, câmera dentro da cabine, sem colisão enquanto sentado
 v9On('frame',()=>{ if(CUR!=='bunker'||!CAR.g) return; const idx=NET.mode?clamp(playerSpawnIndex(),0,3):0; CAR2.seatIdx=idx;
   if(CAR.seats&&CAR.seats.length===4&&CAR.seats[0]!==CAR.seats[idx]) CAR.seats._mine=CAR.seats[idx];
   if(CAR2.box) CAR2.box.on=!CAR.seated;
-  if(!CAR.seated) return; const s=[[0.4,-0.12],[-0.4,-0.12],[0.4,0.86],[-0.4,0.86]][idx]; const c=Math.cos(CAR.ry), sn=Math.sin(CAR.ry);
+  if(!CAR.seated) return; const s=[[0.4,0.0],[-0.4,0.0],[0.4,0.86],[-0.4,0.86]][idx]; const c=Math.cos(CAR.ry), sn=Math.sin(CAR.ry);
   P.pos.x=CAR.x+s[0]*c+s[1]*sn; P.pos.z=CAR.z-s[0]*sn+s[1]*c; P.vx=P.vz=0; P.vy=0; P.y=0.42; P.crouch=1; P.sprinting=false; });
 // sair do carro pela porta do seu lado
-{ let wasSeated=false; v9On('frame',()=>{ if(CUR!=='bunker'||!CAR.g) return; if(wasSeated&&!CAR.seated&&!CAR.going){ const s=[[0.4,-0.12],[-0.4,-0.12],[0.4,0.86],[-0.4,0.86]][CAR2.seatIdx]; const side=s[0]>0?1:-1; const lx=side*1.55, lz=s[1]; const c=Math.cos(CAR.ry), sn=Math.sin(CAR.ry);
+{ let wasSeated=false; v9On('frame',()=>{ if(CUR!=='bunker'||!CAR.g) return; if(wasSeated&&!CAR.seated&&!CAR.going){ const s=[[0.4,0.0],[-0.4,0.0],[0.4,0.86],[-0.4,0.86]][CAR2.seatIdx]; const side=s[0]>0?1:-1; const lx=side*1.55, lz=s[1]; const c=Math.cos(CAR.ry), sn=Math.sin(CAR.ry);
     P.pos.x=CAR.x+lx*c+lz*sn; P.pos.z=CAR.z-lx*sn+lz*c; P.y=0; P.crouch=0; } wasSeated=CAR.seated; }); }
 // enquanto sentado, as teclas de andar não empurram o jogador
 addEventListener('keydown',e=>{ if(CAR.seated&&CUR==='bunker'&&/^Key[WASDC]$/.test(e.code)){ e.stopImmediatePropagation(); keys[e.code]=false; } },true);

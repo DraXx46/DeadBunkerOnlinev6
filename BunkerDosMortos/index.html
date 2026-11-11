@@ -18293,7 +18293,7 @@ CMDS.parque={d:'parque · vai para o Parque 4FUN',f:()=>{ setMap('fun'); P.pos.s
 
 /* ---- 44_vozes.js ---- */
 /* ================= v9 · VOZES GRAVADAS (dublagem) =================
-   Personagem com dublagem toca o áudio gravado (audio/sfx/vo_<personagem>_<situação>_NN.mp3) no lugar da voz
+   Personagem com dublagem (Sargento Moreira, Padre Tomás) toca o áudio gravado (audio/sfx/vo_<personagem>_<situação>_NN.mp3) no lugar da voz
    sintética do navegador, e a legenda fica na tela exatamente o tempo do áudio.
    Enquanto um personagem estiver dublado, só as falas que já têm áudio são usadas (nada de voz robótica misturada).
    Para dublar outro personagem: gravar, converter para audio/sfx/vo_<chave>_<situação>_NN.mp3 e listar aqui.
@@ -18310,6 +18310,19 @@ const VOXREC={
     pu:[['vo_moreira_pu_01',"Equipamento novo. Vamos testar neles.",2.81]],
     sur:[['vo_moreira_sur_01',"Venham. Eu sou a parede.",1.94]],
     idle:[['vo_moreira_idle_01',"Alguém tem café? Café de verdade?",2.42]]
+  },
+  tomas:{
+    round:[['vo_tomas_round_01',"A confissão vai ser longa esta noite.",3.29],['vo_tomas_round_02',"Mais almas perdidas. Mais trabalho para mim.",3.98],['vo_tomas_round_03',"Rezo por eles. Depois resolvo.",2.69],['vo_tomas_round_04',"Senhor, dai-me paciência. E munição.",3.00]],
+    a:[['vo_tomas_a_01',"Batismo de fogo, literalmente.",2.81],['vo_tomas_a_02',"Benzido e mal-humorado.",2.18],['vo_tomas_a_03',"Sinto muito, filhos. Isso vai arder.",3.00],['vo_tomas_a_04',"Água benta, sem economia.",2.23]],
+    u:[['vo_tomas_u_01',"Em nome do Pai… e do meu facão.",2.45],['vo_tomas_u_02',"Exorcismo em andamento. Não interrompam.",3.70],['vo_tomas_u_03',"Hoje a missa é campal.",1.87],['vo_tomas_u_04',"Voltem para o descanso.",1.97]],
+    multi:[['vo_tomas_multi_01',"Amém. Amém. Amém.",1.75],['vo_tomas_multi_02',"Isso foi um milagre ou só boa mira?",2.98],['vo_tomas_multi_03',"Um terço inteiro de uma vez.",2.50]],
+    head:[['vo_tomas_head_01',"Pela graça, e pelo crânio.",2.18],['vo_tomas_head_02',"Que descanse em paz. Agora sim.",2.74]],
+    low:[['vo_tomas_low_01',"Até os santos sangram.",1.82],['vo_tomas_low_02',"Estou bem. Só um pouco mais perto do céu.",3.53],['vo_tomas_low_03',"Senhor, se for agora, que seja rápido.",3.36]],
+    down:[['vo_tomas_down_01',"Pai… em tuas mãos…",1.78]],
+    revive:[['vo_tomas_revive_01',"Ainda não era minha hora, pelo visto.",3.22],['vo_tomas_revive_02',"Ressurreição de terceiro dia. Adiantada.",3.58]],
+    pu:[['vo_tomas_pu_01',"Obrigado, lá de cima.",2.76],['vo_tomas_pu_02',"Providência divina!",1.92]],
+    sur:[['vo_tomas_sur_01',"Fila para a confissão, por favor!",2.78],['vo_tomas_sur_02',"Muitos pecadores, pouco tempo.",2.76]],
+    idle:[['vo_tomas_idle_01',"A diocese nunca me paga hora extra.",2.95],['vo_tomas_idle_02',"Será que zumbi tem alma? Pergunta para o bispo.",4.08]]
   }
 };
 // a fala nova também entra na lista de texto do personagem
@@ -18351,6 +18364,62 @@ v9On('reset',()=>voxRecStop());
 
 CMDS.voz={d:'voz <situação> · faz o personagem falar (round, a, u, multi, head, low, down, revive, pu, sur, idle)',f:a=>{
   const s=a[0]||'round'; const ok=voxSay(s,true); cprint(ok?'Falando: '+s:'Sem fala gravada para '+s); }};
+
+/* ---- conversas em dupla (online) ----
+   Cada fala gravada: [texto exato da fala, personagem, arquivo, duração]. Quem ainda não tem gravação segue com a voz antiga.
+   Padre ↔ V.I.K.T.O.R: falas do Padre prontas; as do Viktor entram quando forem gravadas. */
+const VOXDUO_LIST=[
+  ["Você acredita que possui uma?",'tomas','duo_tomas-viktor_c1_2_tomas',2.71],
+  ["E eu não encontrei evidências científicas de que você sabe ficar quieto.",'tomas','duo_tomas-viktor_c2_2_tomas',6.48],
+  ["Depende do que você fez.",'tomas','duo_tomas-viktor_c3_2_tomas',2.11],
+  ["Nesse caso, vamos conversar depois.",'tomas','duo_tomas-viktor_c3_4_tomas',3.22],
+  ["Os homens.",'tomas','duo_tomas-viktor_c4_2_tomas',1.37],
+  ["Não complique a teologia, meu filho.",'tomas','duo_tomas-viktor_c4_4_tomas',3.19],
+  ["Acredito.",'tomas','duo_tomas-viktor_c5_2_tomas',1.34]
+];
+const VOXDUO={}; for(const [t,ch,f,d] of VOXDUO_LIST) VOXDUO[ch+'|'+t]=[f,d];
+function voxDuoGet(ch,cv,line){ return VOXDUO[coopProfile(ch||'recruta',cv||'m')+'|'+line]||null; }
+const VOXDUOP={pre:false,h:null};
+v9On('always',()=>{ if(VOXDUOP.pre||!Snd.ctx||!NET.mode) return; VOXDUOP.pre=true; for(const [,,f] of VOXDUO_LIST) if(!Snd.hasSample(f)) try{ Snd.sample(f,{vol:0}); }catch(e){} });
+
+const coopCaptionEvent0=coopCaptionEvent;
+coopCaptionEvent=function(e){
+  const line=String(e[8]||''), rec=voxDuoGet(e[4],e[5],line);
+  if(!rec) return coopCaptionEvent0(e);
+  // legenda e rádio como antes, mas sem a voz sintética
+  const ss=window.speechSynthesis; if(ss) ss.speak=function(){};
+  try{ coopCaptionEvent0(e); }finally{ if(ss) try{ delete ss.speak; }catch(err){} }
+  voxRecStop(); if(VOXDUOP.h){ try{ VOXDUOP.h.stop(0.08); }catch(err){} VOXDUOP.h=null; }
+  const sp=String(e[2]||''), local=coopIsLocalPeer(sp); let sx=null,sz=null;
+  if(!local){ const rp=coopRemoteById(sp); if(rp&&rp.x!=null){ sx=rp.x; sz=rp.z; } }
+  const dist=local||sx==null?0:Math.hypot(P.pos.x-sx,P.pos.z-sz), radio=!local&&(sx==null||dist>COOP_NEAR_DISTANCE);
+  let dur=rec[1];
+  if((+CFG.voice||0)>0&&Snd.hasSample(rec[0])){
+    const o={vol:voxRecVol()*(radio?0.8:1),prio:true,wet:radio?0:0.08};
+    if(!local&&!radio){ o.x=sx; o.z=sz; o.range=40; o.minVol=0.45; }
+    const h=Snd.sample(rec[0],o); if(h){ VOXDUOP.h=h; if(h.src&&h.src.buffer) dur=h.src.buffer.duration; }
+  } else Snd.hasSample(rec[0])||Snd.sample(rec[0],{vol:0});
+  // legenda com o mesmo comprimento do áudio
+  if(coopCaptionEvent.timer) clearTimeout(coopCaptionEvent.timer);
+  coopCaptionEvent.timer=setTimeout(()=>{ if(coopCap) coopCap.classList.remove('on'); },dur*1000+200);
+  COOP_STATE.voiceLockUntil=performance.now()+dur*1000+900;
+};
+// o anfitrião espera o áudio terminar antes da resposta (em vez de estimar pelo tamanho do texto)
+updateCoopDialogue=function(dt){
+  if(NET.mode!=='host'||G.state!=='playing') return;
+  if(COOP_STATE.queue.length){
+    COOP_STATE.wait-=dt;
+    if(COOP_STATE.wait<=0){
+      const item=COOP_STATE.queue.shift(); coopDispatchLine(item);
+      const rec=voxDuoGet(item.speaker.char,item.speaker.cv,item.text);
+      COOP_STATE.wait=rec?rec[1]+0.9:Math.max(5.2,Math.min(8.4,item.text.length/14.5+1.2));
+    }
+    if(!COOP_STATE.queue.length) COOP_STATE.active=false;
+    return;
+  }
+  COOP_STATE.next-=dt;
+  if(COOP_STATE.next<=0){ if(coopMakeScene()) COOP_STATE.next=92+Math.random()*38; else COOP_STATE.next=18; }
+};
 
 /*</V9>*/
 /* ================= MAIN LOOP ================= */

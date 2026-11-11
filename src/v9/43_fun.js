@@ -354,19 +354,46 @@ v9On('always',()=>{ for(const [id,o] of FUN.remoteAnimals){ const rp=o.rp; if(!r
 
 /* ---- arma de portais ---- */
 const PORT={p:[null,null],cd:0};
-function funPortalMesh(col){ const g=new THREE.Group(); const ring=new THREE.Mesh(new THREE.TorusGeometry(0.62,0.06,8,32),new THREE.MeshBasicMaterial({color:col})); ring.scale.y=1.6; g.add(ring);
-  const inner=new THREE.Mesh(new THREE.CircleGeometry(0.6,32),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.45,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false})); inner.scale.y=1.6; g.add(inner); g.userData.inner=inner; return g; }
+/* portais "de verdade": cada portal mostra, em tempo real, o que a câmera veria saindo pelo outro
+   (câmera virtual com o mesmo enquadramento + plano de recorte oblíquo na superfície do portal de saída). */
+const PRT={rt:[null,null],vcam:new THREE.PerspectiveCamera(),busy:false,R180:new THREE.Matrix4().makeRotationY(Math.PI),sz:new THREE.Vector2(),cp:new THREE.Plane(),q:new THREE.Vector4(),v4:new THREE.Vector4()};
+function prtRT(i){ if(!PRT.rt[i]){ PRT.rt[i]=new THREE.WebGLRenderTarget(512,512,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter}); try{ PRT.rt[i].texture.encoding=renderer.outputEncoding; }catch(e){} } return PRT.rt[i]; }
+function prtLink(i){ const A=PORT.p[i].g, B=PORT.p[1-i].g; A.updateMatrixWorld(true); B.updateMatrixWorld(true); return B.matrixWorld.clone().multiply(PRT.R180).multiply(A.matrixWorld.clone().invert()); }
+function funPortalMesh(col,i){ const g=new THREE.Group(); const ring=new THREE.Mesh(new THREE.TorusGeometry(0.62,0.06,8,40),new THREE.MeshBasicMaterial({color:col})); ring.scale.y=1.6; g.add(ring);
+  const glow=new THREE.Mesh(new THREE.TorusGeometry(0.64,0.16,8,40),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.35,blending:THREE.AdditiveBlending,depthWrite:false})); glow.scale.y=1.6; g.add(glow);
+  const mat=new THREE.ShaderMaterial({uniforms:{tView:{value:prtRT(i).texture},uRes:{value:new THREE.Vector2(1,1)},uCol:{value:new THREE.Color(col)},uOn:{value:0},uT:{value:0}},
+    vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    fragmentShader:'uniform sampler2D tView; uniform vec2 uRes; uniform vec3 uCol; uniform float uOn; uniform float uT; varying vec2 vUv; void main(){ vec2 s=gl_FragCoord.xy/uRes; vec3 v=texture2D(tView,s).rgb; float r=length(vUv-0.5)*2.0; float a=atan(vUv.y-0.5,vUv.x-0.5); vec3 sw=uCol*(0.35+0.35*sin(r*18.0-uT*5.0+a*3.0)); vec3 c=mix(sw,v,uOn); c=mix(c,uCol*1.5,smoothstep(0.82,1.0,r)*0.9); gl_FragColor=vec4(c,1.0); }'});
+  const view=new THREE.Mesh(new THREE.CircleGeometry(0.62,40),mat); view.scale.y=1.6; view.position.z=0.005; g.add(view); g.userData.view=view; g.userData.inner=glow; g.userData.mat=mat;
+  view.onBeforeRender=(rn,sc,cam)=>{ mat.uniforms.uT.value=G.t||0; rn.getDrawingBufferSize(PRT.sz); mat.uniforms.uRes.value.copy(PRT.sz);
+    if(PRT.busy||!PORT.p[0]||!PORT.p[1]||cam!==camera){ if(!PRT.busy) mat.uniforms.uOn.value=0; return; }
+    const A=PORT.p[i], B=PORT.p[1-i]; if(cam.position.clone().sub(A.p).dot(A.n)<0.02){ return; }
+    const rt=prtRT(i), w=Math.max(256,PRT.sz.x>>1), h=Math.max(256,PRT.sz.y>>1); if(rt.width!==w||rt.height!==h) rt.setSize(w,h);
+    const M=prtLink(i), vc=PRT.vcam; vc.matrixWorld.multiplyMatrices(M,cam.matrixWorld); vc.matrixWorld.decompose(vc.position,vc.quaternion,vc.scale); vc.scale.set(1,1,1); vc.updateMatrixWorld(true); vc.matrixWorldInverse.copy(vc.matrixWorld).invert();
+    vc.projectionMatrix.copy(cam.projectionMatrix);
+    // plano oblíquo: nada atrás da superfície do portal de saída aparece (senão a parede tampava a vista)
+    PRT.cp.setFromNormalAndCoplanarPoint(B.n,B.p.clone().addScaledVector(B.n,-0.01)); PRT.cp.applyMatrix4(vc.matrixWorldInverse);
+    const cp=PRT.v4.set(PRT.cp.normal.x,PRT.cp.normal.y,PRT.cp.normal.z,PRT.cp.constant), pm=vc.projectionMatrix.elements, q=PRT.q;
+    q.x=(Math.sign(cp.x)+pm[8])/pm[0]; q.y=(Math.sign(cp.y)+pm[9])/pm[5]; q.z=-1.0; q.w=(1.0+pm[10])/pm[14]; cp.multiplyScalar(2.0/cp.dot(q)); pm[2]=cp.x; pm[6]=cp.y; pm[10]=cp.z+1.0; pm[14]=cp.w; vc.projectionMatrixInverse.copy(vc.projectionMatrix).invert();
+    const old=rn.getRenderTarget(), xr=rn.xr.enabled, sh=rn.shadowMap.autoUpdate, sk=skyG.position.clone(); PRT.busy=true; view.visible=false; const bv=B.g.userData.view; if(bv) bv.visible=false;
+    try{ rn.xr.enabled=false; rn.shadowMap.autoUpdate=false; skyG.position.copy(vc.position); rn.setRenderTarget(rt); rn.state.buffers.depth.setMask(true); rn.clear(); rn.render(sc,vc); }catch(e){} finally{ rn.setRenderTarget(old); rn.xr.enabled=xr; rn.shadowMap.autoUpdate=sh; skyG.position.copy(sk); view.visible=true; if(bv) bv.visible=true; PRT.busy=false; }
+    mat.uniforms.uOn.value=1; };
+  return g; }
 function funPortalShoot(i){ const o=camera.position.clone(), d=new THREE.Vector3(); camera.getWorldDirection(d); let t=40, n=null; try{ const tw=rayWall(o,d,40); if(tw<t){ t=tw; } }catch(e){}
   if(d.y<-0.05){ const tf=(floorAt(o.x,o.z)+0.02-o.y)/d.y; if(tf>0&&tf<t){ t=tf; n=new THREE.Vector3(0,1,0); } }
   if(t>=40) return; const p=o.addScaledVector(d,t-0.05); if(!n){ const fx=Math.abs(d.x)>Math.abs(d.z); n=fx?new THREE.Vector3(-Math.sign(d.x),0,0):new THREE.Vector3(0,0,-Math.sign(d.z)); p.y=Math.max(1.1,Math.min(p.y,2.2)); }
-  const col=i?0xff8a1a:0x2a9aff; if(PORT.p[i]) MAPG.fun.remove(PORT.p[i].g); const g=funPortalMesh(col); g.position.copy(p).addScaledVector(n,0.03); g.lookAt(g.position.clone().add(n)); MAPG.fun.add(g); PORT.p[i]={g,p:g.position.clone(),n};
+  const col=i?0xff8a1a:0x2a9aff; if(PORT.p[i]) MAPG.fun.remove(PORT.p[i].g); const g=funPortalMesh(col,i); g.position.copy(p).addScaledVector(n,0.03); g.lookAt(g.position.clone().add(n)); MAPG.fun.add(g); PORT.p[i]={g,p:g.position.clone(),n};
   const T=TOOL.portal; if(T){ T.userData.core.material.color.setHex(col); T.userData.tip.material.color.setHex(col); } TOOL.kick=1;
   try{ const s=Snd.out(0.7,0,0.3,null); Snd.oscTo(s,{type:'sine',freq:i?500:800,freqEnd:i?1200:1600,dur:0.18,gain:0.2}); }catch(e){} emit('spark',p.x,p.y,p.z,14,2,0.4,0); }
-v9On('frame',dt=>{ PORT.cd=Math.max(0,PORT.cd-dt); for(let i=0;i<2;i++){ const q=PORT.p[i]; if(q){ q.g.rotation.z+=dt*2; q.g.userData.inner.material.opacity=0.35+Math.sin(G.t*6+i)*0.12; } }
-  if(CUR!=='fun'||PORT.cd>0||!PORT.p[0]||!PORT.p[1]) return; const eye=new THREE.Vector3(P.pos.x,floorAt(P.pos.x,P.pos.z)+P.y+0.9,P.pos.z);
-  for(let i=0;i<2;i++){ const a=PORT.p[i], b=PORT.p[1-i]; if(eye.distanceTo(a.p)<(a.n.y>0.5?0.75:0.8)){ const out=b.p.clone().addScaledVector(b.n,b.n.y>0.5?0.2:0.9); P.pos.x=out.x; P.pos.z=out.z; FUN.tpJust=true;
-      if(b.n.y>0.5){ P.y=Math.max(0,out.y-floorAt(out.x,out.z)); P.vy=6; } else { P.yaw=Math.atan2(-b.n.x,-b.n.z)+Math.PI; P.y=Math.max(0,b.p.y-1.3-floorAt(out.x,out.z)); }
-      PORT.cd=0.6; try{ Snd.sample('timewarp',{vol:0.6,rate:1.8}); flashScreen&&flashScreen(); }catch(e){} break; } } });
+v9On('frame',dt=>{ PORT.cd=Math.max(0,PORT.cd-dt); for(let i=0;i<2;i++){ const q=PORT.p[i]; if(q){ q.g.userData.inner.material.opacity=0.28+Math.sin(G.t*6+i)*0.1; } }
+  if(CUR!=='fun'||PORT.cd>0||!PORT.p[0]||!PORT.p[1]) return; const eye=new THREE.Vector3(P.pos.x,floorAt(P.pos.x,P.pos.z)+P.y+(PORT.p[0].n.y>0.5||PORT.p[1].n.y>0.5?0.3:0.9),P.pos.z);
+  for(let i=0;i<2;i++){ const a=PORT.p[i], b=PORT.p[1-i]; const d=eye.clone().sub(a.p), along=d.dot(a.n), lat=d.clone().addScaledVector(a.n,-along).length();
+    if(along<0.45&&along>-0.6&&lat<(a.n.y>0.5?0.75:0.62)){ const M=prtLink(i);
+      const f=new THREE.Vector3(-Math.sin(P.yaw),0,-Math.cos(P.yaw)).transformDirection(M), v=new THREE.Vector3(P.vx||0,P.vy||0,P.vz||0).transformDirection(M).multiplyScalar(Math.hypot(P.vx||0,P.vy||0,P.vz||0));
+      const out=b.p.clone().addScaledVector(b.n,b.n.y>0.5?0.15:0.75); P.pos.x=out.x; P.pos.z=out.z; FUN.tpJust=true;
+      if(Math.abs(f.y)<0.8) P.yaw=Math.atan2(-f.x,-f.z); else if(b.n.y<0.5) P.yaw=Math.atan2(-b.n.x,-b.n.z);
+      if(b.n.y>0.5){ P.y=Math.max(0,out.y-floorAt(out.x,out.z)); P.vy=Math.max(6.5,v.length()*0.9); } else { P.y=Math.max(0,b.p.y-1.3-floorAt(out.x,out.z)); P.vx=b.n.x*Math.max(3,Math.hypot(v.x,v.z)); P.vz=b.n.z*Math.max(3,Math.hypot(v.x,v.z)); }
+      PORT.cd=0.5; try{ Snd.sample('timewarp',{vol:0.5,rate:1.9}); }catch(e){} break; } } });
 
 /* ---- mapa na seleção: entra o 4FUN, sai o X1 ---- */
 try{ const x=document.querySelector('.mapc.x1card'); if(x){ const b=document.createElement('button'); b.className='mapc'; b.dataset.map='fun'; b.type='button'; b.innerHTML='<span class="mt">Parque 4FUN · diversão</span><span class="md">Sem zumbis. Sinuca, dardos, copos, roleta e caça-níquel com drax de verdade, parkour, tirolesa, cabine do bicho, arma de portais e a Arena X1.</span>';

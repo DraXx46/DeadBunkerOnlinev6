@@ -7,10 +7,11 @@
      cadência maior, quase não leva dano e anda mais rápido.
    - Iara: marcação e Olho da Raposa mais longos e fortes.
    - Soro da Vida: depois de levantar, você renasce num lugar aleatório e seguro do mapa. */
-Object.assign(AB_CFG.recruta,{cd:30,buff:10,reload:0.4,dmgBuff:1.5,shells:12,radius:4.5,dmg:1100,dmgRound:300});
-Object.assign(AB_CFG.helena,{cd:28,heal:80,range:10,fieldT:15,fieldR:8,fieldHps:25,adrT:6,adrDmg:1.45,fieldDmg:70,fieldRound:24,farRevR:40,farRevCd:60});
-Object.assign(AB_CFG.moreira,{cd:18,dmg:260,dmgRound:60,furyT:12,taken:0.12,knife:3,regen:8,furyR:3.6,furyDmg:90,furyRound:30,furyDmgMul:1.8,furyRof:1.6,furySpd:1.3,furyJump:1.42});
-Object.assign(AB_CFG.iara,{cd:25,range:45,markT:12,mark:1.8,ultT:10,head:2.6,ricoN:3,ricoP:0.7});
+function abTune(c,o){ Object.assign(AB_BASE[c],o); Object.assign(AB_CFG[c],o); }   // AB_BASE é a base que os níveis usam
+abTune('recruta',{cd:30,buff:10,reload:0.4,dmgBuff:1.5,shells:12,radius:4.5,dmg:1100,dmgRound:300});
+abTune('helena',{cd:28,heal:80,range:10,fieldT:15,fieldR:8,fieldHps:25,adrT:6,adrDmg:1.45,fieldDmg:70,fieldRound:24,farRevR:40,farRevCd:60});
+abTune('moreira',{cd:18,dmg:260,dmgRound:60,furyT:12,taken:0.12,knife:3,regen:8,furyR:3.6,furyDmg:90,furyRound:30,furyDmgMul:1.8,furyRof:1.6,furySpd:1.3,furyJump:1.42});
+abTune('iara',{cd:25,range:45,markT:12,mark:1.8,ultT:10,head:2.6,ricoN:3,ricoP:0.7});
 AB_DEF.recruta.u={name:'Apoio Aéreo',desc:'Munição cheia para todo o time (pente e reserva) e um caça bombardeia o ponto exato para onde você está mirando.'};
 AB_DEF.moreira.u={name:'Frenesi',desc:'Por 12 s: pente infinito, super força, pulo 2× mais alto, cadência maior, mais velocidade e quase nenhum dano recebido.'};
 AB_DEF.recruta.a.desc='Enche o pente de todas as armas, recarrega bem mais rápido e os tiros causam +50% de dano por 10 s.';

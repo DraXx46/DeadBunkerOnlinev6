@@ -368,7 +368,7 @@ function rmPhysStep(dt){ const h=RMPH.h; RM.acc+=Math.min(dt,0.05); let n=0; RM.
   if(RM.st==='stand') RM._O=rmOrigin();
   while(RM.acc>=h&&n<48){ rmSubstep(h); RM.acc-=h; n++; } if(n>=48) RM.acc=0; return n; }
 // coice físico do tiro: impulso no ponto exato (gira e empurra), parte do corpo cede, equilíbrio balança
-const RMKB={pistol:15,revolver:40,smg:11,rifle:36,lmg:21,shotgun:36,sniper:170,ray:0};
+const RMKB={knife:12,knifeH:48,pistol:15,revolver:40,smg:11,rifle:36,lmg:21,shotgun:36,sniper:170,ray:0};
 function rmKnock(b,hp,dir,J,cls){ if(J<=0) return; RM.sleep=false; RM.sleepT=0;
   const up=cls==='shotgun'?0.24:cls==='sniper'?0.2:0.05; let dx=dir.x, dy=dir.y+up, dz=dir.z; const l=Math.hypot(dx,dy,dz)||1; dx/=l; dy/=l; dz/=l;
   // parte vai para o corpo inteiro (empurra), o resto no ponto atingido (gira a parte)
@@ -489,26 +489,27 @@ function rmRay(o,d,maxT){ let best=null; const a=rmv(), bb=rmv();
   return best; }
 // onde corta: a junta mais perto do ponto atingido
 const RMSEV={uarm:['sh','el'],farm:['el','wr'],hand:['wr','wr'],thigh:['hip','kn'],shin:['kn','an'],foot:['an','an']};
-function rmHitBullet(h,o,d,dmg,wid,base){ const b=h.b, s=h.s, tag=s.tag; const hp=rmv(o.x+d.x*h.t,o.y+d.y*h.t,o.z+d.z*h.t);
+function rmHitBullet(h,o,d,dmg,wid,base,cls0){ const melee=!!cls0; const b=h.b, s=h.s, tag=s.tag; const hp=rmv(o.x+d.x*h.t,o.y+d.y*h.t,o.z+d.z*h.t);
   const ux=h.B.x-h.A.x, uy=h.B.y-h.A.y, uz=h.B.z-h.A.z, L2=ux*ux+uy*uy+uz*uz; const tc=L2>1e-9?rmCl(((hp.x-h.A.x)*ux+(hp.y-h.A.y)*uy+(hp.z-h.A.z)*uz)/L2,0,1):0;
   const n=rmv(hp.x-(h.A.x+ux*tc),hp.y-(h.A.y+uy*tc),hp.z-(h.A.z+uz*tc)); const nl=vlen(n); if(nl<1e-6){ n.x=-d.x; n.y=-d.y; n.z=-d.z; } else { n.x/=nl; n.y/=nl; n.z/=nl; }
   RM._shotId=typeof NET!=='undefined'?NET.fs:(RM._shotId||0)+1; if(RM.dshot!==RM._shotId){ RM.dshot=RM._shotId; RM.dacc={}; }
   const key=b.name+':'+tag; RM.dacc[key]=(RM.dacc[key]||0)+dmg; b.tot=(b.tot||0)+dmg; const acc=RM.dacc[key];
   // coice
-  const cls=(typeof WEAPONS!=='undefined'&&WEAPONS[wid]&&WEAPONS[wid].snd)||'rifle'; const J=(RMKB[cls]!=null?RMKB[cls]:20)*rmCl(dmg/(base||dmg),0.25,1.3); rmKnock(b,hp,d,J,cls);
+  const cls=cls0||(typeof WEAPONS!=='undefined'&&WEAPONS[wid]&&WEAPONS[wid].snd)||'rifle'; const J=(RMKB[cls]!=null?RMKB[cls]:20)*rmCl(dmg/(base||dmg),0.25,1.3); rmKnock(b,hp,d,J,cls);
   // ferida e sangue (entrada volta para quem atirou; saída sai pelas costas nos tiros fortes)
   const sd=b.side>0?'L':'R', part=b.part;
   const artery=tag==='neck'||(tag==='thigh'&&tc<0.45&&Math.random()<0.6)||(tag==='uarm'&&tc<0.35&&Math.random()<0.4);
   const w=rmAddWound(b,tag,hp,n,dmg,artery);
   rmSpray(hp.x,hp.y,hp.z,n.x-d.x*0.5,n.y-d.y*0.5,n.z-d.z*0.5,Math.round(rmCl(dmg/6,8,40)),1.6,0.8,0.011);
-  if(dmg>=100){ const ex=rmv(hp.x+d.x*0.2,hp.y+d.y*0.2,hp.z+d.z*0.2); rmSpray(ex.x,ex.y,ex.z,d.x,d.y,d.z,Math.round(rmCl(dmg/8,12,60)),3.2,1.2,0.013); }
-  try{ Snd.flesh(hp.x,hp.z); }catch(e){}
+  if(dmg>=100&&!melee){ const ex=rmv(hp.x+d.x*0.2,hp.y+d.y*0.2,hp.z+d.z*0.2); rmSpray(ex.x,ex.y,ex.z,d.x,d.y,d.z,Math.round(rmCl(dmg/8,12,60)),3.2,1.2,0.013); }
+  if(!melee) try{ Snd.flesh(hp.x,hp.z); }catch(e){}
   if(RM.st==='dead'){ RM.sleep=false; RM.sleepT=0; }
   // dano: sangue, perna, órgãos vitais
   RM.blood-=dmg*0.045*(tag==='pelvis'?1.3:1);
   if(part==='leg'||part==='foot'){ const i=b.side>0?0:1; RM.legs[i]=Math.max(0,RM.legs[i]-dmg/210); } if(tag==='pelvis'){ RM.legs[0]=Math.max(0,RM.legs[0]-dmg/500); RM.legs[1]=Math.max(0,RM.legs[1]-dmg/500); }
   // gore
-  if(tag==='head'){ if((acc>=240||b.tot>=520)&&!RM.headGone) rmHeadBoom(d); rmKill(); }
+  if(melee){ if(tag==='head'||tag==='neck'){ w.rate*=2; w.artery=true; if(cls==='knifeH'||RM.blood<40) rmKill(); } else if(tag==='belly'&&cls==='knifeH'&&b.tot>=700&&!RM.openB) rmOpenBelly(d); }
+  else if(tag==='head'){ if((acc>=240||b.tot>=520)&&!RM.headGone) rmHeadBoom(d); rmKill(); }
   else if(tag==='neck'){ w.rate*=2.2; if(acc>=300) rmSever('neck',d); else if(dmg>=100) rmKill(); }
   else if(RMSEV[tag]){ const lim=tag==='hand'||tag==='foot'?160:part==='leg'?300:260, tot=tag==='hand'||tag==='foot'?500:part==='leg'?1000:900;
     if(acc>=lim||b.tot>=tot) rmSever(RMSEV[tag][tc<0.5?0:1]+sd,d); }
@@ -625,6 +626,15 @@ function rmPlayerTouch(dt){ if(typeof P==='undefined'||!P||!P.pos||G.state!=='pl
   for(const b of RMPH.B){ if(b.m>6||b.kin) continue; if(b.x.y<py-0.1||b.x.y>py+1.8) continue; const dx=b.x.x-P.pos.x, dz=b.x.z-P.pos.z, d=Math.hypot(dx,dz), R=0.3+b.br*0.4; if(d>=R||d<1e-4) continue;
     const nx=dx/d, nz=dz/d, vn=b.v.x*nx+b.v.z*nz; if(vn<0.45){ b.v.x+=nx*(0.45-vn)*0.25; b.v.z+=nz*(0.45-vn)*0.25; } RM.sleep=false; RM.sleepT=0; } }
 /* ---------- ganchos no jogo ---------- */
+// faca: corte (lateral) e golpe pesado (estocada) acertam o boneco se ele estiver mais perto que os zumbis
+{ const ks0=knifeStrike; knifeStrike=function(heavy,range,cone){ if(!RM.on||RM.map!==CUR||(typeof x1Live==='function'&&x1Live())) return ks0.apply(this,arguments);
+    const o=camera.position.clone(), d=new THREE.Vector3(); camera.getWorldDirection(d); const rt=new THREE.Vector3(-d.z,0,d.x).normalize();
+    let h=null; for(const a of [0,-0.18,0.18,-0.36,0.36]){ const dd=d.clone().addScaledVector(rt,a).normalize(); h=rmRay(o,dd,range+0.35); if(h){ h.dd=dd; break; } }
+    if(h){ let zd=99; const fx=-Math.sin(P.yaw), fz=-Math.cos(P.yaw); for(const z of zlist()){ if(z.dead||z.predDead||z.state==='rise') continue; const dx=z.pos.x-P.pos.x, dz=z.pos.z-P.pos.z, dl=Math.hypot(dx,dz); if(dl<range&&(dx*fx+dz*fz)/(dl||1)>cone) zd=Math.min(zd,dl); }
+      if(h.t<zd+0.2){ const dir=heavy?h.dd:h.dd.clone().multiplyScalar(0.55).addScaledVector(rt,0.85).normalize(); const dmg=knifeDamage(heavy,{});
+        try{ Snd.stab(heavy); }catch(e){} try{ rmHitBullet(h,o,dir,dmg,'knife',dmg,heavy?'knifeH':'knife'); }catch(e){ console.warn('[Bunker] faca no boneco',e); }
+        try{ vmBlood(heavy?0.9:0.55,true); shake(heavy?0.2:0.12); shotShake(heavy?0.45:0.25); }catch(e){} return true; } }
+    return ks0.apply(this,arguments); }; }
 const RMF={on:false,d:null,s:null};
 { const f0=fire; fire=function(){ if(!RM.on||RM.map!==CUR) return f0.apply(this,arguments); RMF.on=true; try{ RMF.s=curSlot(); RMF.d=RMF.s?wstat(RMF.s):null; return f0.apply(this,arguments); } finally{ RMF.on=false; } }; }
 { const rw0=rayWall; rayWall=function(o,d,max){ const t=rw0.apply(this,arguments); if(!RMF.on||!RM.on||RM.map!==CUR||!RMF.d) return t; const h=rmRay(o,d,t);

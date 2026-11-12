@@ -78,7 +78,7 @@ function socialChanged() {
 function partyState(party) {
   if (!party) return null;
   return { id: party.id, leader: (clients.get(party.leader) || {}).user || '', members: party.members.map(id => clients.get(id)).filter(Boolean).map(c => ({
-    id: c.id, name: c.user || c.name, look: c.look || null, leader: c.id === party.leader, status: friendStatus(c) })) };
+    id: c.id, name: c.user || c.name, look: c.look || null, leader: c.id === party.leader, status: friendStatus(c), ready: c.id === party.leader || !!c.partyReady })) };
 }
 function broadcastParty(party) {
   if (!party) return;
@@ -434,11 +434,16 @@ async function onMessage(client, ws, buffer) {
       if (party.members.length >= PARTY_MAX) { sendError(ws, reqId, 'O grupo já está cheio.'); return; }
       if (client.partyId === party.id) return;
       leaveParty(client, true);
-      party.members.push(client.id); client.partyId = party.id;
+      party.members.push(client.id); client.partyId = party.id; client.partyReady = false;
       for (const id of party.members) { const o = clients.get(id); if (o && o !== client) send(o.ws, { type: 'partyNote', text: client.user + ' entrou no grupo' }); }
       broadcastParty(party); return;
     }
-    if (msg.type === 'partyLeave') { leaveParty(client); return; }
+    if (msg.type === 'partyLeave') { client.partyReady = false; leaveParty(client); return; }
+    if (msg.type === 'partyReady') {
+      // "Estou pronto" no menu: o grupo inteiro vê quem já está pronto antes do líder escolher o mapa
+      const party = client.partyId ? parties.get(client.partyId) : null; if (!party) return;
+      client.partyReady = !!msg.ready; broadcastParty(party); return;
+    }
     if (msg.type === 'partyKick') {
       const party = client.partyId ? parties.get(client.partyId) : null;
       if (!party || party.leader !== client.id) { sendError(ws, reqId, 'Só o líder pode remover alguém do grupo.'); return; }
@@ -451,7 +456,8 @@ async function onMessage(client, ws, buffer) {
       const party = client.partyId ? parties.get(client.partyId) : null; const room = roomOf(client);
       if (!party || party.leader !== client.id || !room) return;
       for (const id of party.members) { const o = clients.get(id); if (o && o !== client) send(o.ws, { type: 'partyGo', code: room.code, map: room.map }); }
-      return;
+      for (const id of party.members) { const o = clients.get(id); if (o) o.partyReady = false; }   // na próxima partida cada um confirma de novo
+      broadcastParty(party); return;
     }
     if (msg.type === 'chat') {
       // chat de texto e registro de ações da partida: repassado para os outros jogadores da mesma sala

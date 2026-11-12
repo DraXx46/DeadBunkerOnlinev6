@@ -106,10 +106,11 @@ v9On('always',()=>{ if(!MLD.on) return; const n=performance.now(); MLD.frames++;
   if(n-MLD.phT>5200){ MLD.phT=n; mldShowPhoto(); } if(n-MLD.tiT>4800){ MLD.tiT=n; mldTip(); }
   const r=mldUpdate(), age=n-MLD.t0;
   // na sala de espera / escolha de personagem não precisa esperar as vozes
+  if(MLD.hold&&age<40000) return;
   const ok=r.ready||(MLD.why!=='start'&&!MLD.pend&&MLD.frames>=4&&CUR===MLD.map);
   if((ok&&age>2500)||age>14000) mldEnd(); });
 // a tela também anda quando o jogo ainda não roda quadros (menu parado)
-setInterval(()=>{ if(MLD.on&&performance.now()-MLD.t0>16000) mldEnd(); },1000);
+setInterval(()=>{ if(MLD.on&&performance.now()-MLD.t0>(MLD.hold?42000:16000)) mldEnd(); },1000);
 
 // pontos de entrada: escolher mapa, entrar em sala, começar a partida
 const nextPaint=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));

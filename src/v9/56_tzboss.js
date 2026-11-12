@@ -38,3 +38,14 @@ function tzbRelease(){ const h=TZBOSS.held; if(!h) return; TZBOSS.held=null;
 v9On('frame',()=>{ if(CUR!=='tz'||NET.mode==='client'||!TZBOSS.held||G.state!=='playing') return;
   if(tzbStopOk()&&TZB.t>2) tzbRelease(); });
 v9On('reset',()=>{ TZBOSS.held=null; });
+
+// chefe nunca entra no ônibus: se o alvo está lá dentro, ele rodeia por fora; se estiver dentro, sai pela porta
+function tzbIsBoss(z){ return !!z&&(z.bossKi!=null||z.boss); }
+{ const st0=tzSteer; tzSteer=function(z,T){
+    if(!tzbIsBoss(z)||!TZB.present) return st0.apply(this,arguments);
+    const zIn=tzInBus(z.pos.x,z.pos.z,0.1), tIn=tzInBus(T.x,T.z,0.3);
+    if(zIn){ let best=null,bd=1e9; for(const d of TZB.doorSlots){ const dd=Math.hypot(d.land.x-z.pos.x,d.land.z-z.pos.z); if(dd<bd){ bd=dd; best=d; } } if(best) return bd>0.5?{x:best.land.x,z:best.land.z}:{x:best.outPt.x,z:best.outPt.z}; return null; }
+    if(tIn){ if(z.win&&z.win.bus){ if(z.win.occupant===z) z.win.occupant=null; z.win=null; }
+      const a=((z.seed||1)%628)/100+G.t*0.12; return {x:TZB.pos.x+Math.cos(a)*(TZ_HW+3.6),z:TZB.pos.z+Math.sin(a)*(TZ_ZR+2)}; }
+    return st0.apply(this,arguments); }; }
+{ const en0=tzEntry; tzEntry=function(z){ return tzbIsBoss(z)?null:en0.apply(this,arguments); }; }

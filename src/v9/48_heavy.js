@@ -59,8 +59,11 @@ v9On('frame',dt=>{
   if(show){ const o=scoped?1:HV.post>0?1:Math.max(0,Math.min(1,(P.ads-0.35)/0.5*0.5+V9B.open*0.5));
     el.style.setProperty('--o',o.toFixed(3)); el.style.setProperty('--k',HV.kick.toFixed(3)); el.style.setProperty('--f',HV.focus.toFixed(3));
     el.style.opacity=HV.post>0&&!scoped?Math.min(1,HV.post/0.2).toFixed(2):'1'; }
+  // com a luneta cobrindo a tela a arma não pode aparecer na frente (abrindo, mirando, logo depois do tiro e no ferrolho)
+  HV.coverVm=show&&(scoped||HV.post>0||V9B.open>0.35||(P.ads>0.7&&IN.ads));
 });
 // viewmodel: tranco da Barrett sem luneta, puxada para o olho ao mirar e tranco da Glock
+V9VM.push(()=>{ if(HV.coverVm){ if(vmRoot.visible){ vmRoot.visible=false; HV.hidVm=true; } } else if(HV.hidVm){ vmRoot.visible=true; HV.hidVm=false; } });
 V9VM.push(dt=>{
   const s=curSlot(); if(!s) return;
   if(s.id==='ptrs'){

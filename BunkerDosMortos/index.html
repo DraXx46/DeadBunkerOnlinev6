@@ -18293,7 +18293,7 @@ CMDS.parque={d:'parque · vai para o Parque 4FUN',f:()=>{ setMap('fun'); P.pos.s
 
 /* ---- 44_vozes.js ---- */
 /* ================= v9 · VOZES GRAVADAS (dublagem) =================
-   Personagem com dublagem (Sargento Moreira, Padre Tomás) toca o áudio gravado (audio/sfx/vo_<personagem>_<situação>_NN.mp3) no lugar da voz
+   Personagem com dublagem (Sargento Moreira, Padre Tomás, V.I.K.T.O.R) toca o áudio gravado (audio/sfx/vo_<personagem>_<situação>_NN.mp3) no lugar da voz
    sintética do navegador, e a legenda fica na tela exatamente o tempo do áudio.
    Enquanto um personagem estiver dublado, só as falas que já têm áudio são usadas (nada de voz robótica misturada).
    Para dublar outro personagem: gravar, converter para audio/sfx/vo_<chave>_<situação>_NN.mp3 e listar aqui.
@@ -18323,6 +18323,20 @@ const VOXREC={
     pu:[['vo_tomas_pu_01',"Obrigado, lá de cima.",2.76],['vo_tomas_pu_02',"Providência divina!",1.92]],
     sur:[['vo_tomas_sur_01',"Fila para a confissão, por favor!",2.78],['vo_tomas_sur_02',"Muitos pecadores, pouco tempo.",2.76]],
     idle:[['vo_tomas_idle_01',"A diocese nunca me paga hora extra.",2.95],['vo_tomas_idle_02',"Será que zumbi tem alma? Pergunta para o bispo.",4.08]]
+  },
+  viktor:{
+    round:[['vo_viktor_round_01',"Diagnóstico concluído. Ainda funciono.",2.98],['vo_viktor_round_02',"Mais uma noite de manutenção.",2.18],['vo_viktor_round_03',"Sensores ligados. Paciência, nem tanto.",2.98],['vo_viktor_round_04',"Atualizando… não, só estou com sono.",2.62]],
+    a:[['vo_viktor_a_01',"Tenta acompanhar.",2.14],['vo_viktor_a_02',"Overclock. Segura o café.",2.04],['vo_viktor_a_03',"Sistema acelerado.",1.58],['vo_viktor_a_04',"Agora eu sou o problema de vocês.",2.21]],
+    off:[['vo_viktor_off_01',"Ainda preciso ajustar isso.",2.09],['vo_viktor_off_02',"Resfriando. Não encosta.",2.02],['vo_viktor_off_03',"Isso esquentou mais que devia.",3.26],['vo_viktor_off_04',"Nota mental: trocar o dissipador.",2.38]],
+    u:[['vo_viktor_u_01',"Desliguem.",1.54],['vo_viktor_u_02',"Sobrecarga autorizada.",1.73],['vo_viktor_u_03',"Pulso de cortesia.",1.78],['vo_viktor_u_04',"Fim de bateria para vocês.",1.90]],
+    multi:[['vo_viktor_multi_01',"Eficiência de máquina.",1.90],['vo_viktor_multi_02',"Erro 404: zumbi não encontrado.",2.95],['vo_viktor_multi_03',"Processamento em lote.",1.90]],
+    head:[['vo_viktor_head_01',"Precisão de fábrica.",1.90],['vo_viktor_head_02',"Desconectado.",1.66],['vo_viktor_head_03',"Ctrl+Z não salva você.",1.87]],
+    low:[['vo_viktor_low_01',"Integridade em queda.",1.82],['vo_viktor_low_02',"Isso vai precisar de solda.",1.87],['vo_viktor_low_03',"Alerta vermelho. Literalmente.",2.21]],
+    down:[['vo_viktor_down_01',"Falha… crítica…",1.66]],
+    revive:[['vo_viktor_revive_01',"Reinicializado.",1.63],['vo_viktor_revive_02',"Obrigado. Garantia renovada.",2.23]],
+    pu:[['vo_viktor_pu_01',"Upgrade gratuito.",3.62],['vo_viktor_pu_02',"Peça nova. Adoro peça nova.",2.06]],
+    sur:[['vo_viktor_sur_01',"Hora de forçar o hardware.",2.02],['vo_viktor_sur_02',"Cercado. Interessante.",1.85]],
+    idle:[['vo_viktor_idle_01',"Esse braço range quando chove.",2.11],['vo_viktor_idle_02',"Meu último backup foi antes do fim do mundo.",3.10]]
   }
 };
 // a fala nova também entra na lista de texto do personagem
@@ -18375,7 +18389,24 @@ const VOXDUO_LIST=[
   ["Nesse caso, vamos conversar depois.",'tomas','duo_tomas-viktor_c3_4_tomas',3.22],
   ["Os homens.",'tomas','duo_tomas-viktor_c4_2_tomas',1.37],
   ["Não complique a teologia, meu filho.",'tomas','duo_tomas-viktor_c4_4_tomas',3.19],
-  ["Acredito.",'tomas','duo_tomas-viktor_c5_2_tomas',1.34]
+  ["Acredito.",'tomas','duo_tomas-viktor_c5_2_tomas',1.34],
+  ["Admito que sua capacidade de resistência é impressionante.",'viktor','duo_moreira-viktor_c5_1_viktor',4.10],
+  ["Eliminei 42 criaturas durante a última operação.",'viktor','duo_tomas-viktor_c3_3_viktor',4.56],
+  ["Embora sua inteligência tática apresente algumas limitações.",'viktor','duo_moreira-viktor_c5_3_viktor',4.56],
+  ["Então tecnicamente sou uma criação de uma criação.",'viktor','duo_tomas-viktor_c4_3_viktor',3.72],
+  ["Interessante. Eu gostaria de saber se existe vida antes da minha próxima manutenção.",'viktor','duo_tomas-viktor_c5_3_viktor',6.19],
+  ["Não encontrei evidências científicas da existência de Deus.",'viktor','duo_tomas-viktor_c2_1_viktor',4.37],
+  ["Não sei. Mas tenho dúvidas.",'viktor','duo_tomas-viktor_c1_3_viktor',1.90],
+  ["O senhor acredita que existe vida após a morte?",'viktor','duo_tomas-viktor_c5_1_viktor',3.41],
+  ["Ordem recebida. Duração estimada: 3 segundos.",'viktor','duo_moreira-viktor_c2_4_viktor',3.53],
+  ["Padre, máquinas possuem alma?",'viktor','duo_tomas-viktor_c1_1_viktor',2.16],
+  ["Recomendo não atravessar.",'viktor','duo_moreira-viktor_c4_2_viktor',2.06],
+  ["Recomendo reconsiderar.",'viktor','duo_moreira-viktor_c4_4_viktor',2.02],
+  ["Se Deus criou os homens, quem criou as máquinas?",'viktor','duo_tomas-viktor_c4_1_viktor',3.38],
+  ["Sim.",'viktor','duo_vamp-viktor_c4_2_viktor',1.15],
+  ["Sua estrutura física apresenta desgaste considerável.",'viktor','duo_moreira-viktor_c3_1_viktor',4.03],
+  ["Tecnicamente, sou uma plataforma de combate autônoma.",'viktor','duo_moreira-viktor_c1_2_viktor',4.03],
+  ["É possível uma máquina cometer pecado?",'viktor','duo_tomas-viktor_c3_1_viktor',2.90]
 ];
 const VOXDUO={}; for(const [t,ch,f,d] of VOXDUO_LIST) VOXDUO[ch+'|'+t]=[f,d];
 function voxDuoGet(ch,cv,line){ return VOXDUO[coopProfile(ch||'recruta',cv||'m')+'|'+line]||null; }
@@ -18676,6 +18707,100 @@ V9VM.push(dt=>{
 
 // vozes dos personagens mais altas (gravadas e sintéticas)
 voxRecVol=function(){ const v=CFG.voice==null?1:+CFG.voice||0, s=Math.max(0.05,CFG.sfx==null?1:+CFG.sfx||0); return clamp(2.0*v/s,0,5); };
+
+/* ---- 49_voxnet.js ---- */
+/* ================= v9 · VOZES NO ONLINE E FILA DE FALAS =================
+   - Online, todo mundo ouve as falas dos outros personagens (habilidade, ultimate, comentários no meio da partida).
+     A fala de início de rodada é só sua: cada jogador ouve o próprio personagem.
+   - Nunca duas vozes ao mesmo tempo: o anfitrião é quem libera cada fala (quem pede enquanto alguém fala fica quieto),
+     e as conversas em dupla também esperam a fala atual terminar.
+   - No mapa do ônibus, enquanto o Motorista 115 fala nenhuma voz de personagem é ativada (e a que estiver tocando é cortada). */
+const VOXG={until:0,h:null,driverUntil:0};
+function voxBusy(){ const n=performance.now(); return n<VOXG.until||n<VOXG.driverUntil||(typeof COOP_STATE!=='undefined'&&n<(COOP_STATE.voiceLockUntil||0)); }
+function voxStopAll(){ if(VOXG.h){ try{ VOXG.h.stop(0.08); }catch(e){} VOXG.h=null; } try{ voxRecStop(); }catch(e){} }
+// falas possíveis de um personagem numa situação: gravadas (arquivo) ou só texto (voz do navegador)
+function voxLines(k,sit){ const R=VOXREC[k]; if(R) return (R[sit]||[]).map(e=>({t:e[1],f:e[0],d:e[2]}));
+  const L=(VOX[k]&&VOX[k][sit])||[]; return L.map(t=>({t,f:null,d:Math.max(1.6,t.length/12+0.6)})); }
+function voxChoose(k,sit){ const pool=voxLines(k,sit); if(!pool.length) return -1;
+  const rec=voxRecent[k+sit]||(voxRecent[k+sit]=[]); let idx=pool.map((e,i)=>i).filter(i=>!rec.includes(pool[i].t)); if(!idx.length){ rec.length=0; idx=pool.map((e,i)=>i); }
+  const ready=idx.filter(i=>pool[i].f&&Snd.hasSample(pool[i].f)), i=pick(ready.length?ready:idx);
+  rec.push(pool[i].t); if(rec.length>Math.max(1,pool.length-1)) rec.shift(); return i; }
+function voxCharOf(k){ return k==='vamp'?'recruta':k; }
+function voxFem(k,cv){ try{ const V=CHARS[voxCharOf(k)].vars[cv]||{}; return !!(V.look&&V.look.fem); }catch(e){ return false; } }
+function voxName(k){ try{ return k==='vamp'?'Conde':CHARS[voxCharOf(k)].name; }catch(e){ return k; } }
+
+// toca uma fala: a sua (opt.own) ou a de outro jogador (opt.peer), com a legenda pelo tempo do áudio
+function voxPlay(k,sit,i,opt){
+  const e=voxLines(k,sit)[i]; if(!e) return 0;
+  try{ voxRecPreload(k); }catch(err){}
+  try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(err){}
+  voxStopAll();
+  let dur=e.d; const on=(+CFG.voice||0)>0;
+  let sx=null,sz=null; if(!opt.own&&opt.peer){ const rp=coopRemoteById(opt.peer); if(rp&&rp.x!=null){ sx=rp.x; sz=rp.z; } }
+  if(e.f){
+    if(on&&Snd.hasSample(e.f)){ const o={vol:voxRecVol()*(opt.own?1:0.9),prio:true,wet:0.06};
+      if(sx!=null&&Math.hypot(P.pos.x-sx,P.pos.z-sz)<COOP_NEAR_DISTANCE){ o.x=sx; o.z=sz; o.range=45; o.minVol=0.55; }
+      const h=Snd.sample(e.f,o); if(h){ VOXG.h=h; if(h.src&&h.src.buffer) dur=h.src.buffer.duration; } }
+    else if(!Snd.hasSample(e.f)) try{ Snd.sample(e.f,{vol:0}); }catch(err){}
+  } else if(on&&window.speechSynthesis){
+    try{ const vv=VOX_VOICE[k]||{p:1,r:1}, fem=voxFem(k,opt.own?PROG.cv:opt.cv), u=new SpeechSynthesisUtterance(e.t); u.lang='pt-BR';
+      u.pitch=fem&&k!=='helena'&&k!=='iara'?Math.max(vv.p,1.05):vv.p; u.rate=vv.r; u.volume=opt.own?1:0.92; speechSynthesis.speak(u); }catch(err){}
+  }
+  abCaption(e.t); if(!opt.own&&abCap) abCap.textContent=`${voxName(k)}: “${e.t}”`; abCapT=dur+0.2;
+  VOXG.until=performance.now()+dur*1000+250;
+  return dur;
+}
+
+voxSay=function(sit,force){
+  if(G.state!=='playing') return false;
+  if(voxBusy()) return false;                       // alguém (ou o motorista) já está falando
+  if(!force&&voxGap>0) return false;
+  const k=voxKey(), i=voxChoose(k,sit); if(i<0) return false;
+  const e=voxLines(k,sit)[i];
+  voxGap=(force?4:9+Math.random()*6)+e.d; voxIdleT=45+Math.random()*40;
+  if(sit==='round'||!NET.mode||NET.mode==='spectator'){ voxPlay(k,sit,i,{own:true}); return true; }   // início de rodada: só você ouve
+  if(NET.mode==='host'){ voxPlay(k,sit,i,{own:true}); pushEv(['vox',NET.me,k,sit,i,PROG.cv]); return true; }
+  // convidado: pede a vez ao anfitrião e só fala quando ele liberar
+  netAct(['voxr',k,sit,i,PROG.cv]); VOXG.until=performance.now()+700; return true;
+};
+V9NET.act.voxr=(peer,a)=>{ const k=String(a[2]||''), sit=String(a[3]||''), i=a[4]|0, cv=String(a[5]||'m');
+  if(!VOX[k]||sit==='round'||voxBusy()||!voxLines(k,sit)[i]) return;
+  voxPlay(k,sit,i,{own:false,peer,cv}); pushEv(['vox',peer,k,sit,i,cv]); };
+V9NET.ev.vox=(e,me)=>{ if(NET.mode==='host') return; const peer=e[2], k=String(e[3]||''), sit=String(e[4]||''), i=e[5]|0, cv=String(e[6]||'m');
+  if(!VOX[k]||!voxLines(k,sit)[i]) return;
+  if(CUR==='tz'&&performance.now()<VOXG.driverUntil) return;
+  voxPlay(k,sit,i,peer===me?{own:true}:{own:false,peer,cv}); };
+
+// o motorista tem prioridade: corta a voz atual e bloqueia novas enquanto fala
+const tzSay0=tzSay;
+tzSay=function(cat){ const was=tzCapEl&&tzCapEl.querySelector('span')?tzCapEl.querySelector('span').textContent:'';
+  const r=tzSay0.apply(this,arguments);
+  const sp=tzCapEl&&tzCapEl.querySelector('span'), line=sp?sp.textContent:'';
+  if(line&&(line!==was||tzCapEl.classList.contains('on'))){ voxStopAll(); VOXG.driverUntil=performance.now()+(Math.max(2.5,line.length*0.075)+0.5)*1000;
+    try{ if(abCap) abCap.classList.remove('on'); }catch(e){} }
+  return r; };
+v9On('reset',()=>{ VOXG.until=0; VOXG.driverUntil=0; voxStopAll(); });
+
+// as conversas em dupla esperam a fala atual (e o motorista) terminar antes de começar a próxima linha
+updateCoopDialogue=function(dt){
+  if(NET.mode!=='host'||G.state!=='playing') return;
+  if(COOP_STATE.queue.length){
+    COOP_STATE.wait-=dt;
+    const n=performance.now();
+    if(COOP_STATE.wait<=0&&n>=VOXG.until&&n>=VOXG.driverUntil){
+      const item=COOP_STATE.queue.shift(); coopDispatchLine(item);
+      const rec=voxDuoGet(item.speaker.char,item.speaker.cv,item.text);
+      COOP_STATE.wait=rec?rec[1]+0.9:Math.max(5.2,Math.min(8.4,item.text.length/14.5+1.2));
+    }
+    if(!COOP_STATE.queue.length) COOP_STATE.active=false;
+    return;
+  }
+  COOP_STATE.next-=dt;
+  if(COOP_STATE.next<=0){ const n=performance.now(); if(n<VOXG.until||n<VOXG.driverUntil){ COOP_STATE.next=3; return; }
+    if(coopMakeScene()) COOP_STATE.next=92+Math.random()*38; else COOP_STATE.next=18; }
+};
+// uma linha de conversa que chega também conta como "alguém falando"
+{ const cce=coopCaptionEvent; coopCaptionEvent=function(e){ if(CUR==='tz'&&performance.now()<VOXG.driverUntil) return; voxStopAll(); return cce.apply(this,arguments); }; }
 
 /*</V9>*/
 /* ================= MAIN LOOP ================= */

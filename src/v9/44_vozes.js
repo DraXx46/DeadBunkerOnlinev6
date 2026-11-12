@@ -1,5 +1,5 @@
 /* ================= v9 · VOZES GRAVADAS (dublagem) =================
-   Personagem com dublagem (Sargento Moreira, Padre Tomás) toca o áudio gravado (audio/sfx/vo_<personagem>_<situação>_NN.mp3) no lugar da voz
+   Personagem com dublagem (Sargento Moreira, Padre Tomás, V.I.K.T.O.R) toca o áudio gravado (audio/sfx/vo_<personagem>_<situação>_NN.mp3) no lugar da voz
    sintética do navegador, e a legenda fica na tela exatamente o tempo do áudio.
    Enquanto um personagem estiver dublado, só as falas que já têm áudio são usadas (nada de voz robótica misturada).
    Para dublar outro personagem: gravar, converter para audio/sfx/vo_<chave>_<situação>_NN.mp3 e listar aqui.
@@ -29,6 +29,20 @@ const VOXREC={
     pu:[['vo_tomas_pu_01',"Obrigado, lá de cima.",2.76],['vo_tomas_pu_02',"Providência divina!",1.92]],
     sur:[['vo_tomas_sur_01',"Fila para a confissão, por favor!",2.78],['vo_tomas_sur_02',"Muitos pecadores, pouco tempo.",2.76]],
     idle:[['vo_tomas_idle_01',"A diocese nunca me paga hora extra.",2.95],['vo_tomas_idle_02',"Será que zumbi tem alma? Pergunta para o bispo.",4.08]]
+  },
+  viktor:{
+    round:[['vo_viktor_round_01',"Diagnóstico concluído. Ainda funciono.",2.98],['vo_viktor_round_02',"Mais uma noite de manutenção.",2.18],['vo_viktor_round_03',"Sensores ligados. Paciência, nem tanto.",2.98],['vo_viktor_round_04',"Atualizando… não, só estou com sono.",2.62]],
+    a:[['vo_viktor_a_01',"Tenta acompanhar.",2.14],['vo_viktor_a_02',"Overclock. Segura o café.",2.04],['vo_viktor_a_03',"Sistema acelerado.",1.58],['vo_viktor_a_04',"Agora eu sou o problema de vocês.",2.21]],
+    off:[['vo_viktor_off_01',"Ainda preciso ajustar isso.",2.09],['vo_viktor_off_02',"Resfriando. Não encosta.",2.02],['vo_viktor_off_03',"Isso esquentou mais que devia.",3.26],['vo_viktor_off_04',"Nota mental: trocar o dissipador.",2.38]],
+    u:[['vo_viktor_u_01',"Desliguem.",1.54],['vo_viktor_u_02',"Sobrecarga autorizada.",1.73],['vo_viktor_u_03',"Pulso de cortesia.",1.78],['vo_viktor_u_04',"Fim de bateria para vocês.",1.90]],
+    multi:[['vo_viktor_multi_01',"Eficiência de máquina.",1.90],['vo_viktor_multi_02',"Erro 404: zumbi não encontrado.",2.95],['vo_viktor_multi_03',"Processamento em lote.",1.90]],
+    head:[['vo_viktor_head_01',"Precisão de fábrica.",1.90],['vo_viktor_head_02',"Desconectado.",1.66],['vo_viktor_head_03',"Ctrl+Z não salva você.",1.87]],
+    low:[['vo_viktor_low_01',"Integridade em queda.",1.82],['vo_viktor_low_02',"Isso vai precisar de solda.",1.87],['vo_viktor_low_03',"Alerta vermelho. Literalmente.",2.21]],
+    down:[['vo_viktor_down_01',"Falha… crítica…",1.66]],
+    revive:[['vo_viktor_revive_01',"Reinicializado.",1.63],['vo_viktor_revive_02',"Obrigado. Garantia renovada.",2.23]],
+    pu:[['vo_viktor_pu_01',"Upgrade gratuito.",3.62],['vo_viktor_pu_02',"Peça nova. Adoro peça nova.",2.06]],
+    sur:[['vo_viktor_sur_01',"Hora de forçar o hardware.",2.02],['vo_viktor_sur_02',"Cercado. Interessante.",1.85]],
+    idle:[['vo_viktor_idle_01',"Esse braço range quando chove.",2.11],['vo_viktor_idle_02',"Meu último backup foi antes do fim do mundo.",3.10]]
   }
 };
 // a fala nova também entra na lista de texto do personagem
@@ -81,7 +95,24 @@ const VOXDUO_LIST=[
   ["Nesse caso, vamos conversar depois.",'tomas','duo_tomas-viktor_c3_4_tomas',3.22],
   ["Os homens.",'tomas','duo_tomas-viktor_c4_2_tomas',1.37],
   ["Não complique a teologia, meu filho.",'tomas','duo_tomas-viktor_c4_4_tomas',3.19],
-  ["Acredito.",'tomas','duo_tomas-viktor_c5_2_tomas',1.34]
+  ["Acredito.",'tomas','duo_tomas-viktor_c5_2_tomas',1.34],
+  ["Admito que sua capacidade de resistência é impressionante.",'viktor','duo_moreira-viktor_c5_1_viktor',4.10],
+  ["Eliminei 42 criaturas durante a última operação.",'viktor','duo_tomas-viktor_c3_3_viktor',4.56],
+  ["Embora sua inteligência tática apresente algumas limitações.",'viktor','duo_moreira-viktor_c5_3_viktor',4.56],
+  ["Então tecnicamente sou uma criação de uma criação.",'viktor','duo_tomas-viktor_c4_3_viktor',3.72],
+  ["Interessante. Eu gostaria de saber se existe vida antes da minha próxima manutenção.",'viktor','duo_tomas-viktor_c5_3_viktor',6.19],
+  ["Não encontrei evidências científicas da existência de Deus.",'viktor','duo_tomas-viktor_c2_1_viktor',4.37],
+  ["Não sei. Mas tenho dúvidas.",'viktor','duo_tomas-viktor_c1_3_viktor',1.90],
+  ["O senhor acredita que existe vida após a morte?",'viktor','duo_tomas-viktor_c5_1_viktor',3.41],
+  ["Ordem recebida. Duração estimada: 3 segundos.",'viktor','duo_moreira-viktor_c2_4_viktor',3.53],
+  ["Padre, máquinas possuem alma?",'viktor','duo_tomas-viktor_c1_1_viktor',2.16],
+  ["Recomendo não atravessar.",'viktor','duo_moreira-viktor_c4_2_viktor',2.06],
+  ["Recomendo reconsiderar.",'viktor','duo_moreira-viktor_c4_4_viktor',2.02],
+  ["Se Deus criou os homens, quem criou as máquinas?",'viktor','duo_tomas-viktor_c4_1_viktor',3.38],
+  ["Sim.",'viktor','duo_vamp-viktor_c4_2_viktor',1.15],
+  ["Sua estrutura física apresenta desgaste considerável.",'viktor','duo_moreira-viktor_c3_1_viktor',4.03],
+  ["Tecnicamente, sou uma plataforma de combate autônoma.",'viktor','duo_moreira-viktor_c1_2_viktor',4.03],
+  ["É possível uma máquina cometer pecado?",'viktor','duo_tomas-viktor_c3_1_viktor',2.90]
 ];
 const VOXDUO={}; for(const [t,ch,f,d] of VOXDUO_LIST) VOXDUO[ch+'|'+t]=[f,d];
 function voxDuoGet(ch,cv,line){ return VOXDUO[coopProfile(ch||'recruta',cv||'m')+'|'+line]||null; }

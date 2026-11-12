@@ -502,7 +502,7 @@ function rmHitBullet(h,o,d,dmg,wid,base){ const b=h.b, s=h.s, tag=s.tag; const h
     if(acc>=lim||b.tot>=tot) rmSever(RMSEV[tag][tc<0.5?0:1]+sd,d); }
   else if(tag==='belly'){ if((acc>=300||b.tot>=420)&&!RM.openB) rmOpenBelly(d); }
   else if(tag==='chest'){ if((acc>=340||b.tot>=520)&&!RM.openC) rmOpenChest(d);
-    const hl=rmv(0.028-b.com.x,1.305-b.com.y,0.02-b.com.z); if(Math.hypot(w.lp.x-hl.x,w.lp.y-hl.y,(w.lp.z-hl.z)*0.5)<0.05){ RM.blood=Math.min(RM.blood,18); w.rate*=3; w.artery=true; } }
+    const hl=rmv(0.028-b.com.x,1.305-b.com.y,0.02-b.com.z); if(w.lp.x>0.005&&Math.hypot(w.lp.x-hl.x,w.lp.y-hl.y,(w.lp.z-hl.z)*0.4)<0.032){ RM.blood=Math.min(RM.blood,40); w.rate*=3.5; w.artery=true; RM.hurt=1; } }
   if(RM.blood<=0) rmKill();
   try{ hitmarker(RM.st==='dead',tag==='head'); }catch(e){} }
 function rmBlast(p,dmg,rad){ if(!RM.on) return; const R=rad*2.2; let hit=0;
@@ -591,8 +591,9 @@ function rmBuild(){ if(RM.built) return; RM.built=true; rmMats();
   rmPhysBuild(); rmBuildVisuals(); rmReset(); try{ if(typeof funReskin==='function') funReskin(); }catch(e){} }
 function rmReset(){ if(!RM.built) return; rmPhysReset(RM.x,RM.z,RM.yaw0);
   RM.chestFront.visible=RM.bellyFront.visible=true; RM.chestOrg.visible=RM.bellyOrg.visible=RM.chestCav.visible=RM.bellyCav.visible=false; RM.headG.visible=true;
-  for(const m of RM.marks) m.parent&&m.parent.remove(m); RM.marks=[]; while(RM.dyn.children.length) RM.dyn.remove(RM.dyn.children[0]);
-  RM.drops.length=0; RM.dropIM.count=0; RM.splat=0; RM.splIM.count=0; for(const p of RM.pools) p.m.parent&&p.m.parent.remove(p.m); RM.pools=[]; RM.gibs=[]; RM.dacc={}; RM.dshot=-1;
+  const kill=o=>{ o.traverse(q=>{ if(q.geometry) q.geometry.dispose(); }); o.parent&&o.parent.remove(o); };   // libera a memória das marcas, cotos e pedaços
+  for(const m of RM.marks) kill(m); RM.marks=[]; while(RM.dyn.children.length) kill(RM.dyn.children[0]);
+  RM.drops.length=0; RM.dropIM.count=0; RM.splat=0; RM.splIM.count=0; for(const p of RM.pools){ p.m.geometry.dispose(); p.m.parent&&p.m.parent.remove(p.m); } RM.pools=[]; RM.gibs=[]; RM.dacc={}; RM.dshot=-1;
   for(const b of RMPH.B) b.tot=0; RM.on=true; rmDraw(); }
 function rmUpdate(dt){ if(!RM.on) return; dt=Math.min(dt,0.05); RM.t+=dt;
   if(RM.sleep&&typeof P!=='undefined'&&P&&P.pos){ const c=RMPH.byName.pelvis.x; if(Math.hypot(P.pos.x-c.x,P.pos.z-c.z)<1.3) RM.sleep=false; }

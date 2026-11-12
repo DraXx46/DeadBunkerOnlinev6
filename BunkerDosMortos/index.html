@@ -20475,8 +20475,11 @@ function bscRender(dt){ bscEnsure(); const f0=camera.fov, U=BSC.mat.uniforms, w=
   U.tIn.value=BSC.rti.texture; U.tOut.value=BSC.rto.texture; U.uRes.value.set(w,h); U.uC.value.set(cx,cy); U.uR.value=R; U.uO.value=ez; U.uK.value=HV.kick; U.uT.value=BSC.t; U.uSq.value=0.82+0.18*ez; U.uPx.value=1/R;
   U.uS.value.set(BSC.sx,BSC.sy);
   renderer.render(BSC.scn,BSC.cam); }
+// com a lente na tela nada da arma/mãos é desenhado por cima (o desenho da arma vem logo depois deste passo)
+function bscVm(){ if(BSC.on&&!BSC.fail){ if(vmScene.visible){ vmScene.visible=false; BSC.hv=true; } } else if(BSC.hv){ vmScene.visible=true; BSC.hv=false; } }
 { const po=v9PostOn; v9PostOn=function(){ return (BSC.on&&!BSC.fail)||po.apply(this,arguments); };
-  const rp=v9RenderPost; v9RenderPost=function(dt){ if(BSC.on&&!BSC.fail){ try{ bscRender(dt); return; }catch(e){ BSC.fail=true; console.warn('[Bunker] luneta renderizada desligada',e); try{ renderer.setRenderTarget(null); }catch(e2){} } } if(po.call(this)) return rp.apply(this,arguments); renderer.render(scene,camera); }; }
+  const rp=v9RenderPost; v9RenderPost=function(dt){ bscVm(); if(BSC.on&&!BSC.fail){ try{ bscRender(dt); return; }catch(e){ BSC.fail=true; console.warn('[Bunker] luneta renderizada desligada',e); try{ renderer.setRenderTarget(null); }catch(e2){} } } if(po.call(this)) return rp.apply(this,arguments); renderer.render(scene,camera); }; }
+v9On('frame',()=>{ if(!BSC.on) bscVm(); });
 v9On('frame',dt=>{ const s=curSlot(), isB=!!(s&&s.id==='ptrs'), ok=isB&&(G.state==='playing'||G.state==='paused')&&!P.down&&!BSC.fail;
   dt=Math.min(dt||0.016,0.05); BSC.t+=dt;
   const tgt=!ok?0:Wp.scoped?1:Math.max(0,Math.min(1,(P.ads-0.1)/0.86))*0.93+0.07*V9B.open*(P.ads>0.5?1:0);

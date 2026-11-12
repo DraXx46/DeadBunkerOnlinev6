@@ -60,9 +60,10 @@ function pkxShow(c){
    <div class="ab"><kbd>Z</kbd><span><b>${A.name||'Habilidade'}</b> · ${A.desc||''}</span><kbd>X</kbd><span><b>${U.name||'Ultimate'}</b> · ${U.desc||''}</span></div>
    ${C.passive?`<div class="ps">Passiva: <b>${C.passive.name}</b></div>`:''}</div>
    <div class="side"><div class="df">Dificuldade <b>${PKX_DIFF[X.diff]||''}</b></div>${PKX_ST.map((s,i)=>`<div class="bar"><span>${s}</span><u>${[1,2,3,4,5].map(n=>`<s class="${n<=X.st[i]?'f':''}"></s>`).join('')}</u></div>`).join('')}</div>
-   <div class="hint">${pickAllowed(c)?'Clique para escolher':'Indisponível'}</div>`;
+   <div class="hint">${pickAllowed(c)?'Clique para selecionar · Travar para confirmar':'Indisponível'}</div>`;
   el.classList.add('on');
 }
+function pkxCur(){ return (typeof PKL!=='undefined'&&PKL.sel)||(PICK.picks&&PICK.picks[PICK.me])||null; }
 const renderPick0=renderPick;
 renderPick=function(){
   const r=renderPick0.apply(this,arguments);
@@ -76,10 +77,10 @@ renderPick=function(){
         if(!b.classList.contains('off')) b.style.transform=`translateY(-6px) rotateX(${((0.5-y)*14).toFixed(2)}deg) rotateY(${((x-0.5)*16).toFixed(2)}deg) scale(1.03)`;
         if(im) im.style.transform=`translateZ(18px) translate(${((x-0.5)*-8).toFixed(1)}px,${((y-0.5)*-6).toFixed(1)}px) scale(1.06)`; });
       const enter=()=>{ b.classList.add('hov'); pkxShow(c); try{ Snd.ui('hover'); }catch(e){} };
-      const leave=()=>{ b.classList.remove('hov'); b.style.transform=''; if(im) im.style.transform=''; const mine=PICK.picks&&PICK.picks[PICK.me]; if(mine) pkxShow(mine); };
+      const leave=()=>{ b.classList.remove('hov'); b.style.transform=''; if(im) im.style.transform=''; const mine=pkxCur(); if(mine) pkxShow(mine); };
       b.addEventListener('pointerenter',enter); b.addEventListener('focus',enter); b.addEventListener('pointerleave',leave); b.addEventListener('blur',leave);
     });
-    const mine=PICK.picks&&PICK.picks[PICK.me], el=pkxInfoEl();
+    const mine=pkxCur(), el=pkxInfoEl();
     if(mine) pkxShow(mine); else if(!el.dataset.c){ el.classList.remove('on'); el.innerHTML='<div style="grid-column:1/-1;align-self:center;text-align:center;color:#a99c8f;font-size:13px;letter-spacing:.12em">Passe o mouse num personagem para ver o estilo de jogo dele</div>'; }
     else pkxShow(el.dataset.c);
   }catch(e){ console.warn('[Bunker v9] pick',e); }

@@ -42,6 +42,7 @@ function qslerp(o,a,b,t){ let bx=b.x,by=b.y,bz=b.z,bw=b.w; let c=a.x*bx+a.y*by+a
   let k0,k1; if(c>0.9995){ k0=1-t; k1=t; } else { const th=Math.acos(c), s=Math.sin(th); k0=Math.sin((1-t)*th)/s; k1=Math.sin(t*th)/s; }
   o.x=a.x*k0+bx*k1; o.y=a.y*k0+by*k1; o.z=a.z*k0+bz*k1; o.w=a.w*k0+bw*k1; return qnrm(o); }
 const rmCl=(v,a,b)=>v<a?a:v>b?b:v;
+function rmFloor(x,z){ try{ return typeof floorAt==='function'?floorAt(x,z):0; }catch(e){ return 0; } }
 const RMD2R=Math.PI/180;
 
 /* ---------- esqueleto em pé (metros; olhando +z, +x = lado esquerdo dele) ---------- */
@@ -89,7 +90,7 @@ function rmPhysBuild(){ const BD=rmBodyDefs(), JD=rmJointDefs(); RMPH.B=[]; RMPH
   for(const d of BD){ const [w,h,dp]=d.box, m=d.m;
     const b={name:d.name,part:d.part,side:d.side,m,im:1/m,iI:rmv(12/(m*(h*h+dp*dp)),12/(m*(w*w+dp*dp)),12/(m*(w*w+h*h))),com:vcp(rmv(),d.com),
       shapes:d.shapes.map(s=>({a:rmv(s.a.x-d.com.x,s.a.y-d.com.y,s.a.z-d.com.z),b:rmv(s.b.x-d.com.x,s.b.y-d.com.y,s.b.z-d.com.z),r:s.r,r0:s.r,tag:s.tag,sph:s.a.x===s.b.x&&s.a.y===s.b.y&&s.a.z===s.b.z})),
-      x:rmv(),q:rmq(),v:rmv(),w:rmv(),xp:rmv(),qp:rmq(),att:true,idx:RMPH.B.length,mu:d.part==='foot'?1.0:0.8,kin:false};
+      x:rmv(),q:rmq(),v:rmv(),w:rmv(),xp:rmv(),qp:rmq(),att:true,idx:RMPH.B.length,mu:d.part==='foot'?1.0:0.8,kin:false,fy:0};
     b.iI0=vcp(rmv(),b.iI);
     b.br=0; for(const s of b.shapes) b.br=Math.max(b.br,vlen(s.a)+s.r,vlen(s.b)+s.r);
     RMPH.B.push(b); RMPH.byName[b.name]=b; }
@@ -169,7 +170,7 @@ function rmPtVel(o,b,r){ o.x=b.v.x+(b.w.y*r.z-b.w.z*r.y); o.y=b.v.y+(b.w.z*r.x-b
 const RMCT=[]; let RMCTn=0; const RMSC=[]; let RMSCn=0;
 function rmCtNew(){ if(RMCTn>=RMCT.length) RMCT.push({b:null,lp:rmv(),r:0,ln:0,vn:0,mu:0.8}); return RMCT[RMCTn++]; }
 function rmScNew(){ if(RMSCn>=RMSC.length) RMSC.push({A:null,B:null,ra:rmv(),rb:rmv(),nx:0,ny:0,nz:0,ln:0}); return RMSC[RMSCn++]; }
-function rmGroundPt(b,lp,r,mu){ const E=RMT.a, rw=RMT.r1, vv=RMT.c; qrot(E,b.q,lp); const ey=b.x.y+E.y; const depth=r-ey; if(depth<=0) return;
+function rmGroundPt(b,lp,r,mu){ const E=RMT.a, rw=RMT.r1, vv=RMT.c; qrot(E,b.q,lp); const ey=b.x.y+E.y; const depth=r-(ey-b.fy); if(depth<=0) return;
   rw.x=E.x; rw.y=E.y-r; rw.z=E.z; rmPtVel(vv,b,rw); const vn=vv.y;
   const ln=rmPosC(b,rw,null,null,0,depth,0,0);
   if(b.part==='chest'||b.part==='belly'||b.part==='pelvis'||b.part==='head') RM.groundT=RM.t;
@@ -201,6 +202,7 @@ function rmSubstep(h){ const B=RMPH.B, J=RMPH.J; RMIH2=1/(h*h);
   for(let i=0;i<B.length;i++){ const b=B[i], mu=b.mu*slip; for(const s of b.shapes){ if(s.r<0.01) continue; rmGroundPt(b,s.a,s.r,mu); if(!s.sph) rmGroundPt(b,s.b,s.r,mu); } }
   for(let i=J.length-1;i>=0;i--) if(J[i].on) rmJointPos(J[i]);
   for(let i=0;i<J.length;i++) if(J[i].on) rmJointPos(J[i]);
+  if((RM.subN=(RM.subN||0)+1)%4===0) rmWalls();
   for(let i=0;i<J.length;i++) if(J[i].on) rmJointLimit(J[i]);
   // velocidades a partir das posições
   const ih=1/h, dq=RMLQ.a;
@@ -209,6 +211,13 @@ function rmSubstep(h){ const B=RMPH.B, J=RMPH.J; RMIH2=1/(h*h);
   rmVelPass(h); rmCtrlVel(h);
   for(let i=0;i<B.length;i++){ const b=B[i]; const v=Math.sqrt(b.v.x*b.v.x+b.v.y*b.v.y+b.v.z*b.v.z); if(v>28){ const k=28/v; b.v.x*=k; b.v.y*=k; b.v.z*=k; }
     const w=Math.sqrt(b.w.x*b.w.x+b.w.y*b.w.y+b.w.z*b.w.z); if(w>40){ const k=40/w; b.w.x*=k; b.w.y*=k; b.w.z*=k; } } }
+const RMWP={x:0,z:0}, RMWA=rmv();
+function rmWallPush(p,r){ if(typeof cellPush!=='function') return; const c0=Math.floor(p.x/S), r0=Math.floor(p.z/S);
+  for(let dz=-1;dz<=1;dz++) for(let dx=-1;dx<=1;dx++){ const x=c0+dx, z=r0+dz; if(solidIn(x,z)) cellPush(p,r,x,z); }
+  const L=RM.props; if(L) for(let i=0;i<L.length;i++){ const b=L[i]; if(b.on) pushOutBox(p,r,b.x0,b.z0,b.x1,b.z1); } }
+function rmWalls(){ if(typeof cellPush!=='function'||!RM.map) return;
+  for(const b of RMPH.B){ if(b.kin) continue; for(const s of b.shapes){ if(s.r<0.01) continue; for(let e=0;e<(s.sph?1:2);e++){ qrot(RMWA,b.q,e?s.b:s.a); const ex=b.x.x+RMWA.x, ez=b.x.z+RMWA.z;
+      RMWP.x=ex; RMWP.z=ez; rmWallPush(RMWP,s.r*0.85); const dx=RMWP.x-ex, dz=RMWP.z-ez; if(dx*dx+dz*dz>1e-10){ RMWA.y=RMWA.y; rmPosC(b,RMWA,null,null,dx,0,dz,0); } } } } }
 function rmVelPass(h){ const rw=RMT.r1, vv=RMT.c, ih2=1/(h*h);
   for(let i=0;i<RMCTn;i++){ const c=RMCT[i], b=c.b; qrot(rw,b.q,c.lp); rw.y-=c.r; rmPtVel(vv,b,rw);
     const vtx=vv.x, vtz=vv.z, vt=Math.sqrt(vtx*vtx+vtz*vtz);
@@ -246,7 +255,7 @@ function rmCom(){ let m=0,x=0,y=0,z=0,vx=0,vy=0,vz=0; for(const b of RMPH.B){ if
   RM.com.x=x/m; RM.com.y=y/m; RM.com.z=z/m; RM.comV.x=vx/m; RM.comV.y=vy/m; RM.comV.z=vz/m; return RM.com; }
 // pés: centro do pé (no chão) e giro; o pé plantado fica preso em posição e orientação (sem rolar)
 const RMFOOT={x:0.105,y:0.06,z:0.055};
-function rmFootIdeal(ox,oz,yaw,fi){ const o=rmRotY(rmv(),RMFOOT.x*(fi?-1:1),0,RMFOOT.z,yaw); return {x:rmv(ox+o.x,RMFOOT.y,oz+o.z),yaw}; }
+function rmFootIdeal(ox,oz,yaw,fi){ const o=rmRotY(rmv(),RMFOOT.x*(fi?-1:1),0,RMFOOT.z,yaw); const x=ox+o.x, z=oz+o.z; return {x:rmv(x,rmFloor(x,z)+RMFOOT.y,z),yaw}; }
 // origem atual do "homem" (centro entre os pés, sem o deslocamento da ponta) e o ponto onde o centro de massa deve ficar
 function rmOrigin(){ let x=0,z=0,n=0; for(let fi=0;fi<2;fi++){ const p=RM.plant[fi]; if(!p) continue; const S=RM.step&&RM.step.f===fi?RM.step:null; const c=S?S.cx:p.x, y=S?S.cy:p.yaw;
     const off=rmRotY(rmv(),RMFOOT.x*(fi?-1:1),0,RMFOOT.z,y); x+=c.x-off.x; z+=c.z-off.z; n++; }
@@ -254,7 +263,7 @@ function rmOrigin(){ let x=0,z=0,n=0; for(let fi=0;fi<2;fi++){ const p=RM.plant[
 // pé plantado vira "cinemático": preso no chão (massa infinita), só a perna se mexe em cima dele
 function rmFootLock(fi,on){ const b=RMPH.byName[fi?'footR':'footL']; if(!b) return; if(on&&b.att){ b.kin=true; b.im=0; b.iI.x=b.iI.y=b.iI.z=0; b.v.x=b.v.y=b.v.z=0; b.w.x=b.w.y=b.w.z=0; }
   else if(b.kin){ b.kin=false; b.im=1/b.m; vcp(b.iI,b.iI0); } }
-function rmPlant(fi){ const b=RMPH.byName[fi?'footR':'footL']; RM.plant[fi]={x:rmv(b.x.x,RMFOOT.y,b.x.z),yaw:rmBodyYaw(b)}; rmFootLock(fi,true); }
+function rmPlant(fi){ const b=RMPH.byName[fi?'footR':'footL']; RM.plant[fi]={x:rmv(b.x.x,rmFloor(b.x.x,b.x.z)+RMFOOT.y,b.x.z),yaw:rmBodyYaw(b)}; rmFootLock(fi,true); }
 function rmUnplantAll(){ RM.plant=[null,null]; rmFootLock(0,false); rmFootLock(1,false); }
 function rmFall(why){ if(RM.st!=='stand') return; RM.why=why; RM.st='fall'; RM.fallT=0; RM.step=null; rmUnplantAll(); RM.A=0; RM.landed=false;
   // para que lado cai: velocidade do centro de massa (ou inclinação do peito) no referencial do quadril
@@ -298,7 +307,7 @@ function rmCtrl(dt){ const J=RMPH.J, st=RM.st; rmCom();
   for(const j of J){ rmPoseNow(j,a); rmPoseQ(j.tg,j,a[0],a[1],a[2]); qslerp(j.tq,j.tq,j.tg,k);
     j.kEff=rmStrengthNow(j); const g=j.grp; j.damp=!j.C.att?3.5:st==='stand'?(g==='arm'||g==='wrist'?6:16):st==='fall'?6.5:st==='down'?8:4.5; }
   rmGuardPick(); }
-function rmBalance(dt){ const c=RM.com, cv=RM.comV; const hgt=Math.max(0.5,c.y); const k=Math.sqrt(hgt/9.81);
+function rmBalance(dt){ const c=RM.com, cv=RM.comV; const hgt=Math.max(0.5,c.y-(RM.fy||0)); const k=Math.sqrt(hgt/9.81);
   const O=rmOrigin(); const off=rmRotY(rmv(),RM.comOff.x,0,RM.comOff.z,RM.yaw); const bx=O.x+off.x, bz=O.z+off.z;
   const ex=c.x+cv.x*k-bx, ez=c.z+cv.z*k-bz, e=Math.hypot(ex,ez); RM.capE=e;
   const ch=RMPH.byName.chest, up=qrot(rmv(),ch.q,rmv(0,1,0));
@@ -308,7 +317,7 @@ function rmBalance(dt){ const c=RM.com, cv=RM.comV; const hgt=Math.max(0.5,c.y);
   if(Math.min(RM.legs[0],RM.legs[1])<0.4||RM.legs[0]+RM.legs[1]<1.1) return rmFall('perna'); if(RM.blood<35) return rmFall('sangue');
   // passo em andamento
   const S=RM.step; if(S){ S.s=Math.min(1,S.s+dt/S.dur); const w=S.s*S.s*(3-2*S.s), lift=Math.sin(Math.PI*S.s)*0.1;
-    S.cx.x=S.x0.x+(S.x1.x-S.x0.x)*w; S.cx.z=S.x0.z+(S.x1.z-S.x0.z)*w; S.cx.y=RMFOOT.y+lift; let dy=S.y1-S.y0; dy=Math.atan2(Math.sin(dy),Math.cos(dy)); S.cy=S.y0+dy*w;
+    S.cx.x=S.x0.x+(S.x1.x-S.x0.x)*w; S.cx.z=S.x0.z+(S.x1.z-S.x0.z)*w; S.cx.y=S.x0.y+(S.x1.y-S.x0.y)*w+lift; let dy=S.y1-S.y0; dy=Math.atan2(Math.sin(dy),Math.cos(dy)); S.cy=S.y0+dy*w;
     S.pitch=Math.sin(Math.PI*Math.min(1,S.s*1.25))*0.35*(1-S.s);   // tira o calcanhar primeiro e pousa reto
     if(S.s>=1){ RM.plant[S.f]={x:vcp(rmv(),S.x1),yaw:S.y1}; rmFootLock(S.f,true); RM.step=null; } return; }
   // calmo: vira devagar para o jogador
@@ -332,7 +341,7 @@ function rmCtrlSub(h){ const J=RMPH.J, B=RMPH.byName, st=RM.st;
     const ch=B.chest; qmul(RMLQ.c,RMCQ,J[0].tq); qmul(RMLQ.c,RMLQ.c,J[1].tq); qcj(RMLQ.b,ch.q); qmul(RMLQ.b,RMLQ.c,RMLQ.b); qtorv(RMCV,RMLQ.b); rmAngC(null,ch,RMCV.x,RMCV.y,RMCV.z,1/(700*A));
     // centro de massa em cima do apoio e altura do quadril (como as pernas fariam)
     RMCR.x=0; RMCR.y=0; RMCR.z=0; const hz=RM.hurt*0.05; if(RM.pelT) rmPosC(pel,RMCR,null,null,RM.pelT.x-pel.x.x,0,RM.pelT.z-pel.x.z,1/(1600*A));
-    rmPosC(pel,RMCR,null,null,0,(RM.hipH-hz)-pel.x.y,0,1/(5200*A));
+    rmPosC(pel,RMCR,null,null,0,(RM.hipH-hz+(RM.fy||0))-pel.x.y,0,1/(5200*A));
     // pés plantados (o que está no ar segue a trajetória do passo)
     for(let fi=0;fi<2;fi++){ const p=RM.plant[fi]; if(!p) continue; const ft=B[fi?'footR':'footL']; if(!ft.att) continue; const S=RM.step&&RM.step.f===fi?RM.step:null;
       if(!S){ if(ft.kin){ vcp(ft.x,p.x); rmYawQ(ft.q,p.yaw); } continue; }
@@ -353,6 +362,9 @@ function rmCtrlVel(h){ if(RM.st==='stand'||RM.st==='down'){ // tônus muscular: 
 function rmAttach(){ for(const b of RMPH.B) b.att=false; const st=[RMPH.byName.pelvis]; st[0].att=true; while(st.length){ const b=st.pop(); for(const j of RMPH.J){ if(!j.on) continue; const o=j.P===b?j.C:j.C===b?j.P:null; if(o&&!o.att){ o.att=true; st.push(o); } } } }
 // passo de tempo inteiro
 function rmPhysStep(dt){ const h=RMPH.h; RM.acc+=Math.min(dt,0.05); let n=0; RM._O=null;
+  for(const b of RMPH.B) b.fy=rmFloor(b.x.x,b.x.z); RM.fy=RMPH.byName.pelvis.fy;
+  // móveis por perto (caixas de colisão do mapa) — só os que estão a menos de 4 m
+  if(typeof propBoxes!=='undefined'&&RM.map){ const c=RMPH.byName.pelvis.x, L=RM.props||(RM.props=[]); L.length=0; for(const b of propBoxes){ if(b.x1>c.x-4&&b.x0<c.x+4&&b.z1>c.z-4&&b.z0<c.z+4) L.push(b); } }
   if(RM.st==='stand') RM._O=rmOrigin();
   while(RM.acc>=h&&n<48){ rmSubstep(h); RM.acc-=h; n++; } if(n>=48) RM.acc=0; return n; }
 // coice físico do tiro: impulso no ponto exato (gira e empurra), parte do corpo cede, equilíbrio balança
@@ -370,8 +382,8 @@ function rmKnock(b,hp,dir,J,cls){ if(J<=0) return; RM.sleep=false; RM.sleepT=0;
     if(RM.shotJ>=70){ RM.thrownT=cls==='shotgun'||cls==='sniper'?0.45:0.25; rmFall('impacto'); } }
   else if(RM.st==='down'||RM.st==='fall'){ RM.hurt=Math.min(1,RM.hurt+0.2); } }
 // reset puro (sem gráficos) — também usado pelo jogo
-function rmPhysReset(x0,z0,yaw){ const B=RMPH.B, J=RMPH.J; const q=rmYawQ(rmq(),yaw);
-  for(const b of B){ const p=rmRotY(rmv(),b.com.x,b.com.y,b.com.z,yaw); b.x.x=x0+p.x; b.x.y=p.y; b.x.z=z0+p.z; qcp(b.q,q); b.v.x=b.v.y=b.v.z=0; b.w.x=b.w.y=b.w.z=0; vcp(b.xp,b.x); qcp(b.qp,b.q); b.att=true; b.kin=false; b.im=1/b.m; vcp(b.iI,b.iI0); for(const s of b.shapes) s.r=s.r0; }
+function rmPhysReset(x0,z0,yaw){ const B=RMPH.B, J=RMPH.J; const q=rmYawQ(rmq(),yaw); const fy=rmFloor(x0,z0); RM.fy=fy;
+  for(const b of B){ const p=rmRotY(rmv(),b.com.x,b.com.y,b.com.z,yaw); b.x.x=x0+p.x; b.x.y=p.y+fy; b.x.z=z0+p.z; b.fy=fy; qcp(b.q,q); b.v.x=b.v.y=b.v.z=0; b.w.x=b.w.y=b.w.z=0; vcp(b.xp,b.x); qcp(b.qp,b.q); b.att=true; b.kin=false; b.im=1/b.m; vcp(b.iI,b.iI0); for(const s of b.shapes) s.r=s.r0; }
   for(const j of J){ j.on=true; j.tq.x=j.tq.y=j.tq.z=0; j.tq.w=1; qcp(j.tg,j.tq); j.relax=0; j.kEff=0; }
   // centro de massa em pé relativo à origem (entre os pés)
   let m=0,cx=0,cz=0; for(const b of B){ m+=b.m; cx+=b.com.x*b.m; cz+=b.com.z*b.m; } RM.comOff.x=cx/m; RM.comOff.z=cz/m;
@@ -463,7 +475,7 @@ function rmAddWound(b,tag,hp,n,dmg,artery){ const lp=qroti(rmv(),b.q,rmv(hp.x-b.
   RM.wounds.push(w); if(RM.wounds.length>40) RM.wounds.shift(); const M=rmMats();
   rmMark(b,lp,ln,rmCl(0.008+dmg/9000,0.008,0.03),M.wound,0.004); w.stain=rmMark(b,lp,ln,0.03,M.stain,0.002); return w; }
 function rmSpray(x,y,z,dx,dy,dz,n,spd,spread,size){ for(let i=0;i<n;i++){ if(RM.drops.length>=1400) RM.drops.shift();
-    const v=spd*(0.5+Math.random()*0.7); RM.drops.push({x,y,z,vx:dx*v+(Math.random()-0.5)*spread,vy:dy*v+(Math.random()-0.5)*spread+0.4*Math.random(),vz:dz*v+(Math.random()-0.5)*spread,r:(size||0.012)*(0.6+Math.random()*0.9)}); } }
+    const v=spd*(0.5+Math.random()*0.7); RM.drops.push({fy:rmFloor(x,z),x,y,z,vx:dx*v+(Math.random()-0.5)*spread,vy:dy*v+(Math.random()-0.5)*spread+0.4*Math.random(),vz:dz*v+(Math.random()-0.5)*spread,r:(size||0.012)*(0.6+Math.random()*0.9)}); } }
 // raio contra as cápsulas do corpo
 function rmRayCap(o,d,A,B,r,maxT){ const ux=B.x-A.x, uy=B.y-A.y, uz=B.z-A.z; const wx=o.x-A.x, wy=o.y-A.y, wz=o.z-A.z;
   const b=d.x*ux+d.y*uy+d.z*uz, c=ux*ux+uy*uy+uz*uz, dd=d.x*wx+d.y*wy+d.z*wz, e=ux*wx+uy*wy+uz*wz; const den=c-b*b;
@@ -553,7 +565,7 @@ function rmGutStep(dt){ const G0=RM.gut, Nn=G0.nodes; const a=qrot(rmv(),G0.b.q,
   Nn[0].x=a.x; Nn[0].y=a.y; Nn[0].z=a.z;
   for(let it=0;it<8;it++){ for(let i=0;i<Nn.length-1;i++){ const A=Nn[i], B=Nn[i+1]; const dx=B.x-A.x, dy=B.y-A.y, dz=B.z-A.z, L=Math.hypot(dx,dy,dz)||1e-6, f=(L-0.055)/L; const wa=i===0?0:0.5, wb=i===0?1:0.5;
       A.x+=dx*f*wa; A.y+=dy*f*wa; A.z+=dz*f*wa; B.x-=dx*f*wb; B.y-=dy*f*wb; B.z-=dz*f*wb; }
-    for(const p of Nn){ if(p.y<0.02){ p.y=0.02; p.ox+=(p.x-p.ox)*0.4; p.oz+=(p.z-p.oz)*0.4; } } } }
+    for(const p of Nn){ const f=rmFloor(p.x,p.z)+0.02; if(p.y<f){ p.y=f; p.ox+=(p.x-p.ox)*0.4; p.oz+=(p.z-p.oz)*0.4; } } } }
 // sangue: jatos no ritmo do coração, mão tampando, gotas, manchas, poças e pedaços
 function rmBlood(dt){ const alive=RM.st!=='dead', hr=alive?1.1+(100-RM.blood)/60:0, beat=Math.pow(Math.max(0,Math.sin(RM.t*Math.PI*2*hr)),3);
   const pos=rmv(), nrm=rmv(), palm=rmv(); let cov=1;
@@ -565,19 +577,19 @@ function rmBlood(dt){ const alive=RM.st!=='dead', hr=alive?1.1+(100-RM.blood)/60
     const sp=covered?0.25:(w.artery?1.4+beat*2.6:0.6+beat*0.8);
     for(let i=0;i<k;i++) rmSpray(pos.x+nrm.x*0.015,pos.y+nrm.y*0.015,pos.z+nrm.z*0.015,covered?0:nrm.x,covered?-0.5:nrm.y,covered?0:nrm.z,1,sp,covered?0.15:0.35,0.009);
     if(w.stain&&w.stain.scale.x<3.2) w.stain.scale.multiplyScalar(1+dt*0.06*decay);
-    if(pos.y<0.35&&RM.st!=='stand'&&w.rate*decay>0.4) rmPool(pos.x,pos.z,dt*w.rate*decay*(w.artery?0.012:0.004)); }
+    if(pos.y<(RM.fy||0)+0.35&&RM.st!=='stand'&&w.rate*decay>0.4) rmPool(pos.x,pos.z,dt*w.rate*decay*(w.artery?0.012:0.004)); }
   RM.cov=cov;
   if(alive){ let loss=0; for(const w of RM.wounds) loss+=w.rate*(w.artery?0.55:0.12)*Math.max(0.15,1-w.age/25); RM.blood-=loss*dt*cov; if(RM.blood<=0) rmKill(); }
   const D=RM.drops; let j=0; for(let i=0;i<D.length;i++){ const d=D[i]; d.vy-=9.8*dt; d.vx*=0.995; d.vz*=0.995; d.x+=d.vx*dt; d.y+=d.vy*dt; d.z+=d.vz*dt;
-    if(d.y<=0.004){ if(Math.random()<0.55) rmSplat(d.x,d.z,d.r*rand(3,7)*(1+Math.min(2,Math.hypot(d.vx,d.vz)*0.15))); continue; } D[j++]=d; } D.length=j;
+    if(d.y<=d.fy+0.004){ const f=rmFloor(d.x,d.z); if(d.y<=f+0.004){ if(Math.random()<0.55) rmSplat(d.x,d.z,d.r*rand(3,7)*(1+Math.min(2,Math.hypot(d.vx,d.vz)*0.15)),f); continue; } d.fy=f; } D[j++]=d; } D.length=j;
   for(const g of RM.gibs){ if(g.rest) continue; g.vy-=9.8*dt; g.m.position.x+=g.vx*dt; g.m.position.y+=g.vy*dt; g.m.position.z+=g.vz*dt; g.m.rotation.x+=g.spin*dt; g.m.rotation.y+=g.spin*0.7*dt;
-    if(g.m.position.y<g.r){ g.m.position.y=g.r; g.vy=-g.vy*0.25; g.vx*=0.6; g.vz*=0.6; g.spin*=0.6; if(Math.random()<0.5) rmSplat(g.m.position.x,g.m.position.z,g.r*3); if(Math.abs(g.vy)<0.3&&Math.hypot(g.vx,g.vz)<0.15) g.rest=true; } } }
-function rmSplat(x,z,r){ const i=RM.splat%700; RM.splat++; RMO.position.set(x,0.006+(i%50)*0.00008,z); RMO.rotation.set(-Math.PI/2,0,Math.random()*6.28); const sx=r*(0.7+Math.random()*0.6); RMO.scale.set(sx,r,1); RMO.updateMatrix(); RM.splIM.setMatrixAt(i,RMO.matrix); RM.splIM.count=Math.min(700,RM.splat); RM.splIM.instanceMatrix.needsUpdate=true; }
-function rmPool(x,z,add){ let p=RM.pools.find(q=>Math.hypot(q.x-x,q.z-z)<0.35); if(!p){ if(RM.pools.length>=8) return; const m=new THREE.Mesh(new THREE.CircleGeometry(1,28),RMMAT.pool); m.rotation.x=-Math.PI/2; m.position.set(x,0.009+RM.pools.length*0.0006,z); m.scale.setScalar(0.02); m.userData.frs=1; MAPG.fun.add(m); p={x,z,v:0,m}; RM.pools.push(p); }
+    const gf=rmFloor(g.m.position.x,g.m.position.z); if(g.m.position.y<gf+g.r){ g.m.position.y=gf+g.r; g.vy=-g.vy*0.25; g.vx*=0.6; g.vz*=0.6; g.spin*=0.6; if(Math.random()<0.5) rmSplat(g.m.position.x,g.m.position.z,g.r*3,gf); if(Math.abs(g.vy)<0.3&&Math.hypot(g.vx,g.vz)<0.15) g.rest=true; } } }
+function rmSplat(x,z,r,fy){ const i=RM.splat%700; RM.splat++; RMO.position.set(x,(fy==null?rmFloor(x,z):fy)+0.006+(i%50)*0.00008,z); RMO.rotation.set(-Math.PI/2,0,Math.random()*6.28); const sx=r*(0.7+Math.random()*0.6); RMO.scale.set(sx,r,1); RMO.updateMatrix(); RM.splIM.setMatrixAt(i,RMO.matrix); RM.splIM.count=Math.min(700,RM.splat); RM.splIM.instanceMatrix.needsUpdate=true; }
+function rmPool(x,z,add){ let p=RM.pools.find(q=>Math.hypot(q.x-x,q.z-z)<0.35); if(!p){ if(RM.pools.length>=8) return; const m=new THREE.Mesh(new THREE.CircleGeometry(1,28),RMMAT.pool); m.rotation.x=-Math.PI/2; m.position.set(x,rmFloor(x,z)+0.009+RM.pools.length*0.0006,z); m.scale.setScalar(0.02); m.userData.frs=1; (RM.root||MAPG.fun).add(m); p={x,z,v:0,m}; RM.pools.push(p); }
   p.v+=add; const r=Math.min(0.6,Math.sqrt(p.v)*0.9); p.m.scale.set(r,r*0.85,1); }
 /* ---------- lugar no parque, reset e laço ---------- */
 function rmBuild(){ if(RM.built) return; RM.built=true; rmMats();
-  RM.x=FX(13)-3; RM.z=FZ(44); RM.yaw0=Math.PI/2;
+  RM.labX=RM.x=FX(13)-3; RM.labZ=RM.z=FZ(44); RM.yaw0=Math.PI/2; RM.map='fun'; RM.root=MAPG.fun;
   const root=MAPG.fun; RM.g=new THREE.Group(); root.add(RM.g); RM.dyn=new THREE.Group(); root.add(RM.dyn);
   const pad=new THREE.Mesh(new THREE.CircleGeometry(4.2,48),new THREE.MeshBasicMaterial({color:0x1e0a2a})); pad.rotation.x=-Math.PI/2; pad.position.set(RM.x,0.012,RM.z); root.add(pad);
   const ring=new THREE.Mesh(new THREE.RingGeometry(4.1,4.25,64),funGlow(NEON.green)); ring.rotation.x=-Math.PI/2; ring.position.set(RM.x,0.02,RM.z); root.add(ring);
@@ -589,7 +601,12 @@ function rmBuild(){ if(RM.built) return; RM.built=true; rmMats();
   const lb=new THREE.Mesh(new THREE.PlaneGeometry(1.4,0.35),funSign('RESETAR',1.4,0.35,'#ff4040')); lb.position.set(0,1.55,0); lb.rotation.y=Math.PI*0.75; cg.add(lb); root.add(cg);
   funItem('rmreset',bx,bz,1.5,'Resetar o homem do laboratório',()=>{ rmReset(); btn.position.y=1.09; setTimeout(()=>btn.position.y=1.12,180); try{ Snd.ui('select'); }catch(e){} });
   rmPhysBuild(); rmBuildVisuals(); rmReset(); try{ if(typeof funReskin==='function') funReskin(); }catch(e){} }
-function rmReset(){ if(!RM.built) return; rmPhysReset(RM.x,RM.z,RM.yaw0);
+// leva o boneco para qualquer lugar de qualquer mapa (o laboratório do 4FUN é só o lugar padrão)
+function rmSpawnAt(x,z,yaw,map){ if(!RM.built) rmBuild(); const root=MAPG[map]||MAPG.fun; RM.map=map; RM.root=root;
+  for(const o of [RM.g,RM.dyn,RM.dropIM,RM.splIM]){ root.add(o); o.visible=true; } RM.x=x; RM.z=z; RM.yaw0=yaw; rmResetHere(); }
+function rmDespawn(){ if(!RM.built) return; rmResetHere(); RM.on=false; for(const o of [RM.g,RM.dyn,RM.dropIM,RM.splIM]) o.parent&&o.parent.remove(o); }
+function rmReset(){ if(!RM.built) return; rmSpawnAt(RM.labX,RM.labZ,Math.PI/2,'fun'); }
+function rmResetHere(){ rmPhysReset(RM.x,RM.z,RM.yaw0);
   RM.chestFront.visible=RM.bellyFront.visible=true; RM.chestOrg.visible=RM.bellyOrg.visible=RM.chestCav.visible=RM.bellyCav.visible=false; RM.headG.visible=true;
   const kill=o=>{ o.traverse(q=>{ if(q.geometry) q.geometry.dispose(); }); o.parent&&o.parent.remove(o); };   // libera a memória das marcas, cotos e pedaços
   for(const m of RM.marks) kill(m); RM.marks=[]; while(RM.dyn.children.length) kill(RM.dyn.children[0]);
@@ -609,10 +626,22 @@ function rmPlayerTouch(dt){ if(typeof P==='undefined'||!P||!P.pos||G.state!=='pl
     const nx=dx/d, nz=dz/d, vn=b.v.x*nx+b.v.z*nz; if(vn<0.45){ b.v.x+=nx*(0.45-vn)*0.25; b.v.z+=nz*(0.45-vn)*0.25; } RM.sleep=false; RM.sleepT=0; } }
 /* ---------- ganchos no jogo ---------- */
 const RMF={on:false,d:null,s:null};
-{ const f0=fire; fire=function(){ if(CUR!=='fun'||!RM.on) return f0.apply(this,arguments); RMF.on=true; try{ RMF.s=curSlot(); RMF.d=RMF.s?wstat(RMF.s):null; return f0.apply(this,arguments); } finally{ RMF.on=false; } }; }
-{ const rw0=rayWall; rayWall=function(o,d,max){ const t=rw0.apply(this,arguments); if(!RMF.on||!RM.on||CUR!=='fun'||!RMF.d) return t; const h=rmRay(o,d,t);
+{ const f0=fire; fire=function(){ if(!RM.on||RM.map!==CUR) return f0.apply(this,arguments); RMF.on=true; try{ RMF.s=curSlot(); RMF.d=RMF.s?wstat(RMF.s):null; return f0.apply(this,arguments); } finally{ RMF.on=false; } }; }
+{ const rw0=rayWall; rayWall=function(o,d,max){ const t=rw0.apply(this,arguments); if(!RMF.on||!RM.on||RM.map!==CUR||!RMF.d) return t; const h=rmRay(o,d,t);
     if(!h) return t; if(RMF.d.proj) return h.t; RH.kind='none';
     const dmg=RMF.d.dmg*(RMF.d.range?rmCl(1.25-h.t/RMF.d.range,0.25,1):1); try{ rmHitBullet(h,o,d,dmg,RMF.s&&RMF.s.id,RMF.d.dmg); }catch(e){ console.warn('[Bunker] homem de testes',e); } return h.t; }; }
-{ const ex0=explodeSplash; explodeSplash=function(p,dmg,rad){ const r=ex0.apply(this,arguments); if(CUR==='fun'&&RM.on) try{ rmBlast(p,dmg,rad); }catch(e){} return r; }; }
-v9On('frame',dt=>{ if(CUR!=='fun') return; if(!RM.built){ try{ rmBuild(); }catch(e){ console.warn('[Bunker] lab de física',e); RM.built=true; return; } } try{ rmUpdate(dt); }catch(e){ if(!RM._err){ RM._err=1; console.warn('[Bunker] homem de testes',e); } } });
+{ const ex0=explodeSplash; explodeSplash=function(p,dmg,rad){ const r=ex0.apply(this,arguments); if(RM.on&&RM.map===CUR) try{ rmBlast(p,dmg,rad); }catch(e){} return r; }; }
+v9On('frame',dt=>{ if(CUR==='fun'&&!RM.built){ try{ rmBuild(); }catch(e){ console.warn('[Bunker] lab de física',e); RM.built=true; return; } } if(!RM.built||!RM.on||RM.map!==CUR) return; try{ rmUpdate(dt); }catch(e){ if(!RM._err){ RM._err=1; console.warn('[Bunker] homem de testes',e); } } });
+// onde colocar: no ponto da mira (até 30 m) ou bem na sua frente; nunca dentro de parede
+function rmSpawnSpot(near){ const o=camera.position.clone(), d=new THREE.Vector3(); camera.getWorldDirection(d);
+  let x,z; if(near||Math.abs(d.y)>0.97){ const l=Math.hypot(d.x,d.z)||1; x=P.pos.x+d.x/l*1.8; z=P.pos.z+d.z/l*1.8; }
+  else { const t=rayWall(o,d,30); const hx=o.x+d.x*t, hz=o.z+d.z*t, l=Math.hypot(d.x,d.z)||1; const back=RH.kind==='none'||RH.ny>0.5?0:0.7; x=hx-d.x/l*back; z=hz-d.z/l*back; }
+  const p={x,z}; for(let i=0;i<3;i++) collide(p,0.55,solidIn,true); if(solidIn(Math.floor(p.x/S),Math.floor(p.z/S))) return null;
+  return {x:p.x,z:p.z,yaw:Math.atan2(P.pos.x-p.x,P.pos.z-p.z)}; }
+CMDS.boneco={d:'boneco [mira|aqui|lab|remover] · coloca o boneco de física (ragdoll) onde você mira, em qualquer mapa',f:a=>{
+  if(!needGame()) return; const arg=(a[0]||'mira').toLowerCase(); if(!RM.built) rmBuild();
+  if(arg==='remover'||arg==='tirar'||arg==='sumir'){ rmDespawn(); cprint('Boneco removido.'); return; }
+  if(arg==='lab'){ if(CUR!=='fun'){ cprint('O laboratório fica no Parque 4FUN. Use "boneco" ou "boneco aqui" para colocar ele aqui.','err'); return; } rmReset(); cprint('Boneco de volta ao laboratório.'); return; }
+  const sp=rmSpawnSpot(arg==='aqui'); if(!sp){ cprint('Não achei um lugar livre ali. Mire no chão ou use "boneco aqui".','err'); return; }
+  rmSpawnAt(sp.x,sp.z,sp.yaw,CUR); cprint(arg==='aqui'?'Boneco colocado na sua frente.':'Boneco colocado onde você está mirando.'); }};
 CMDS.homem={d:'homem · reseta o homem do laboratório de física (Parque 4FUN)',f:()=>{ if(CUR!=='fun'){ cprint('Só no Parque 4FUN.','err'); return; } if(!RM.built) rmBuild(); rmReset(); cprint('Homem resetado.'); }};

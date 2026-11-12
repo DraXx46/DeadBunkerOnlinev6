@@ -18,8 +18,8 @@ v9Css(`
 @keyframes pklShine{0%,55%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
 .pkc.sel:not(.off){border-color:#f0d28a;box-shadow:0 0 0 2px rgba(240,210,138,.65),0 0 28px rgba(240,210,138,.3);animation:pklPulse 1.1s ease-in-out infinite}
 @keyframes pklPulse{50%{box-shadow:0 0 0 2px rgba(240,210,138,.95),0 0 38px rgba(240,210,138,.45)}}
-.pkc.locked{border-color:#ff4a32!important;box-shadow:0 0 0 2px #ff4a32,0 0 40px rgba(255,60,30,.55)!important;animation:none!important;transform:translateY(-6px) scale(1.05)!important}
-.pkc .stamp{position:absolute;left:50%;top:38%;transform:translate3d(-50%,-50%,60px) rotate(-14deg) scale(2.4);opacity:0;padding:4px 12px;font:700 20px var(--f-display);letter-spacing:.22em;color:#ff4a32;border:3px solid #ff4a32;background:rgba(10,4,3,.6);text-shadow:0 0 10px rgba(255,60,30,.6);pointer-events:none;z-index:3}
+.pkc.locked{border-color:#ff4a32!important;box-shadow:0 0 0 2px #ff4a32,0 0 40px rgba(255,60,30,.55)!important;animation:none!important}
+.pkc .stamp{position:absolute;left:50%;top:38%;transform:translate3d(-50%,-50%,60px) rotate(-14deg) scale(2.4);opacity:0;padding:4px 12px;font:700 15px var(--f-display);letter-spacing:.14em;color:#ff4a32;border:3px solid #ff4a32;white-space:nowrap;background:rgba(10,4,3,.6);text-shadow:0 0 10px rgba(255,60,30,.6);pointer-events:none;z-index:3}
 .pkc.locked .stamp{animation:pklStamp .38s cubic-bezier(.2,1.6,.4,1) forwards}
 @keyframes pklStamp{to{opacity:1;transform:translate3d(-50%,-50%,60px) rotate(-14deg) scale(1)}}
 #pickscr.pklocked .pkc:not(.locked){opacity:.4;filter:grayscale(.6);transition:opacity .4s,filter .4s}
@@ -28,7 +28,8 @@ v9Css(`
 @keyframes pklFlash{0%{opacity:1}100%{opacity:0}}
 #pickscr.pkshake .pkbox{animation:pklShake .32s}
 @keyframes pklShake{20%{transform:translate(-6px,3px)}40%{transform:translate(5px,-4px)}60%{transform:translate(-3px,2px)}80%{transform:translate(2px,-1px)}}
-#pk-info .quote{grid-column:2/4;margin-top:6px;padding:8px 12px;border-left:3px solid #ff4a32;background:rgba(255,60,30,.08);font-size:14px;font-style:italic;color:#f3ebe2;animation:pkxIn .3s ease-out}
+#pk-info.hasq .ps{visibility:hidden}
+#pk-info .quote{position:absolute;left:186px;right:250px;bottom:24px;padding:6px 12px;border-left:3px solid #ff4a32;background:rgba(255,60,30,.08);font-size:14px;font-style:italic;color:#f3ebe2;animation:pkxIn .3s ease-out}
 `);
 { const box=document.querySelector('#pickscr .pkbox'), pl=document.querySelector('#pickscr .pktime');
   const row=document.createElement('div'); row.id='pk-lockrow';
@@ -82,10 +83,10 @@ function pklLock(){
   if(fl){ fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go'); }
   if(sc){ sc.classList.remove('pkshake'); void sc.offsetWidth; sc.classList.add('pkshake'); }
   const line=pklVoice(c);
-  try{ pkxShow(c); const el=document.getElementById('pk-info'); if(el&&line){ el.querySelector('.quote')?.remove(); const q=document.createElement('div'); q.className='quote'; q.textContent='“'+line+'”'; el.appendChild(q); } }catch(e){}
+  try{ pkxShow(c); const el=document.getElementById('pk-info'); if(el&&line){ el.querySelector('.quote')?.remove(); const q=document.createElement('div'); q.className='quote'; q.textContent='“'+line+'”'; el.appendChild(q); el.classList.add('hasq'); } }catch(e){}
 }
 const openPickLock=openPick;
-openPick=function(){ PKL.sel=null; PKL.locked=false; const r=openPickLock.apply(this,arguments);
+openPick=function(){ PKL.sel=null; PKL.locked=false; try{ const el=document.getElementById('pk-info'); if(el){ el.classList.remove('hasq'); el.querySelector('.quote')?.remove(); el.dataset.c=''; } }catch(e){} const r=openPickLock.apply(this,arguments);
   const own=PICK.picks&&PICK.picks[PICK.me]; if(own){ PKL.sel=own; PKL.locked=true; } pklRefresh(); return r; };
 const renderPickLock=renderPick;
 renderPick=function(){ const r=renderPickLock.apply(this,arguments); try{ pklRefresh(); }catch(e){} return r; };
@@ -96,3 +97,33 @@ pickNetMsg=function(m){ if(m&&m.type==='pickTaken'){ PKL.locked=false; PKL.sel=n
 // tempo acabando: trava sozinho o que estiver selecionado
 setInterval(()=>{ if(!PICK.on||PKL.locked||!PKL.sel) return; if(PICK.deadline-performance.now()<1200) pklLock(); },200);
 addEventListener('keydown',e=>{ if(!PICK.on) return; if(e.code==='Enter'||e.code==='NumpadEnter'){ e.preventDefault(); pklLock(); } },true);
+
+/* ---- cartões em vidro líquido: vidro fosco translúcido, borda que reflete a luz e brilho que acompanha o mouse ---- */
+v9Css(`
+#pickscr{background:#060403}
+#pickscr::before,#pickscr::after{content:'';position:fixed;pointer-events:none;border-radius:50%;filter:blur(70px);opacity:.55;z-index:0}
+#pickscr::before{width:46vw;height:46vw;left:-8vw;top:-10vw;background:radial-gradient(circle,#a3161a,transparent 65%);animation:lgOrb1 16s ease-in-out infinite alternate}
+#pickscr::after{width:40vw;height:40vw;right:-6vw;bottom:-12vw;background:radial-gradient(circle,#c27a1c,transparent 65%);animation:lgOrb2 19s ease-in-out infinite alternate}
+@keyframes lgOrb1{to{transform:translate(18vw,14vh) scale(1.15)}}
+@keyframes lgOrb2{to{transform:translate(-16vw,-18vh) scale(.9)}}
+#pickscr .pkbox{position:relative;z-index:1}
+.pkc{border-radius:18px!important;border:1px solid rgba(255,255,255,.16)!important;
+  background:linear-gradient(160deg,rgba(255,255,255,.13) 0%,rgba(255,255,255,.04) 38%,rgba(255,255,255,.02) 62%,rgba(255,255,255,.08) 100%)!important;
+  backdrop-filter:blur(18px) saturate(170%) brightness(1.06);-webkit-backdrop-filter:blur(18px) saturate(170%) brightness(1.06);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.38),inset 0 -1px 0 rgba(255,255,255,.08),inset 0 0 0 1px rgba(255,255,255,.04),inset 0 -18px 40px rgba(0,0,0,.18),0 10px 30px rgba(0,0,0,.45)!important;
+  overflow:hidden}
+.pkc::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(115deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,.05) 22%,rgba(255,255,255,0) 40%),radial-gradient(120% 60% at 50% -10%,rgba(255,255,255,.14),transparent 60%);mix-blend-mode:screen}
+.pkc::before{background:radial-gradient(circle at var(--mx) var(--my),rgba(255,255,255,.28),rgba(255,240,220,.08) 28%,rgba(255,255,255,0) 55%)!important;border-radius:inherit}
+.pkc img{border-radius:12px!important;border:1px solid rgba(255,255,255,.18)!important;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.pkc .tag{border-radius:10px;background:rgba(255,255,255,.08);backdrop-filter:blur(6px)}
+.pkc .pkt i{background:rgba(255,255,255,.1)!important;border-color:rgba(255,255,255,.22)!important;backdrop-filter:blur(6px)}
+.pkc.hov:not(.off),.pkc:hover:not(.off){border-color:rgba(255,255,255,.34)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 0 22px rgba(255,255,255,.06),0 14px 40px rgba(0,0,0,.55),0 0 26px rgba(255,200,140,.16)!important}
+.pkc.sel:not(.off){border-color:rgba(240,210,138,.85)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 0 0 2px rgba(240,210,138,.55),0 0 34px rgba(240,210,138,.3)!important}
+.pkc.locked{border-color:rgba(255,90,60,.95)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 2px rgba(255,74,50,.8),0 0 44px rgba(255,60,30,.5)!important}
+.pkc.off{background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.01))!important}
+#pk-info{border-radius:18px;border:1px solid rgba(255,255,255,.14)!important;background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.02) 45%,rgba(0,0,0,.25))!important;backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 12px 34px rgba(0,0,0,.45)}
+#pk-info .art{border-radius:12px}
+.pktime{border-radius:14px;background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.16)!important;backdrop-filter:blur(14px)}
+#pk-lock{border-radius:14px}
+`);

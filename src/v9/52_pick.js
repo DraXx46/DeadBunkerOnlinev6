@@ -16,6 +16,8 @@ const PKX_ST=['Resistência','Dano','Mobilidade','Suporte'], PKX_DIFF=['','Fáci
 
 v9Css(`
 #pk-grid{perspective:900px}
+.pkc:hover:not(.off){transform:none}
+.pkc{height:100%}
 .pkc{transform-style:preserve-3d;will-change:transform;--mx:50%;--my:50%;transition:transform .18s ease-out,border-color .15s,box-shadow .2s!important}
 .pkc::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .2s;background:radial-gradient(circle at var(--mx) var(--my),rgba(255,230,180,.22),rgba(255,230,180,0) 55%)}
 .pkc:hover::before,.pkc:focus-visible::before{opacity:1}
@@ -25,7 +27,8 @@ v9Css(`
 .pkc .pkt{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;min-height:18px}
 .pkc .pkt i{font-style:normal;font-size:9.5px;letter-spacing:.06em;padding:2px 6px;border-radius:9px;background:rgba(240,210,138,.12);color:#e9cf93;border:1px solid rgba(240,210,138,.25)}
 .pkc.hov:not(.off){border-color:#f0d28a;box-shadow:0 14px 36px rgba(0,0,0,.6),0 0 22px rgba(240,180,90,.18)}
-#pk-info{position:relative;display:grid;grid-template-columns:150px 1fr 220px;gap:18px;align-items:start;padding:14px 18px;border:1px solid rgba(240,210,138,.25);background:linear-gradient(180deg,rgba(26,14,8,.92),rgba(8,6,5,.92));min-height:150px;opacity:.35;transition:opacity .25s}
+#pk-info{position:relative;display:grid;grid-template-columns:150px 1fr 220px;gap:18px;align-items:start;padding:14px 18px;border:1px solid rgba(240,210,138,.25);background:linear-gradient(180deg,rgba(26,14,8,.92),rgba(8,6,5,.92));height:236px;box-sizing:border-box;overflow:hidden;opacity:.35;transition:opacity .25s}
+#pk-info>div{min-width:0}
 #pk-info.on{opacity:1}
 #pk-info .art{width:150px;height:150px;object-fit:cover;border:1px solid rgba(240,210,138,.3);animation:pkxIn .35s ease-out}
 #pk-info h3{margin:0;font:26px var(--f-display);color:#f3ebe2;letter-spacing:.03em}
@@ -54,7 +57,7 @@ function pkxShow(c){
   if(!C) return; if(el.dataset.c===c&&el.classList.contains('on')) return; el.dataset.c=c;
   let art=''; try{ art=CHAR_ART[c]?charFace(c):charThumb(c,pickVar(c)); }catch(e){}
   const nm=(C.vars[pickVar(c)]||{}).name||C.name;
-  el.innerHTML=`<img class="art" src="${art}" alt="">
+  el.classList.remove("hasq"); el.innerHTML=`<img class="art" src="${art}" alt="">
    <div><h3>${nm}</h3><div class="role">${C.role||''}</div><div class="tags">${X.tags.map(t=>`<i>${t}</i>`).join('')}</div>
    <p class="line">${X.line}</p>
    <div class="ab"><kbd>Z</kbd><span><b>${A.name||'Habilidade'}</b> · ${A.desc||''}</span><kbd>X</kbd><span><b>${U.name||'Ultimate'}</b> · ${U.desc||''}</span></div>
@@ -74,8 +77,8 @@ renderPick=function(){
       const im=b.querySelector('img');
       b.addEventListener('pointermove',ev=>{ const R=b.getBoundingClientRect(), x=(ev.clientX-R.left)/R.width, y=(ev.clientY-R.top)/R.height;
         b.style.setProperty('--mx',(x*100).toFixed(1)+'%'); b.style.setProperty('--my',(y*100).toFixed(1)+'%');
-        if(!b.classList.contains('off')) b.style.transform=`translateY(-6px) rotateX(${((0.5-y)*14).toFixed(2)}deg) rotateY(${((x-0.5)*16).toFixed(2)}deg) scale(1.03)`;
-        if(im) im.style.transform=`translateZ(18px) translate(${((x-0.5)*-8).toFixed(1)}px,${((y-0.5)*-6).toFixed(1)}px) scale(1.06)`; });
+        if(!b.classList.contains('off')) b.style.transform=`rotateX(${((0.5-y)*12).toFixed(2)}deg) rotateY(${((x-0.5)*14).toFixed(2)}deg)`;
+        if(im) im.style.transform=`translateZ(18px) translate(${((x-0.5)*-6).toFixed(1)}px,${((y-0.5)*-4).toFixed(1)}px)`; });
       const enter=()=>{ b.classList.add('hov'); pkxShow(c); try{ Snd.ui('hover'); }catch(e){} };
       const leave=()=>{ b.classList.remove('hov'); b.style.transform=''; if(im) im.style.transform=''; const mine=pkxCur(); if(mine) pkxShow(mine); };
       b.addEventListener('pointerenter',enter); b.addEventListener('focus',enter); b.addEventListener('pointerleave',leave); b.addEventListener('blur',leave);

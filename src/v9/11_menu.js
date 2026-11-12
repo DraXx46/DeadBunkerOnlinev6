@@ -124,7 +124,7 @@ const V9NEWS=[
   ['Bebidas','Soro da Vida e Mula de Carga','Um reviver a mais e espaço para uma 3ª arma.'],
   ['Armas','Besta Carcará','Arma nova — e a Barrett agora puxa o ferrolho e bate muito mais forte.'],
   ['Cachorros','Agarrão na perna','Aperte ataque sem parar para esfaquear antes que ele te derrube.'],
-  ['Eventos','Roleta, sósia e troca','Eventos mais frequentes, com prêmios e castigos.']];
+  ['Eventos','Roleta, troca e chuva de pontos','Eventos mais frequentes, com prêmios e castigos.']];
 const NWS={i:0,t:null};
 function newsRender(){ const box=document.querySelector('#ad .v9news'); if(!box) return; const n=V9NEWS[NWS.i%V9NEWS.length];
   box.querySelector('.nw-s').innerHTML=`<small>${n[0]}</small><b>${n[1]}</b><p>${n[2]}</p>`;

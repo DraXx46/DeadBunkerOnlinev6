@@ -10,11 +10,11 @@ WEAPONS.m1911.recoil=0.032;
 v9Css(`
 #bscope{position:absolute;inset:0;pointer-events:none;z-index:4;display:none;--o:0;--k:0;--f:0;--R:min(46vh,46vw)}
 #bscope.on{display:block}
-#bscope .tube{position:absolute;inset:-12%;transform:translate(calc(var(--k)*0px),calc(var(--k)*-9vh)) rotate(calc(var(--k)*-2.5deg)) scale(calc(1 + (1 - var(--o))*.35));
+#bscope .tube{position:absolute;inset:-12%;transform:translate(calc(var(--k)*0px),calc(var(--k)*-4.5vh)) rotate(calc(var(--k)*-1.25deg)) scale(calc(1 + (1 - var(--o))*.35));
   background:radial-gradient(circle at 50% 50%,rgba(0,0,0,0) 0,rgba(0,0,0,0) calc(var(--R) + (1 - var(--o))*95vmax - 30px),rgba(8,10,12,.7) calc(var(--R) + (1 - var(--o))*95vmax - 8px),#030405 calc(var(--R) + (1 - var(--o))*95vmax),#030405 100%)}
 #bscope .glass{position:absolute;left:50%;top:50%;width:calc(var(--R)*2);height:calc(var(--R)*2);margin:calc(var(--R)*-1) 0 0 calc(var(--R)*-1);border-radius:50%;
-  transform:translateY(calc(var(--k)*-9vh)) rotate(calc(var(--k)*-2.5deg));
-  backdrop-filter:blur(calc((1 - var(--o))*7px + var(--f)*3px + var(--k)*5px));-webkit-backdrop-filter:blur(calc((1 - var(--o))*7px + var(--f)*3px + var(--k)*5px));
+  transform:translateY(calc(var(--k)*-4.5vh)) rotate(calc(var(--k)*-1.25deg));
+  backdrop-filter:blur(calc((1 - var(--o))*7px + var(--f)*3px + var(--k)*2.5px));-webkit-backdrop-filter:blur(calc((1 - var(--o))*7px + var(--f)*3px + var(--k)*2.5px));
   background:radial-gradient(circle at 38% 34%,rgba(160,210,255,.10) 0,rgba(0,0,0,0) 30%),radial-gradient(circle at 50% 50%,rgba(0,0,0,0) 60%,rgba(20,40,60,.35) 96%);
   box-shadow:inset 0 0 0 2px rgba(0,0,0,.85),inset 0 0 40px 8px rgba(0,0,0,.55)}
 #bscope .ret{position:absolute;inset:0;border-radius:50%;opacity:calc(var(--o)*var(--o));transform:rotate(calc((1 - var(--o))*24deg)) scale(calc(1.25 - var(--o)*.25))}
@@ -34,10 +34,10 @@ body.barscope #scope{display:none!important}
 const HV={kick:0, post:0, wasScoped:false, focus:0, vm:0, recov:0, recovLeft:0, glock:0, shove:0, last:false};
 v9On('fire',(s,d)=>{
   if(s.id==='ptrs'){
-    if(HV.wasScoped){ HV.kick=1; HV.post=0.32; shake(0.45); try{ padRumble(1,0.9,220); }catch(e){} }
+    if(HV.wasScoped){ HV.kick=1; HV.post=0.32; shake(0.22); try{ padRumble(1,0.9,220); }catch(e){} }
     else{ // sem luneta: o coice da .50 joga a arma e a câmera
-      const k=1-P.crouch*0.35; P.pitch=clamp(P.pitch+0.15*k,-1.45,1.45); P.yaw+=rand(-1,1)*0.045*k;
-      HV.recovLeft=0.15*k*0.55; HV.vm=1; HV.shove=1; shake(1.1); try{ padRumble(1,1,320); }catch(e){} v9Flash('#ffb060',0.18,0.18);
+      const k=1-P.crouch*0.35; P.pitch=clamp(P.pitch+0.075*k,-1.45,1.45); P.yaw+=rand(-1,1)*0.0225*k;
+      HV.recovLeft=0.075*k*0.55; HV.vm=1; HV.shove=1; shake(0.55); try{ padRumble(1,1,320); }catch(e){} v9Flash('#ffb060',0.18,0.18);
     }
   } else if(s.id==='m1911'){ HV.glock=1; }
 });
@@ -64,12 +64,49 @@ v9On('frame',dt=>{
 V9VM.push(dt=>{
   const s=curSlot(); if(!s) return;
   if(s.id==='ptrs'){
-    if(HV.vm>0){ const a=Math.sin(Math.min(1,HV.vm)*Math.PI*0.5); vmRoot.position.z+=a*0.24; vmRoot.position.y+=a*0.03; vmRoot.rotation.x+=a*0.62; vmRoot.rotation.z+=a*0.12; vmRoot.rotation.y+=a*0.06; }
+    if(HV.vm>0){ const a=Math.sin(Math.min(1,HV.vm)*Math.PI*0.5); vmRoot.position.z+=a*0.12; vmRoot.position.y+=a*0.015; vmRoot.rotation.x+=a*0.31; vmRoot.rotation.z+=a*0.06; vmRoot.rotation.y+=a*0.03; }
     if(IN.ads&&V9B.cyc<=0&&!Wp.scoped){ const a=Math.max(0,P.ads-0.3); vmRoot.rotation.z+=a*0.09*(1-V9B.open); vmRoot.position.z-=a*0.04*V9B.open; vmRoot.position.y+=Math.sin(G.t*14)*0.002*a; }
   } else if(s.id==='m1911'&&HV.glock>0){ const a=HV.glock*HV.glock; vmRoot.rotation.x+=a*0.22; vmRoot.position.z+=a*0.05; vmRoot.position.y+=a*0.012; }
 });
 // o ombro é empurrado para trás no coice sem luneta
-{ const v9Cam0=v9Cam; v9Cam=function(dt){ const r=v9Cam0.apply(this,arguments); if(HV.shove>0&&G.state==='playing'){ const a=HV.shove*HV.shove; camera.translateZ(a*0.16); camera.rotateZ(a*0.03); } return r; }; }
+{ const v9Cam0=v9Cam; v9Cam=function(dt){ const r=v9Cam0.apply(this,arguments); if(HV.shove>0&&G.state==='playing'){ const a=HV.shove*HV.shove; camera.translateZ(a*0.08); camera.rotateZ(a*0.015); } return r; }; }
 
 // vozes dos personagens mais altas (gravadas e sintéticas)
 voxRecVol=function(){ const v=CFG.voice==null?1:+CFG.voice||0, s=Math.max(0.05,CFG.sfx==null?1:+CFG.sfx||0); return clamp(2.0*v/s,0,5); };
+
+/* Luneta física no modelo da Barrett (M107): tubo, sinos, anéis, torres e lentes. Some quando a luneta 2D abre. */
+function hvScope3d(){
+  const G3=new THREE.Group(); G3.name='hvScope3d';
+  const met=new THREE.MeshStandardMaterial({color:0x191b1d,metalness:0.65,roughness:0.42});
+  const met2=new THREE.MeshStandardMaterial({color:0x26292c,metalness:0.55,roughness:0.55});
+  const lens=new THREE.MeshPhongMaterial({color:0x10263a,specular:0x9fd4ff,shininess:110,emissive:0x0a2238,emissiveIntensity:0.35,transparent:true,opacity:0.92});
+  const cyl=(r1,r2,l,m,seg)=>{ const g=new THREE.CylinderGeometry(r1,r2,l,seg||20,1); g.rotateX(Math.PI/2); return new THREE.Mesh(g,m); };
+  const Y=0.104;
+  const add=(m,x,y,z)=>{ m.position.set(x,y,z); G3.add(m); return m; };
+  add(cyl(0.0165,0.0165,0.25,met),0,Y,-0.02);                 // tubo principal
+  add(cyl(0.029,0.0165,0.07,met),0,Y,-0.18);                  // transição do sino da objetiva
+  add(cyl(0.029,0.029,0.06,met),0,Y,-0.245);                  // sino da objetiva
+  add(cyl(0.031,0.031,0.012,met2),0,Y,-0.272);                // aro da objetiva
+  add(cyl(0.0165,0.024,0.05,met),0,Y,0.13);                   // transição da ocular
+  add(cyl(0.024,0.024,0.05,met2,24),0,Y,0.18);                // ocular
+  add(cyl(0.026,0.026,0.012,met),0,Y,0.205);                  // borracha da ocular
+  const lo=new THREE.Mesh(new THREE.CircleGeometry(0.026,24),lens); lo.position.set(0,Y,-0.279); lo.rotation.y=Math.PI; G3.add(lo);
+  const le=new THREE.Mesh(new THREE.CircleGeometry(0.021,24),lens); le.position.set(0,Y,0.2115); G3.add(le);
+  const tur=new THREE.CylinderGeometry(0.011,0.011,0.024,16);
+  add(new THREE.Mesh(tur,met2),0,Y+0.027,-0.03);              // torre de elevação
+  const tw=new THREE.Mesh(tur,met2); tw.rotation.z=Math.PI/2; add(tw,0.027,Y,-0.03); // torre de deriva
+  const tp=new THREE.Mesh(new THREE.CylinderGeometry(0.0125,0.0125,0.004,16),met); add(tp,0,Y+0.041,-0.03);
+  const pz=new THREE.Mesh(new THREE.CylinderGeometry(0.009,0.009,0.02,14),met2); pz.rotation.z=-Math.PI/2; add(pz,-0.024,Y,-0.03); // paralaxe
+  for(const z of [-0.12,0.07]){                                // anéis + bases no trilho
+    add(cyl(0.021,0.021,0.022,met2),0,Y,z);
+    const b=new THREE.Mesh(new THREE.BoxGeometry(0.022,0.034,0.022),met2); add(b,0,Y-0.026,z);
+    const c=new THREE.Mesh(new THREE.BoxGeometry(0.036,0.008,0.03),met); add(c,0,0.072,z);
+    for(const sx of [-1,1]){ const sc=new THREE.Mesh(new THREE.CylinderGeometry(0.003,0.003,0.006,8),met); sc.rotation.z=Math.PI/2; add(sc,sx*0.02,0.072,z); }
+  }
+  G3.traverse(o=>{ if(o.isMesh){ o.castShadow=false; o.receiveShadow=false; o.frustumCulled=false; } });
+  return G3;
+}
+{ const sgm0=setGunModel; setGunModel=function(){ const r=sgm0.apply(this,arguments);
+  try{ const s=curSlot(); if(s&&s.id==='ptrs'&&gunModel&&!gunModel.userData.scope3d){ const g=hvScope3d(); gunModel.add(g); gunModel.userData.scope3d=g; gunModel.updateMatrixWorld(true); } }catch(e){ console.warn('[Bunker] luneta 3d',e); }
+  return r; }; }
+v9On('frame',()=>{ const g=gunModel&&gunModel.userData.scope3d; if(g) g.visible=!(typeof V9B!=='undefined'&&V9B.open>0.55); });

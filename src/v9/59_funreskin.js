@@ -36,7 +36,7 @@ function frsMat(m,mesh){ if(FRS.mats.has(m)) return FRS.mats.get(m); let out=m;
   }
   FRS.mats.set(m,out); return out; }
 function funReskin(root){ root=root||MAPG.fun; const skip=new Set([typeof RM!=='undefined'&&RM.g,typeof RM!=='undefined'&&RM.dyn,typeof RM!=='undefined'&&RM.dropIM,typeof RM!=='undefined'&&RM.splIM].filter(Boolean));
-  const todo=[]; root.traverse(o=>{ for(const s of skip){ let q=o; while(q){ if(q===s) return; q=q.parent; } } if(o.isMesh||o.isLine||o.isLineSegments||o.isInstancedMesh) todo.push(o); });
+  const todo=[]; root.traverse(o=>{ for(let q=o;q;q=q.parent) if(q.userData&&q.userData.rag) return; for(const s of skip){ let q=o; while(q){ if(q===s) return; q=q.parent; } } if(o.isMesh||o.isLine||o.isLineSegments||o.isInstancedMesh) todo.push(o); });
   let n=0;
   for(const o of todo){ if(o.userData.frs) continue; try{ n+=frsOne(o); o.userData.frs=1; }catch(e){ if(!FRS.warned){ FRS.warned=1; console.warn('[Bunker] 4fun visual',e); } } }
   return n; }

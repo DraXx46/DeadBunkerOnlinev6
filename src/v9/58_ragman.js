@@ -85,7 +85,7 @@ function rmJointDefs(){ const J=[], P=rmv, UP=P(0,1,0), FW=P(0,0,1), LF=P(1,0,0)
   return J; }
 
 /* ---------- montagem da física ---------- */
-const RMPH={B:[],J:[],byName:{},pairs:[],cts:[],scts:[],h:1/960};
+let RMPH={B:[],J:[],byName:{},pairs:[],cts:[],scts:[],h:1/960};
 function rmPhysBuild(){ const BD=rmBodyDefs(), JD=rmJointDefs(); RMPH.B=[]; RMPH.J=[]; RMPH.byName={};
   for(const d of BD){ const [w,h,dp]=d.box, m=d.m;
     const b={name:d.name,part:d.part,side:d.side,m,im:1/m,iI:rmv(12/(m*(h*h+dp*dp)),12/(m*(w*w+dp*dp)),12/(m*(w*w+h*h))),com:vcp(rmv(),d.com),
@@ -230,10 +230,11 @@ function rmVelPass(h){ const rw=RMT.r1, vv=RMT.c, ih2=1/(h*h);
     rmVelImp(A,ra,n.x*p,n.y*p,n.z*p); rmVelImp(Bb,rb,-n.x*p,-n.y*p,-n.z*p); }
   for(let i=0;i<RMPH.J.length;i++){ const j=RMPH.J[i]; if(j.on) rmJointDampV(j,j.damp,h); } }
 /* ---------- estado e controle (músculos, equilíbrio, passos, reações) ---------- */
-const RM={built:false,on:false,g:null,dyn:null,st:'stand',blood:100,t:0,acc:0,A:1,hurt:0,yaw:0,yaw0:0,x:0,z:0,
+let RM={built:false,on:false,g:null,dyn:null,st:'stand',blood:100,t:0,acc:0,A:1,hurt:0,yaw:0,yaw0:0,x:0,z:0,
   plant:[null,null],step:null,steps:[],fallT:0,fallDir:'F',groundT:0,landed:false,deadT:0,crumple:0,thrownT:0,legs:[1,1],
   wounds:[],acc:{},shot:-1,shotJ:0,lastHit:-9,headGone:false,openB:false,openC:false,gut:null,guard:[null,null],cov:1,
   drops:[],splat:0,pools:[],gibs:[],marks:[],sleep:false,sleepT:0,hipH:0.955,comOff:rmv(),com:rmv(),comV:rmv(),why:''};
+const RM0=JSON.stringify(RM);
 // poses (graus: flexão, lado, torção); chave sem L/R vale para os dois lados
 const RMPOSE={
   stand:{sp0:[3,0,0],sp1:[3,0,0],neck:[-2,0,0],sh:[3,6,0],el:[14,0,0],wr:[10,0,0],hip:[8,2,0],kn:[13,0,0],an:[5,0,0]},
@@ -457,7 +458,7 @@ function rmBuildVisuals(){ const M=rmMats(), N=RMPH.byName, P=rmv;
       rmPut(ft,rmBall(0.048,M.shoe,P(0.1*s,0.045,-0.045),1.0,0.8,0.9)); rmPut(ft,rmBox(0.102,0.014,0.27,M.sole,P(0.105*s,0.007,0.06))); } }
   // gotas e manchas (instanciadas)
   const root=MAPG.fun; RM.dropIM=new THREE.InstancedMesh(new THREE.SphereGeometry(1,5,4),RMMAT.drop,1400); RM.dropIM.count=0; RM.dropIM.frustumCulled=false; root.add(RM.dropIM);
-  RM.splIM=new THREE.InstancedMesh(new THREE.CircleGeometry(1,11),RMMAT.splat,700); RM.splIM.count=0; RM.splIM.frustumCulled=false; root.add(RM.splIM);
+  RM.splIM=new THREE.InstancedMesh(new THREE.CircleGeometry(1,11),RMMAT.splat,700); RM.splIM.count=0; RM.splIM.frustumCulled=false; root.add(RM.splIM); RM.dropIM.userData.rag=1; RM.splIM.userData.rag=1;
   for(const b of RMPH.B) b.g.traverse(o=>{ if(o.isMesh){ o.castShadow=false; o.frustumCulled=false; } }); }
 function rmDraw(){ for(const b of RMPH.B){ b.g.position.set(b.x.x,b.x.y,b.x.z); b.g.quaternion.set(b.q.x,b.q.y,b.q.z,b.q.w); }
   if(RM.heart&&RM.chestOrg.visible){ const bt=RM.st==='dead'?0:Math.pow(Math.max(0,Math.sin(RM.t*Math.PI*2*(1.1+(100-RM.blood)/60))),4); RM.heart.scale.set(1+bt*0.12,1.25*(1+bt*0.12),0.95*(1+bt*0.12)); }
@@ -591,7 +592,7 @@ function rmPool(x,z,add){ let p=RM.pools.find(q=>Math.hypot(q.x-x,q.z-z)<0.35); 
 /* ---------- lugar no parque, reset e laço ---------- */
 function rmBuild(){ if(RM.built) return; RM.built=true; rmMats();
   RM.labX=RM.x=FX(13)-3; RM.labZ=RM.z=FZ(44); RM.yaw0=Math.PI/2; RM.map='fun'; RM.root=MAPG.fun;
-  const root=MAPG.fun; RM.g=new THREE.Group(); root.add(RM.g); RM.dyn=new THREE.Group(); root.add(RM.dyn);
+  const root=MAPG.fun; RM.g=new THREE.Group(); RM.g.userData.rag=1; root.add(RM.g); RM.dyn=new THREE.Group(); RM.dyn.userData.rag=1; root.add(RM.dyn);
   const pad=new THREE.Mesh(new THREE.CircleGeometry(4.2,48),new THREE.MeshBasicMaterial({color:0x1e0a2a})); pad.rotation.x=-Math.PI/2; pad.position.set(RM.x,0.012,RM.z); root.add(pad);
   const ring=new THREE.Mesh(new THREE.RingGeometry(4.1,4.25,64),funGlow(NEON.green)); ring.rotation.x=-Math.PI/2; ring.position.set(RM.x,0.02,RM.z); root.add(ring);
   const sg=new THREE.Mesh(new THREE.PlaneGeometry(5.4,1.1),funSign('LAB DE FÍSICA',5.4,1.1,'#4bff8a')); sg.position.set(RM.x-4.6,3.1,RM.z); sg.rotation.y=Math.PI/2; root.add(sg);
@@ -627,31 +628,56 @@ function rmPlayerTouch(dt){ if(typeof P==='undefined'||!P||!P.pos||G.state!=='pl
     const nx=dx/d, nz=dz/d, vn=b.v.x*nx+b.v.z*nz; if(vn<0.45){ b.v.x+=nx*(0.45-vn)*0.25; b.v.z+=nz*(0.45-vn)*0.25; } RM.sleep=false; RM.sleepT=0; } }
 /* ---------- ganchos no jogo ---------- */
 // faca: corte (lateral) e golpe pesado (estocada) acertam o boneco se ele estiver mais perto que os zumbis
-{ const ks0=knifeStrike; knifeStrike=function(heavy,range,cone){ if(!RM.on||RM.map!==CUR||(typeof x1Live==='function'&&x1Live())) return ks0.apply(this,arguments);
+/* ---------- vários bonecos (teste de estresse): cada um tem o próprio estado; a física roda um de cada vez ---------- */
+const RMI=[];   // RMI[0] é o do laboratório
+function rmUse(k){ RM=k.RM; RMPH=k.RMPH; }
+function rmInst0(){ if(!RMI.length) RMI.push({RM,RMPH}); return RMI[0]; }
+function rmNewInst(){ const k0=rmInst0(); if(!RM.built){ rmUse(k0); rmBuild(); }
+  const k={RM:JSON.parse(RM0),RMPH:{B:[],J:[],byName:{},pairs:[],cts:[],scts:[],h:1/960}}; rmUse(k);
+  RM.g=new THREE.Group(); RM.dyn=new THREE.Group(); RM.g.userData.rag=1; RM.dyn.userData.rag=1; MAPG.fun.add(RM.g); MAPG.fun.add(RM.dyn);
+  rmPhysBuild(); rmBuildVisuals(); RM.dropIM.userData.rag=1; RM.splIM.userData.rag=1; RM.built=true; RM.labX=k0.RM.labX; RM.labZ=k0.RM.labZ; RM.map='fun'; RM.root=MAPG.fun; RM.on=false;
+  RMI.push(k); rmUse(k0); return k; }
+function rmEach(fn){ const k0=rmInst0(); try{ for(const k of RMI){ rmUse(k); if(RM.built&&RM.on&&RM.map===CUR) fn(k); } } finally{ rmUse(k0); } }
+function rmAnyHere(){ for(const k of RMI) if(k.RM.built&&k.RM.on&&k.RM.map===CUR) return true; return !RMI.length&&RM.on&&RM.map===CUR; }
+// faca: corte (lateral) e golpe pesado (estocada) acertam o boneco se ele estiver mais perto que os zumbis
+{ const ks0=knifeStrike; knifeStrike=function(heavy,range,cone){ if(!rmAnyHere()||(typeof x1Live==='function'&&x1Live())) return ks0.apply(this,arguments);
     const o=camera.position.clone(), d=new THREE.Vector3(); camera.getWorldDirection(d); const rt=new THREE.Vector3(-d.z,0,d.x).normalize();
-    let h=null; for(const a of [0,-0.18,0.18,-0.36,0.36]){ const dd=d.clone().addScaledVector(rt,a).normalize(); h=rmRay(o,dd,range+0.35); if(h){ h.dd=dd; break; } }
+    let h=null, hk=null; for(const a of [0,-0.18,0.18,-0.36,0.36]){ const dd=d.clone().addScaledVector(rt,a).normalize(); rmEach(k=>{ const r=rmRay(o,dd,h?h.t:range+0.35); if(r){ h=r; h.dd=dd; hk=k; } }); if(h) break; }
     if(h){ let zd=99; const fx=-Math.sin(P.yaw), fz=-Math.cos(P.yaw); for(const z of zlist()){ if(z.dead||z.predDead||z.state==='rise') continue; const dx=z.pos.x-P.pos.x, dz=z.pos.z-P.pos.z, dl=Math.hypot(dx,dz); if(dl<range&&(dx*fx+dz*fz)/(dl||1)>cone) zd=Math.min(zd,dl); }
       if(h.t<zd+0.2){ const dir=heavy?h.dd:h.dd.clone().multiplyScalar(0.55).addScaledVector(rt,0.85).normalize(); const dmg=knifeDamage(heavy,{});
-        try{ Snd.stab(heavy); }catch(e){} try{ rmHitBullet(h,o,dir,dmg,'knife',dmg,heavy?'knifeH':'knife'); }catch(e){ console.warn('[Bunker] faca no boneco',e); }
+        try{ Snd.stab(heavy); }catch(e){} const k0=rmInst0(); rmUse(hk); try{ rmHitBullet(h,o,dir,dmg,'knife',dmg,heavy?'knifeH':'knife'); }catch(e){ console.warn('[Bunker] faca no boneco',e); } finally{ rmUse(k0); }
         try{ vmBlood(heavy?0.9:0.55,true); shake(heavy?0.2:0.12); shotShake(heavy?0.45:0.25); }catch(e){} return true; } }
     return ks0.apply(this,arguments); }; }
 const RMF={on:false,d:null,s:null};
-{ const f0=fire; fire=function(){ if(!RM.on||RM.map!==CUR) return f0.apply(this,arguments); RMF.on=true; try{ RMF.s=curSlot(); RMF.d=RMF.s?wstat(RMF.s):null; return f0.apply(this,arguments); } finally{ RMF.on=false; } }; }
-{ const rw0=rayWall; rayWall=function(o,d,max){ const t=rw0.apply(this,arguments); if(!RMF.on||!RM.on||RM.map!==CUR||!RMF.d) return t; const h=rmRay(o,d,t);
+{ const f0=fire; fire=function(){ if(!rmAnyHere()) return f0.apply(this,arguments); RMF.on=true; try{ RMF.s=curSlot(); RMF.d=RMF.s?wstat(RMF.s):null; return f0.apply(this,arguments); } finally{ RMF.on=false; } }; }
+{ const rw0=rayWall; rayWall=function(o,d,max){ const t=rw0.apply(this,arguments); if(!RMF.on||!RMF.d) return t; let h=null, hk=null; rmEach(k=>{ const r=rmRay(o,d,h?h.t:t); if(r){ h=r; hk=k; } });
     if(!h) return t; if(RMF.d.proj) return h.t; RH.kind='none';
-    const dmg=RMF.d.dmg*(RMF.d.range?rmCl(1.25-h.t/RMF.d.range,0.25,1):1); try{ rmHitBullet(h,o,d,dmg,RMF.s&&RMF.s.id,RMF.d.dmg); }catch(e){ console.warn('[Bunker] homem de testes',e); } return h.t; }; }
-{ const ex0=explodeSplash; explodeSplash=function(p,dmg,rad){ const r=ex0.apply(this,arguments); if(RM.on&&RM.map===CUR) try{ rmBlast(p,dmg,rad); }catch(e){} return r; }; }
-v9On('frame',dt=>{ if(CUR==='fun'&&!RM.built){ try{ rmBuild(); }catch(e){ console.warn('[Bunker] lab de física',e); RM.built=true; return; } } if(!RM.built||!RM.on||RM.map!==CUR) return; try{ rmUpdate(dt); }catch(e){ if(!RM._err){ RM._err=1; console.warn('[Bunker] homem de testes',e); } } });
+    const dmg=RMF.d.dmg*(RMF.d.range?rmCl(1.25-h.t/RMF.d.range,0.25,1):1); const k0=rmInst0(); rmUse(hk); try{ rmHitBullet(h,o,d,dmg,RMF.s&&RMF.s.id,RMF.d.dmg); }catch(e){ console.warn('[Bunker] homem de testes',e); } finally{ rmUse(k0); } return h.t; }; }
+{ const ex0=explodeSplash; explodeSplash=function(p,dmg,rad){ const r=ex0.apply(this,arguments); rmEach(()=>{ try{ rmBlast(p,dmg,rad); }catch(e){} }); return r; }; }
+const RMPERF={ms:0,n:0};
+v9On('frame',dt=>{ if(CUR==='fun'&&!RM.built){ rmInst0(); try{ rmBuild(); }catch(e){ console.warn('[Bunker] lab de física',e); RM.built=true; return; } }
+  const t0=performance.now(); let n=0; rmEach(()=>{ n++; try{ rmUpdate(dt); }catch(e){ if(!RM._err){ RM._err=1; console.warn('[Bunker] homem de testes',e); } } });
+  const ms=performance.now()-t0; RMPERF.ms=RMPERF.ms*0.95+ms*0.05; RMPERF.n=n; });
 // onde colocar: no ponto da mira (até 30 m) ou bem na sua frente; nunca dentro de parede
+function rmFreeSpot(x,z){ const p={x,z}; for(let i=0;i<3;i++) collide(p,0.55,solidIn,true); return solidIn(Math.floor(p.x/S),Math.floor(p.z/S))?null:p; }
 function rmSpawnSpot(near){ const o=camera.position.clone(), d=new THREE.Vector3(); camera.getWorldDirection(d);
   let x,z; if(near||Math.abs(d.y)>0.97){ const l=Math.hypot(d.x,d.z)||1; x=P.pos.x+d.x/l*1.8; z=P.pos.z+d.z/l*1.8; }
   else { const t=rayWall(o,d,30); const hx=o.x+d.x*t, hz=o.z+d.z*t, l=Math.hypot(d.x,d.z)||1; const back=RH.kind==='none'||RH.ny>0.5?0:0.7; x=hx-d.x/l*back; z=hz-d.z/l*back; }
-  const p={x,z}; for(let i=0;i<3;i++) collide(p,0.55,solidIn,true); if(solidIn(Math.floor(p.x/S),Math.floor(p.z/S))) return null;
-  return {x:p.x,z:p.z,yaw:Math.atan2(P.pos.x-p.x,P.pos.z-p.z)}; }
-CMDS.boneco={d:'boneco [mira|aqui|lab|remover] · coloca o boneco de física (ragdoll) onde você mira, em qualquer mapa',f:a=>{
-  if(!needGame()) return; const arg=(a[0]||'mira').toLowerCase(); if(!RM.built) rmBuild();
-  if(arg==='remover'||arg==='tirar'||arg==='sumir'){ rmDespawn(); cprint('Boneco removido.'); return; }
-  if(arg==='lab'){ if(CUR!=='fun'){ cprint('O laboratório fica no Parque 4FUN. Use "boneco" ou "boneco aqui" para colocar ele aqui.','err'); return; } rmReset(); cprint('Boneco de volta ao laboratório.'); return; }
-  const sp=rmSpawnSpot(arg==='aqui'); if(!sp){ cprint('Não achei um lugar livre ali. Mire no chão ou use "boneco aqui".','err'); return; }
-  rmSpawnAt(sp.x,sp.z,sp.yaw,CUR); cprint(arg==='aqui'?'Boneco colocado na sua frente.':'Boneco colocado onde você está mirando.'); }};
+  const p=rmFreeSpot(x,z); if(!p) return null; return {x:p.x,z:p.z,yaw:Math.atan2(P.pos.x-p.x,P.pos.z-p.z),fx:d.x/(Math.hypot(d.x,d.z)||1),fz:d.z/(Math.hypot(d.x,d.z)||1)}; }
+CMDS.boneco={d:'boneco [mira|aqui] [quantidade] · coloca bonecos de física onde você mira (ex.: boneco aqui 10) · boneco remover · boneco lab · boneco status',f:a=>{
+  if(!needGame()) return; let mode='mira', qty=1;
+  for(const w of a){ const n=parseInt(w,10); if(!isNaN(n)) qty=n; else mode=String(w).toLowerCase(); }
+  const k0=rmInst0(); if(!RM.built) rmBuild();
+  if(mode==='status'){ cprint(`Bonecos ativos neste mapa: ${RMPERF.n} · física: ${RMPERF.ms.toFixed(2)} ms por quadro (média)`); return; }
+  if(mode==='remover'||mode==='tirar'||mode==='sumir'){ for(const k of RMI){ rmUse(k); rmDespawn(); } rmUse(k0); cprint('Bonecos removidos.'); return; }
+  if(mode==='lab'){ if(CUR!=='fun'){ cprint('O laboratório fica no Parque 4FUN.','err'); return; } rmReset(); cprint('Boneco de volta ao laboratório.'); return; }
+  qty=Math.max(1,Math.min(qty,60));
+  const sp=rmSpawnSpot(mode==='aqui'); if(!sp){ cprint('Não achei um lugar livre ali. Mire no chão ou use "boneco aqui".','err'); return; }
+  while(RMI.length<qty) rmNewInst();
+  // grade virada para o jogador, a partir do ponto escolhido (1,1 m entre eles)
+  const cols=Math.ceil(Math.sqrt(qty)), rx=-sp.fz, rz=sp.fx; let placed=0;
+  for(let i=0;i<qty;i++){ const c=i%cols, r=Math.floor(i/cols); const ox=(c-(cols-1)/2)*1.1, oz=r*1.1; const p=rmFreeSpot(sp.x+rx*ox+sp.fx*oz,sp.z+rz*ox+sp.fz*oz); if(!p) continue;
+    rmUse(RMI[i]); rmSpawnAt(p.x,p.z,Math.atan2(P.pos.x-p.x,P.pos.z-p.z),CUR); placed++; }
+  for(let i=qty;i<RMI.length;i++){ rmUse(RMI[i]); if(RM.on) rmDespawn(); } rmUse(k0);
+  cprint(placed>1?`${placed} bonecos colocados. Use "boneco status" para ver quanto a física está pesando.`:(mode==='aqui'?'Boneco colocado na sua frente.':'Boneco colocado onde você está mirando.')); }};
 CMDS.homem={d:'homem · reseta o homem do laboratório de física (Parque 4FUN)',f:()=>{ if(CUR!=='fun'){ cprint('Só no Parque 4FUN.','err'); return; } if(!RM.built) rmBuild(); rmReset(); cprint('Homem resetado.'); }};

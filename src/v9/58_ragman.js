@@ -11,9 +11,9 @@
 const RMV=new THREE.Vector3(), RMV2=new THREE.Vector3(), RMV3=new THREE.Vector3(), RMQ=new THREE.Quaternion(), RMM=new THREE.Matrix4(), RMO=new THREE.Object3D();
 // nome, x,y,z (em pé, olhando +z, +x = lado esquerdo dele), massa, raio de colisão
 const RMP=[['head',0,1.66,0.01,5,0.11],['neck',0,1.47,0,4,0.06],['spine',0,1.18,0.01,14,0.12],
-  ['shL',0.185,1.44,0,5,0.06],['shR',-0.185,1.44,0,5,0.06],['hipL',0.095,0.94,0,9,0.08],['hipR',-0.095,0.94,0,9,0.08],
-  ['elL',0.215,1.16,-0.02,2,0.045],['elR',-0.215,1.16,-0.02,2,0.045],['haL',0.225,0.9,0.03,0.8,0.04],['haR',-0.225,0.9,0.03,0.8,0.04],
-  ['knL',0.1,0.51,0.03,4.5,0.055],['knR',-0.1,0.51,0.03,4.5,0.055],['anL',0.1,0.08,0,1.5,0.045],['anR',-0.1,0.08,0,1.5,0.045],
+  ['shL',0.185,1.44,0,5,0.06],['shR',-0.185,1.44,0,5,0.06],['hipL',0.095,0.94,0,9,0.1],['hipR',-0.095,0.94,0,9,0.1],
+  ['elL',0.215,1.16,-0.02,2,0.05],['elR',-0.215,1.16,-0.02,2,0.05],['haL',0.225,0.9,0.03,0.8,0.04],['haR',-0.225,0.9,0.03,0.8,0.04],
+  ['knL',0.1,0.51,0.03,4.5,0.062],['knR',-0.1,0.51,0.03,4.5,0.062],['anL',0.1,0.08,0,1.5,0.045],['anR',-0.1,0.08,0,1.5,0.045],
   ['toL',0.11,0.03,0.17,0.7,0.035],['toR',-0.11,0.03,0.17,0.7,0.035]];
 // [a,b,rigidez,min,max] (min/max = fração do comprimento de repouso; sem min/max = osso rígido)
 const RMC=[[1,3,1],[1,4,1],[3,4,1],[2,3,1],[2,4,1],[2,1,1],[5,6,1],[2,5,1],[2,6,1],
@@ -107,7 +107,7 @@ function rmBuild(){ if(RM.built) return; RM.built=true; rmMats();
   // gotas e manchas no chão (instanciadas)
   RM.dropIM=new THREE.InstancedMesh(new THREE.SphereGeometry(1,5,4),RMMAT.drop,1400); RM.dropIM.count=0; RM.dropIM.frustumCulled=false; root.add(RM.dropIM);
   RM.splIM=new THREE.InstancedMesh(new THREE.CircleGeometry(1,11),RMMAT.splat,700); RM.splIM.count=0; RM.splIM.frustumCulled=false; root.add(RM.splIM);
-  rmReset(); }
+  rmReset(); try{ if(typeof funReskin==='function') funReskin(); }catch(e){} }
 function rmReset(){ if(!RM.built) return;
   const c=Math.cos(RM.yaw0), s=Math.sin(RM.yaw0);
   RM.p=RMP.map(([n,x,y,z,m,r])=>{ const wx=RM.x+x*c+z*s, wz=RM.z-x*s+z*c; return {n,x:wx,y,z:wz,ox:wx,oy:y,oz:wz,m,im:1/m,r,pin:false}; });
@@ -117,7 +117,7 @@ function rmReset(){ if(!RM.built) return;
   for(const m of RM.marks) m.parent&&m.parent.remove(m); RM.marks=[];
   while(RM.dyn.children.length) RM.dyn.remove(RM.dyn.children[0]);
   RM.st='stand'; RM.blood=100; RM.flinch=0; RM.hunch=0; RM.wounds=[]; RM.acc={}; RM.legs=[1,1]; RM.step=null; RM.yaw=RM.yaw0; RM.deadT=0; RM.headGone=false; RM.openB=false; RM.openC=false; RM.gut=null; RM.det=new Set(); RM.fallT=0; RM.lastHit=-9; RM.steps=[];
-  RM.drops.length=0; RM.dropIM.count=0; RM.splat=0; RM.splIM.count=0; for(const p of RM.pools) RM.g.parent.remove(p.m); RM.pools=[]; RM.gibs=[]; RM.dead=false;
+  RM.drops.length=0; RM.dropIM.count=0; RM.sleep=false; RM.sleepT=0; RM.crumple=false; RM._fp=null; RM._fc=null; RM.splat=0; RM.splIM.count=0; for(const p of RM.pools) RM.g.parent.remove(p.m); RM.pools=[]; RM.gibs=[]; RM.dead=false;
   RM.plant=[rmFoot(13,15),rmFoot(14,16)]; RM.on=true; }
 const RMP_SEG0={head:[1,0],chest:[2,1],belly:[[5,6],2],uarmL:[3,7],farmL:[7,9],thighL:[5,11],shinL:[11,13],footL:[13,15],uarmR:[4,8],farmR:[8,10],thighR:[6,12],shinR:[12,14],footR:[14,16]};
 function rmFoot(a,t){ const A=RM.p[a], T=RM.p[t]; return {a,t,ax:A.x,ay:A.y,az:A.z,tx:T.x,ty:T.y,tz:T.z}; }
@@ -127,7 +127,7 @@ const RM_DT=1/120;
 function rmCom(){ let m=0,x=0,y=0,z=0,vx=0,vz=0; RM.p.forEach((p,i)=>{ if(RM.det.has(i)) return; m+=p.m; x+=p.x*p.m; y+=p.y*p.m; z+=p.z*p.m; vx+=(p.x-p.ox)*p.m; vz+=(p.z-p.oz)*p.m; }); return {x:x/m,y:y/m,z:z/m,vx:vx/m/RM_DT,vz:vz/m/RM_DT}; }
 function rmBasis(){ const pL=RM.p[3], pR=RM.p[4], h=rmHC(); const n=RM.p[1];
   const l=new THREE.Vector3(pL.x-pR.x,pL.y-pR.y,pL.z-pR.z).normalize(), u=new THREE.Vector3(n.x-h.x,n.y-h.y,n.z-h.z).normalize(); const f=new THREE.Vector3().crossVectors(l,u).normalize(); return {l,u,f}; }
-function rmImpulse(i,vx,vy,vz){ const p=RM.p[i]; if(!p) return; p.ox-=vx*RM_DT; p.oy-=vy*RM_DT; p.oz-=vz*RM_DT; }
+function rmImpulse(i,vx,vy,vz){ const p=RM.p[i]; if(!p) return; RM.sleep=false; p.ox-=vx*RM_DT; p.oy-=vy*RM_DT; p.oz-=vz*RM_DT; }
 function rmLocal(x,y,z,out){ const c=Math.cos(RM.yaw), s=Math.sin(RM.yaw); out.x=x*c+z*s; out.y=y; out.z=-x*s+z*c; return out; }
 function rmWoundPos(w,out){ const s=w.seg; s.f.updateMatrixWorld(); return out.copy(w.lp).applyMatrix4(s.f.matrixWorld); }
 function rmGuard(){ // feridas que as mãos tampam: a mais recente que não esteja no próprio braço
@@ -138,11 +138,99 @@ function rmGuard(){ // feridas que as mãos tampam: a mais recente que não este
     const c=L.filter(w=>!(w.seg.part==='arm'&&w.seg.side===side)); res[hi]=c.find(w=>w!==res[0])||c.find(w=>w.seg.part==='belly'||w.seg.part==='chest')||null; }
   return res; }
 // puxão muscular interno: o que move a mão empurra o corpo de volta (conserva o momento, nada se autopropele)
-function rmPull(i,tx,ty,tz,k,react){ const p=RM.p[i]; const dx=(tx-p.x)*k, dy=(ty-p.y)*k, dz=(tz-p.z)*k; p.x+=dx; p.y+=dy; p.z+=dz;
-  let M=0; for(const j of react) M+=RM.p[j].m; if(M<=0) return; const f=p.m/M; for(const j of react){ const q=RM.p[j]; q.x-=dx*f; q.y-=dy*f; q.z-=dz*f; } }
+function rmPull(i,tx,ty,tz,k,react,damp){ const p=RM.p[i]; const dx=(tx-p.x)*k, dy=(ty-p.y)*k, dz=(tz-p.z)*k; const dm=damp||0; p.x+=dx; p.y+=dy; p.z+=dz; p.ox+=dx*dm; p.oy+=dy*dm; p.oz+=dz*dm;
+  let M=0; for(const j of react) M+=RM.p[j].m; if(M<=0) return; const f=p.m/M; for(const j of react){ const q=RM.p[j]; q.x-=dx*f; q.y-=dy*f; q.z-=dz*f; q.ox-=dx*f*dm; q.oy-=dy*f*dm; q.oz-=dz*f*dm; } }
 function rmSegIdx(s){ return (Array.isArray(s.a)?s.a:[s.a]).concat([s.b]); }
-function rmStep(dt){ const P0=RM.p, n=P0.length, alive=RM.st!=='dead';
-  for(const p of P0){ if(p.pin) continue; const vx=(p.x-p.ox)*0.997, vy=(p.y-p.oy)*0.997, vz=(p.z-p.oz)*0.997; p.ox=p.x; p.oy=p.y; p.oz=p.z; p.x+=vx; p.y+=vy-9.8*dt*dt; p.z+=vz; }
+// ---------- física (passo fixo de 1/120 s) ----------
+const RM_G=9.8, RM_VMAX=14; const RMDBG={};
+// pares que cruzam uma articulação: amortecer a velocidade entre eles é o "atrito" da junta
+// (freia o balanço dos membros sem frear a queda do corpo inteiro)
+const RMD_EXTRA=[[7,5],[8,6],[11,2],[12,2],[0,5],[0,6],[13,2],[14,2],[9,2],[10,2],[11,1],[12,1]];
+function rmDPairs(){ if(RM._dpRef===RM.c&&RM._dpDet===RM.det.size) return RM._dp; const out=[];
+  for(const c of RM.c) if(!(c.lo===1&&c.hi===1)) out.push([c.a,c.b]);
+  for(const [a,b] of RMD_EXTRA) if(RM.p[a]&&RM.p[b]&&RM.det.has(a)===RM.det.has(b)&&!RM.det.has(a)) out.push([a,b]);
+  RM._dp=out; RM._dpRef=RM.c; RM._dpDet=RM.det.size; return out; }
+function rmAdj(){ if(RM._adjRef===RM.c) return RM._adj; const A=RM.p.map(()=>new Set()); for(const c of RM.c) if(c.lo===1&&c.hi===1){ A[c.a].add(c.b); A[c.b].add(c.a); } RM._adj=A; RM._adjRef=RM.c; return A; }
+// impulso J (N·s) aplicado num ponto: divide entre as partículas do osso (pesos) e as vizinhas, conservando o momento
+function rmPush(ws,jx,jy,jz){ const A=rmAdj(); const W=new Map(); for(const [i,w] of ws) if(w>0) W.set(i,(W.get(i)||0)+w);
+  for(const [i,w] of [...W]) for(const j of A[i]||[]) if(!W.has(j)) W.set(j,w*0.45);
+  let M=0; for(const [i,w] of W) M+=RM.p[i].m*w; if(M<=0) return; for(const [i,w] of W) rmImpulse(i,jx/M*w,jy/M*w,jz/M*w); RM.sleep=false; }
+// impulso interno (músculo): o que vai para um lado volta para o outro
+function rmImpulseInt(i,vx,vy,vz,react){ const p=RM.p[i]; let M=0; for(const j of react) M+=RM.p[j].m; if(M<=0) return; rmImpulse(i,vx,vy,vz); const f=-p.m/M; for(const j of react) rmImpulse(j,vx*f,vy*f,vz*f); }
+// move i (+d) contra um grupo (-d), dividindo pela massa: nada se autopropele
+function rmMoveG(i,grp,dx,dy,dz){ const p=RM.p[i]; let M=0; for(const j of grp) M+=RM.p[j].m; const mi=p.m, a=M/(mi+M), b=mi/(mi+M);
+  p.x+=dx*a; p.y+=dy*a; p.z+=dz*a; for(const j of grp){ const q=RM.p[j]; q.x-=dx*b; q.y-=dy*b; q.z-=dz*b; } }
+function rmFrames(){ const P0=RM.p; const hL=P0[5], hR=P0[6], sL=P0[3], sR=P0[4], n=P0[1], sp=P0[2];
+  const mk=(lx,ly,lz,ux,uy,uz)=>{ let ll=Math.hypot(lx,ly,lz)||1; lx/=ll; ly/=ll; lz/=ll; let fx=ly*uz-lz*uy, fy=lz*ux-lx*uz, fz=lx*uy-ly*ux; const fl=Math.hypot(fx,fy,fz)||1; fx/=fl; fy/=fl; fz/=fl;
+    const vx=fy*lz-fz*ly, vy=fz*lx-fx*lz, vz=fx*ly-fy*lx; return {l:{x:lx,y:ly,z:lz},u:{x:vx,y:vy,z:vz},f:{x:fx,y:fy,z:fz}}; };
+  const hx=(hL.x+hR.x)/2, hy=(hL.y+hR.y)/2, hz=(hL.z+hR.z)/2;
+  RM._fp=mk(hL.x-hR.x,hL.y-hR.y,hL.z-hR.z,sp.x-hx,sp.y-hy,sp.z-hz);
+  RM._fc=mk(sL.x-sR.x,sL.y-sR.y,sL.z-sR.z,n.x-sp.x,n.y-sp.y,n.z-sp.z); }
+// limite de articulação esférica com dois ângulos (frente/trás e lado), no referencial do osso pai
+function rmLimit(pi,ci,F,side,mode,thMin,thMax,phMin,phMax,grp){ const det=RM.det; if(det.has(pi)!==det.has(ci)) return; const P=RM.p[pi], C=RM.p[ci];
+  let vx=C.x-P.x, vy=C.y-P.y, vz=C.z-P.z; const L=Math.hypot(vx,vy,vz); if(L<1e-5) return; vx/=L; vy/=L; vz/=L;
+  const vl=(vx*F.l.x+vy*F.l.y+vz*F.l.z)*side, vu=vx*F.u.x+vy*F.u.y+vz*F.u.z, vf=vx*F.f.x+vy*F.f.y+vz*F.f.z; const ud=mode==='down'?-1:1;
+  const ph=Math.asin(clamp(vl,-1,1)); let th=Math.atan2(vf,vu*ud), th2;
+  if(thMax>Math.PI){ // ombro: a faixa proibida é só "braço para trás"
+    th2=(th>thMin||th<thMax-2*Math.PI)?th:(th>(thMin+thMax-2*Math.PI)/2?thMin:thMax-2*Math.PI); }
+  else th2=clamp(th,thMin,thMax);
+  const ph2=clamp(ph,phMin,phMax); if(th2===th&&ph2===ph) return;
+  const cp=Math.cos(ph2), sp=Math.sin(ph2), ct=Math.cos(th2), st=Math.sin(th2);
+  const nx=F.l.x*side*sp+cp*(F.f.x*st+F.u.x*ud*ct), ny=F.l.y*side*sp+cp*(F.f.y*st+F.u.y*ud*ct), nz=F.l.z*side*sp+cp*(F.f.z*st+F.u.z*ud*ct);
+  rmMoveG(ci,grp||[pi],(P.x+nx*L-C.x)*0.5,(P.y+ny*L-C.y)*0.5,(P.z+nz*L-C.z)*0.5); }
+function rmLimits(){ rmFrames(); const fp=RM._fp, fc=RM._fc;
+  rmLimit(5,11,fp,1,'down',-0.45,2.15,-0.35,0.95,[5,6,2]); rmLimit(6,12,fp,-1,'down',-0.45,2.15,-0.35,0.95,[5,6,2]);
+  rmLimit(3,7,fc,1,'down',-0.85,Math.PI+0.55,-0.8,1.57,[3,4,1,2]); rmLimit(4,8,fc,-1,'down',-0.85,Math.PI+0.55,-0.8,1.57,[3,4,1,2]);
+  if(!RM.det.has(0)) rmLimit(1,0,fc,1,'up',-0.6,0.8,-0.6,0.6,[1,3,4]); }
+function rmHinges(){ const P0=RM.p, det=RM.det, fp=RM._fp;
+  for(const [k,h,a,t] of [[11,5,13,15],[12,6,14,16]]){ if(det.has(k)!==det.has(h)||det.has(a)!==det.has(k)) continue;
+    const H=P0[h], K=P0[k], A=P0[a], T=P0[t]; let ux=A.x-H.x, uy=A.y-H.y, uz=A.z-H.z; const ul=Math.hypot(ux,uy,uz)||1; ux/=ul; uy/=ul; uz/=ul;
+    let vx=K.x-H.x, vy=K.y-H.y, vz=K.z-H.z; const vd=vx*ux+vy*uy+vz*uz; vx-=ux*vd; vy-=uy*vd; vz-=uz*vd; const vl=Math.hypot(vx,vy,vz);
+    // referência de dobra: frente da bacia (o joelho aponta para a frente, com pouca rotação de quadril)
+    let rx=fp.f.x, ry=fp.f.y, rz=fp.f.z; const rd=rx*ux+ry*uy+rz*uz; rx-=ux*rd; ry-=uy*rd; rz-=uz*rd; let rl=Math.hypot(rx,ry,rz);
+    if(rl<0.2){ rx=T.x-A.x; ry=T.y-A.y; rz=T.z-A.z; const td=rx*ux+ry*uy+rz*uz; rx-=ux*td; ry-=uy*td; rz-=uz*td; rl=Math.hypot(rx,ry,rz); } if(rl<1e-4) continue; rx/=rl; ry/=rl; rz/=rl;
+    const s=vx*rx+vy*ry+vz*rz;
+    if(s<0.012){ if(!RMDBG.k1){ const d=0.012-s; rmMoveG(k,[h,a],rx*d,ry*d,rz*d); } }
+    else if(vl>0.03&&!RMDBG.k2){ // rotação do quadril: o joelho não vira mais que ~55° para o lado
+      const c=s/vl; if(c<0.57){ let qx=vx-rx*s, qy=vy-ry*s, qz=vz-rz*s; const ql=Math.hypot(qx,qy,qz)||1; qx/=ql; qy/=ql; qz/=ql;
+        const tx=(rx*0.57+qx*0.82)*vl, ty=(ry*0.57+qy*0.82)*vl, tz=(rz*0.57+qz*0.82)*vl; rmMoveG(k,[h,a],(tx-vx)*0.5,(ty-vy)*0.5,(tz-vz)*0.5); } }
+    // pé alinhado com o joelho (sem torcer o tornozelo)
+    let sx=A.x-K.x, sy=A.y-K.y, sz=A.z-K.z; const sl=Math.hypot(sx,sy,sz)||1; sx/=sl; sy/=sl; sz/=sl;
+    let fx=T.x-A.x, fy=T.y-A.y, fz=T.z-A.z; const fd=fx*sx+fy*sy+fz*sz; const fpx=fx-sx*fd, fpy=fy-sy*fd, fpz=fz-sz*fd; const fl=Math.hypot(fpx,fpy,fpz);
+    let bx=rx-sx*(rx*sx+ry*sy+rz*sz), by=ry-sy*(rx*sx+ry*sy+rz*sz), bz=rz-sz*(rx*sx+ry*sy+rz*sz); const bl=Math.hypot(bx,by,bz);
+    if(fl>1e-3&&bl>1e-3&&!RMDBG.k3){ bx/=bl; by/=bl; bz/=bl; const c=(fpx*bx+fpy*by+fpz*bz)/fl; if(c<0.85){ let qx=fpx/fl-bx*c, qy=fpy/fl-by*c, qz=fpz/fl-bz*c; const ql=Math.hypot(qx,qy,qz)||1; qx/=ql; qy/=ql; qz/=ql;
+      const nx=(bx*0.85+qx*0.53)*fl, ny=(by*0.85+qy*0.53)*fl, nz=(bz*0.85+qz*0.53)*fl; rmMoveG(t,[a],(nx-fpx)*0.5,(ny-fpy)*0.5,(nz-fpz)*0.5); } } }
+  const fc=RM._fc;
+  for(const [e,sh,h,sd] of [[7,3,9,1],[8,4,10,-1]]){ if(det.has(e)!==det.has(h)||det.has(e)!==det.has(sh)) continue;
+    const S=P0[sh], E=P0[e], H=P0[h]; let ux=H.x-S.x, uy=H.y-S.y, uz=H.z-S.z; const ul=Math.hypot(ux,uy,uz)||1; ux/=ul; uy/=ul; uz/=ul;
+    let rx=-fc.f.x-fc.u.x*0.5+fc.l.x*sd*0.25, ry=-fc.f.y-fc.u.y*0.5+fc.l.y*sd*0.25, rz=-fc.f.z-fc.u.z*0.5+fc.l.z*sd*0.25; const rd=rx*ux+ry*uy+rz*uz; rx-=ux*rd; ry-=uy*rd; rz-=uz*rd; const rl=Math.hypot(rx,ry,rz); if(rl<1e-4) continue; rx/=rl; ry/=rl; rz/=rl;
+    let vx=E.x-S.x, vy=E.y-S.y, vz=E.z-S.z; const vd=vx*ux+vy*uy+vz*uz; vx-=ux*vd; vy-=uy*vd; vz-=uz*vd; const s=vx*rx+vy*ry+vz*rz; if(s<0.006&&!RMDBG.k4){ const d=0.006-s; rmMoveG(e,[sh,h],rx*d,ry*d,rz*d); } } }
+// tronco é uma cápsula: braços e pernas não atravessam (empurra os dois lados)
+const RM_TORSO=[5,6,2,1,3,4];
+function rmSelfCol(){ const P0=RM.p; const hL=P0[5], hR=P0[6], n=P0[1]; const ax=(hL.x+hR.x)/2, ay=(hL.y+hR.y)/2, az=(hL.z+hR.z)/2, bx=n.x-ax, by=n.y-ay, bz=n.z-az; const bl2=bx*bx+by*by+bz*bz||1;
+  for(let i=7;i<P0.length;i++){ if(i>16&&!RM.det.has(i)) continue; const p=P0[i]; let t=((p.x-ax)*bx+(p.y-ay)*by+(p.z-az)*bz)/bl2; if(t<0.02||t>1.05) continue; t=Math.min(1,t);
+    const dx=p.x-(ax+bx*t), dy=p.y-(ay+by*t), dz=p.z-(az+bz*t); const d=Math.hypot(dx,dy,dz), R=0.125+p.r; if(d<R&&d>1e-5){ const k=(R-d)/d; rmMoveG(i,RM_TORSO,dx*k,dy*k,dz*k); } } }
+// membros não atravessam uns aos outros (cápsula contra cápsula)
+const RM_LIMBPAIRS=[['thighL','thighR'],['shinL','shinR'],['thighL','shinR'],['thighR','shinL'],['farmL','thighL'],['farmL','thighR'],['farmR','thighL'],['farmR','thighR'],['farmL','farmR'],['farmL','shinL'],['farmR','shinR'],['uarmL','farmR'],['uarmR','farmL']];
+function rmLimbCol(){ const P0=RM.p; const S=RM._segBy||(RM._segBy={}); if(!RM._segByOk){ for(const s of RM.segs) S[s.name]=s; RM._segByOk=1; }
+  for(const [na,nb] of RM_LIMBPAIRS){ const s1=S[na], s2=S[nb]; if(!s1||!s2||s1.gone||s2.gone) continue; const a1=s1.a, b1=s1.b, a2=s2.a, b2=s2.b; if(a1===a2||a1===b2||b1===a2||b1===b2) continue;
+    const A=P0[a1], B=P0[b1], C=P0[a2], D=P0[b2]; const r=s1.r+s2.r;
+    const d1x=B.x-A.x, d1y=B.y-A.y, d1z=B.z-A.z, d2x=D.x-C.x, d2y=D.y-C.y, d2z=D.z-C.z, rx=A.x-C.x, ry=A.y-C.y, rz=A.z-C.z;
+    const a=d1x*d1x+d1y*d1y+d1z*d1z, e=d2x*d2x+d2y*d2y+d2z*d2z, f=d2x*rx+d2y*ry+d2z*rz, c=d1x*rx+d1y*ry+d1z*rz, b=d1x*d2x+d1y*d2y+d1z*d2z, den=a*e-b*b;
+    let s=den>1e-9?clamp((b*f-c*e)/den,0,1):0; let t=(b*s+f)/e; if(t<0){ t=0; s=clamp(-c/a,0,1); } else if(t>1){ t=1; s=clamp((b-c)/a,0,1); }
+    const px=A.x+d1x*s-(C.x+d2x*t), py=A.y+d1y*s-(C.y+d2y*t), pz=A.z+d1z*s-(C.z+d2z*t); const d=Math.hypot(px,py,pz); if(d>=r||d<1e-6) continue;
+    const nx=px/d, ny=py/d, nz=pz/d, pen=r-d; const w=(1-s)*(1-s)*A.im+s*s*B.im+(1-t)*(1-t)*C.im+t*t*D.im; if(w<=0) continue; const lam=pen/w;
+    const mv=(Q,k)=>{ Q.x+=nx*k; Q.y+=ny*k; Q.z+=nz*k; }; mv(A,lam*(1-s)*A.im); mv(B,lam*s*B.im); mv(C,-lam*(1-t)*C.im); mv(D,-lam*t*D.im); } }
+// jogador empurra o corpo: correção de posição sem "chute" e velocidade mínima de empurrão (nunca arremessa)
+function rmPlayerPush(dt){ if(!P||!P.pos||G.state!=='playing') return; const px=P.pos.x, pz=P.pos.z, py=(P.base||0)+(P.y||0); const vp=Math.min(2.2,Math.hypot(P.vx||0,P.vz||0)+0.6);
+  for(const p of RM.p){ if(p.y<py-0.1||p.y>py+1.85) continue; const dx=p.x-px, dz=p.z-pz, d=Math.hypot(dx,dz), R=0.32+p.r; if(d>=R||d<1e-4) continue;
+    const nx=dx/d, nz=dz/d, k=(R-d)*0.35; p.x+=nx*k; p.z+=nz*k; p.ox+=nx*k; p.oz+=nz*k;
+    const vn=((p.x-p.ox)*nx+(p.z-p.oz)*nz)/dt; if(vn<vp){ const add=(vp-vn)*dt*0.25; p.ox-=nx*add; p.oz-=nz*add; } RM.sleep=false; } }
+function rmJointDamp(k){ const P0=RM.p; for(const [a,b] of rmDPairs()){ const A=P0[a], B=P0[b]; let nx=B.x-A.x, ny=B.y-A.y, nz=B.z-A.z; const L=Math.hypot(nx,ny,nz); if(L<1e-5) continue; nx/=L; ny/=L; nz/=L;
+    const rv=((B.x-B.ox)-(A.x-A.ox))*nx+((B.y-B.oy)-(A.y-A.oy))*ny+((B.z-B.oz)-(A.z-A.oz))*nz; const w=A.m+B.m, im=rv*k;
+    A.ox-=nx*im*B.m/w; A.oy-=ny*im*B.m/w; A.oz-=nz*im*B.m/w; B.ox+=nx*im*A.m/w; B.oy+=ny*im*A.m/w; B.oz+=nz*im*A.m/w; } }
+function rmStep(dt){ const P0=RM.p, alive=RM.st!=='dead';
+  const air=RM.st==='stand'?0.997:0.9995; for(const p of P0){ p.pen=0; const vx=(p.x-p.ox)*air, vy=(p.y-p.oy)*air, vz=(p.z-p.oz)*air; p.ox=p.x; p.oy=p.y; p.oz=p.z; p.x+=vx; p.y+=vy-RM_G*dt*dt; p.z+=vz; }
   // ---------- controle muscular / equilíbrio ----------
   const standing=RM.st==='stand';
   const guard=alive?rmGuard():[null,null]; RM._guard=guard;
@@ -151,53 +239,46 @@ function rmStep(dt){ const P0=RM.p, n=P0.length, alive=RM.st!=='dead';
     const breath=Math.sin(RM.t*1.7)*0.006; const look=rmLook();
     for(let i=0;i<13;i++){ if(RM.det.has(i)) continue; const k=RMK[i]*m; if(k<=0) continue; const d=RMP[i]; let x=d[1], y=d[2], z=d[3];
       if(i<=6||i===11||i===12){ if(i!==11&&i!==12){ y-=crouch*0.32; z-=crouch*0.05; } else { y-=crouch*0.16; z+=crouch*0.2; } }
-      if(i<=4||i===7||i===8){ const up=(y-0.95)/0.7; z+=hunch*0.24*up; y-=hunch*0.1*up; y+=breath*(i<=4?1:0); }
+      if(i<=4||i===7||i===8){ const up=(y-0.95)/0.7; z+=hunch*0.2*up; y-=hunch*0.1*up; y+=breath*(i<=4?1:0); } if(i===5||i===6||i===2){ z-=hunch*(i===2?0.03:0.07); }
       if(i===0){ x+=look.x; z+=look.z+hunch*0.08; y+=look.y; }
       const hi=i===9?0:i===10?1:-1; if(hi>=0&&guard[hi]) continue; if((i===7&&guard[0])||(i===8&&guard[1])) continue;
-      rmLocal(x,y,z,RMV); const p=P0[i]; p.x+=(sup.x+RMV.x-p.x)*k; p.y+=(RMV.y-p.y)*k; p.z+=(sup.z+RMV.z-p.z)*k; }
+      rmLocal(x,y,z,RMV); const p=P0[i]; const dx=(sup.x+RMV.x-p.x)*k, dy=(RMV.y-p.y)*k, dz=(sup.z+RMV.z-p.z)*k; p.x+=dx; p.y+=dy; p.z+=dz; p.ox+=dx*0.55; p.oy+=dy*0.55; p.oz+=dz*0.55; }
   }
   // mãos no ferimento (em pé ou caído, enquanto vivo)
-  if(alive) for(const hi of [0,1]){ const w=guard[hi]; if(!w) continue; rmWoundPos(w,RMV); const k=RM.st==='stand'?0.18:0.07; RMV.addScaledVector(w.wn,0.035);
-    const re=rmSegIdx(w.seg).filter(j=>j!==9&&j!==10&&j!==7&&j!==8); rmPull(hi?10:9,RMV.x,RMV.y,RMV.z,k,re.length?re:[2]); }
+  if(alive) for(const hi of [0,1]){ const w=guard[hi]; if(!w) continue; rmWoundPos(w,RMV); const k=RM.st==='stand'?0.1:0.06; RMV.addScaledVector(w.wn,0.035);
+    const re=rmSegIdx(w.seg).filter(j=>j!==9&&j!==10&&j!==7&&j!==8); rmPull(hi?10:9,RMV.x,RMV.y,RMV.z,k,re.length?re:[2],0.6); }
   // caindo: braços protegem (vão na direção da queda)
   if(RM.st==='fall'&&RM.fallT<0.8&&alive){ const c=rmCom(); const fx=c.vx, fz=c.vz, L=Math.hypot(fx,fz)||1; for(const i of [9,10]) if(!RM.det.has(i)&&!guard[i-9]) rmPull(i,c.x+fx/L*0.6,0.1,c.z+fz/L*0.6,0.03,[2,3,4,1]); }
   // caído e vivo: encolhe as pernas devagar (dor)
-  if(RM.st==='down'&&alive&&RM.blood>15){ const b=rmBasis(); const h=rmHC(); for(const i of [11,12]) if(!RM.det.has(i)){ const hx=h.x, hy=h.y, hz=h.z; rmPull(i,hx+b.f.x*0.3-b.u.x*0.25,hy+b.f.y*0.3-b.u.y*0.25,hz+b.f.z*0.3-b.u.z*0.25,0.004,[5,6,2]); } }
+  if(RM.st==='down'&&alive&&RM.blood>15){ const fp=RM._fp||(rmFrames(),RM._fp); const h=rmHC(); const hx=h.x, hy=h.y, hz=h.z; for(const i of [11,12]) if(!RM.det.has(i)) rmPull(i,hx+fp.f.x*0.3-fp.u.x*0.25,hy+fp.f.y*0.3-fp.u.y*0.25,hz+fp.f.z*0.3-fp.u.z*0.25,0.004,[5,6,2]); }
+  // morreu de pé: os joelhos cedem e o corpo desaba (não cai duro como uma tábua)
+  if(RM.st==='dead'&&RM.crumple&&RM.deadT<0.55){ const fp=RM._fp||(rmFrames(),RM._fp); const h=rmHC(); const hx=h.x, hy=h.y, hz=h.z; const k=0.03*(1-RM.deadT/0.55);
+    for(const i of [11,12]) if(!RM.det.has(i)) rmPull(i,hx+fp.f.x*0.32-fp.u.x*0.22,hy+fp.f.y*0.32-fp.u.y*0.22,hz+fp.f.z*0.32-fp.u.z*0.22,k,[5,6,2]); }
   // ---------- passo (pé que está no ar segue um arco até o alvo) ----------
   if(standing&&RM.step){ const S=RM.step; S.s=Math.min(1,S.s+dt/S.dur); const e=S.s*S.s*(3-2*S.s), lift=Math.sin(Math.PI*S.s)*0.13;
     const f=RM.plant[S.f]; const A=P0[f.a], T=P0[f.t];
     A.x=S.ax+(S.bx-S.ax)*e; A.z=S.az+(S.bz-S.az)*e; A.y=0.08+lift; T.x=S.tax+(S.tbx-S.tax)*e; T.z=S.taz+(S.tbz-S.taz)*e; T.y=0.03+lift*0.7;
     if(S.s>=1){ RM.plant[S.f]=rmFoot(f.a,f.t); RM.plant[S.f].ay=0.08; RM.plant[S.f].ty=0.03; RM.step=null; } }
+  rmPlayerPush(dt);
   // ---------- restrições ----------
-  for(let it=0;it<10;it++){
+  for(let it=0;it<12;it++){
     for(const c of RM.c){ const A=P0[c.a], B=P0[c.b]; const dx=B.x-A.x, dy=B.y-A.y, dz=B.z-A.z; const L=Math.sqrt(dx*dx+dy*dy+dz*dz)||1e-6;
       const tg=L<c.L*c.lo?c.L*c.lo:L>c.L*c.hi?c.L*c.hi:L; if(tg===L) continue; const w=A.im+B.im; if(w<=0) continue; const f=(L-tg)/L*c.k;
       const fa=A.pin?0:A.im/w, fb=B.pin?0:B.im/w; A.x+=dx*f*fa; A.y+=dy*f*fa; A.z+=dz*f*fa; B.x-=dx*f*fb; B.y-=dy*f*fb; B.z-=dz*f*fb; }
-    rmHinges(); rmSelfCol();
+    if(!(it&1)){ rmLimits(); rmHinges(); }
+    rmSelfCol(); if(!standing) rmLimbCol();
     if(standing){ for(let fi=0;fi<2;fi++){ if(RM.step&&RM.step.f===fi) continue; const f=RM.plant[fi]; if(!f||RM.det.has(f.a)) continue; const A=P0[f.a], T=P0[f.t]; A.x=f.ax; A.y=f.ay; A.z=f.az; T.x=f.tx; T.y=f.ty; T.z=f.tz; } }
-    for(const p of P0){ if(p.y<p.r){ p.y=p.r; } }
-    rmPlayerPush(); }
-  // atrito com o chão
-  for(const p of P0){ if(p.y<=p.r+0.004){ const fr=RM.st==='stand'?0.5:0.35; p.ox+=(p.x-p.ox)*fr; p.oz+=(p.z-p.oz)*fr; if(p.oy<p.y) p.oy=p.y-(p.y-p.oy)*0.2; } }
+    for(const p of P0){ if(p.y<p.r){ p.pen+=p.r-p.y; p.y=p.r; } } }
+  // ---------- contato com o chão: sem quique (a correção não vira velocidade) e com atrito forte ----------
+  const fr=standing?0.5:RM.st==='fall'?0.32:0.5;
+  for(const p of P0){ if(p.pen>0){ const tv=(p.y-p.pen)-p.oy; p.oy=tv<0?p.y:p.oy+p.pen; }
+    if(p.y<=p.r+0.003){ let vx=p.x-p.ox, vz=p.z-p.oz; const sp=Math.hypot(vx,vz)/dt; if(sp<0.06){ vx=0; vz=0; } else { vx*=(1-fr); vz*=(1-fr); } p.ox=p.x-vx; p.oz=p.z-vz; } }
+  rmJointDamp(RM.st==='stand'?0.04:RM.st==='fall'?0.06:0.1);
+  // limite de velocidade (nada sai voando)
+  for(const p of P0){ const vx=p.x-p.ox, vy=p.y-p.oy, vz=p.z-p.oz; const v=Math.hypot(vx,vy,vz)/dt; if(v>RM_VMAX){ const k=RM_VMAX/v; p.ox=p.x-vx*k; p.oy=p.y-vy*k; p.oz=p.z-vz*k; } }
   if(standing) for(let fi=0;fi<2;fi++){ if(RM.step&&RM.step.f===fi) continue; const f=RM.plant[fi]; if(!f) continue; const A=P0[f.a], T=P0[f.t]; A.ox=A.x; A.oy=A.y; A.oz=A.z; T.ox=T.x; T.oy=T.y; T.oz=T.z; }
-  // intestino (corda com física)
   if(RM.gut) rmGutStep(dt);
 }
-function rmHinges(){ const P0=RM.p;
-  for(const [k,h,a,t] of [[11,5,13,15],[12,6,14,16]]){ if(RM.det.has(k)!==RM.det.has(h)||RM.det.has(a)!==RM.det.has(k)) continue;
-    const H=P0[h], K=P0[k], A=P0[a], T=P0[t]; let ux=A.x-H.x, uy=A.y-H.y, uz=A.z-H.z; const ul=Math.hypot(ux,uy,uz)||1; ux/=ul; uy/=ul; uz/=ul;
-    let vx=K.x-H.x, vy=K.y-H.y, vz=K.z-H.z; const vd=vx*ux+vy*uy+vz*uz; vx-=ux*vd; vy-=uy*vd; vz-=uz*vd;
-    let tx=T.x-A.x, ty=T.y-A.y, tz=T.z-A.z; const td=tx*ux+ty*uy+tz*uz; tx-=ux*td; ty-=uy*td; tz-=uz*td; const tl=Math.hypot(tx,ty,tz); if(tl<1e-4) continue; tx/=tl; ty/=tl; tz/=tl;
-    const s=vx*tx+vy*ty+vz*tz; if(s<0.012){ const d=0.012-s; K.x+=tx*d; K.y+=ty*d; K.z+=tz*d; } }
-  const b=rmBasis();
-  for(const [e,sh,h,sd] of [[7,3,9,1],[8,4,10,-1]]){ if(RM.det.has(e)!==RM.det.has(h)||RM.det.has(e)!==RM.det.has(sh)) continue;
-    const S=P0[sh], E=P0[e], H=P0[h]; let ux=H.x-S.x, uy=H.y-S.y, uz=H.z-S.z; const ul=Math.hypot(ux,uy,uz)||1; ux/=ul; uy/=ul; uz/=ul;
-    let rx=-b.f.x-b.u.x*0.5+b.l.x*sd*0.25, ry=-b.f.y-b.u.y*0.5+b.l.y*sd*0.25, rz=-b.f.z-b.u.z*0.5+b.l.z*sd*0.25; const rd=rx*ux+ry*uy+rz*uz; rx-=ux*rd; ry-=uy*rd; rz-=uz*rd; const rl=Math.hypot(rx,ry,rz); if(rl<1e-4) continue; rx/=rl; ry/=rl; rz/=rl;
-    let vx=E.x-S.x, vy=E.y-S.y, vz=E.z-S.z; const vd=vx*ux+vy*uy+vz*uz; vx-=ux*vd; vy-=uy*vd; vz-=uz*vd; const s=vx*rx+vy*ry+vz*rz; if(s<0.006){ const d=0.006-s; E.x+=rx*d; E.y+=ry*d; E.z+=rz*d; } } }
-function rmSelfCol(){ const P0=RM.p; const h=rmHC(); const n=P0[1]; const ax=h.x, ay=h.y, az=h.z, bx=n.x-ax, by=n.y-ay, bz=n.z-az; const bl2=bx*bx+by*by+bz*bz||1;
-  for(const i of [7,8,9,10,11,12,13,14,15,16]){ if(RM.det.has(i)) continue; const p=P0[i]; let t=((p.x-ax)*bx+(p.y-ay)*by+(p.z-az)*bz)/bl2; if(t<0.05||t>1.05) continue; t=Math.min(1,t);
-    const cx_=ax+bx*t, cy=ay+by*t, cz=az+bz*t; let dx=p.x-cx_, dy=p.y-cy, dz=p.z-cz; const d=Math.hypot(dx,dy,dz), R=0.125+p.r; if(d<R&&d>1e-5){ const k=(R-d)/d; p.x+=dx*k; p.y+=dy*k; p.z+=dz*k; } } }
-function rmPlayerPush(){ if(!P||!P.pos) return; const px=P.pos.x, pz=P.pos.z, py=(P.y||0); for(const p of RM.p){ if(p.y<py-0.05||p.y>py+1.85) continue; const dx=p.x-px, dz=p.z-pz, d=Math.hypot(dx,dz), R=0.34+p.r; if(d<R&&d>1e-4){ const k=(R-d)/d; p.x+=dx*k; p.z+=dz*k; } } }
 function rmSupport(){ const pl=RM.plant, S=RM.step; let x=0,z=0,n=0; for(let fi=0;fi<2;fi++){ const f=pl[fi]; if(!f||RM.det.has(f.a)) continue;
     if(S&&S.f===fi){ x+=(S.bx+S.tbx)/2; z+=(S.bz+S.tbz)/2; } else { x+=(f.ax+f.tx)/2; z+=(f.az+f.tz)/2; } n++; }
   if(!n){ const c=rmCom(); return {x:c.x,z:c.z}; }
@@ -209,7 +290,7 @@ function rmBalance(dt){ if(RM.st!=='stand') return; const c=rmCom(); const sup=r
   const cpx=c.x+c.vx*0.32, cpz=c.z+c.vz*0.32; const ex=cpx-sup.x, ez=cpz-sup.z, e=Math.hypot(ex,ez);
   const legs=Math.min(RM.legs[0],RM.legs[1]);
   if(RM.det.has(13)||RM.det.has(14)||RM.det.has(11)||RM.det.has(12)) return rmFall('perna');
-  if(e>0.75||legs<0.22||RM.blood<38||c.y<0.62) return rmFall('equilibrio');
+  if(e>0.9||legs<0.4||RM.legs[0]+RM.legs[1]<1.05||RM.blood<38||c.y<0.62) return rmFall('equilibrio');
   RM.steps=RM.steps.filter(t=>RM.t-t<1.4); if(RM.steps.length>=5) return rmFall('tropeço');
   // calmo: vira devagar para o jogador
   if(RM.t-RM.lastHit>3&&P&&P.pos){ const want=Math.atan2(P.pos.x-RM.p[2].x,P.pos.z-RM.p[2].z); let d=want-RM.yaw; d=Math.atan2(Math.sin(d),Math.cos(d)); RM.yaw+=clamp(d,-0.5*dt,0.5*dt); }
@@ -219,8 +300,8 @@ function rmBalance(dt){ if(RM.st!=='stand') return; const c=rmCom(); const sup=r
   for(let fi=0;fi<2;fi++){ const f=RM.plant[fi]; if(!f) continue; const sd=fi?-1:1; rmLocal(sd*0.1,0,0.07,RMV); const ax=ox+RMV.x, az=oz+RMV.z; rmLocal(sd*0.11,0,0.24,RMV2); const tx=ox+RMV2.x, tz=oz+RMV2.z;
     const d=Math.hypot(ax-f.ax,az-f.az)+Math.hypot(tx-f.tx,tz-f.tz)*0.5; if(d>bd){ bd=d; best=fi; tgt={ax,az,tx,tz}; } }
   if(best>=0&&(need&&bd>0.08||bd>0.22)){ const f=RM.plant[best]; RM.step={f:best,s:0,dur:need?clamp(0.34-e*0.15,0.2,0.34):0.42,ax:f.ax,az:f.az,bx:tgt.ax,bz:tgt.az,tax:f.tx,taz:f.tz,tbx:tgt.tx,tbz:tgt.tz}; RM.steps.push(RM.t); } }
-function rmFall(why){ if(RM.st!=='stand') return; RM.st='fall'; RM.fallT=0; RM.step=null; try{ Snd.sample&&Snd.sample('body_fall',{vol:0.7,x:RM.p[2].x,z:RM.p[2].z,range:30}); }catch(e){} }
-function rmKill(){ if(RM.st==='dead') return; if(RM.st==='stand') rmFall('morte'); RM.st='dead'; RM.deadT=0; }
+function rmFall(why){ if(RM.st!=='stand') return; RM._why=why; RM.st='fall'; RM.fallT=0; RM.step=null; try{ Snd.sample&&Snd.sample('body_fall',{vol:0.7,x:RM.p[2].x,z:RM.p[2].z,range:30}); }catch(e){} }
+function rmKill(){ if(RM.st==='dead') return; RM.crumple=RM.st==='stand'||(RM.st==='fall'&&RM.fallT<0.35); if(RM.st==='stand') rmFall('morte'); RM.st='dead'; RM.deadT=0; RM.sleep=false; RM.sleepT=0; }
 
 /* ---------- tiros, explosões e gore ---------- */
 function rmRay(o,d,maxT){ let best=null; for(const s of RM.segs){ if(s.gone) continue;
@@ -251,9 +332,8 @@ function rmHitBullet(h,o,d,dmg,wid){ const s=h.s; const hp=new THREE.Vector3(o.x
   if(s.name==='head'&&h.tc>=1){ n=hp.clone().sub(B).normalize(); } else { const ax=A.clone().lerp(B,h.tc); n=hp.clone().sub(ax); if(n.lengthSq()<1e-8) n.copy(d).negate(); n.normalize(); }
   RM.acc[s.name]=(RM.acc[s.name]||0)+dmg; s.tot=(s.tot||0)+dmg; RM.lastHit=RM.t;
   // impulso real no ponto do tiro, dividido entre as duas juntas do osso
-  const J=clamp(dmg*0.032,1.1,26); const ia=Array.isArray(s.a)?s.a:[s.a]; const tb=s.name==='head'&&h.tc>=1?1:h.tc;
-  for(const i of ia) rmImpulse(i,d.x*J*(1-tb)/ia.length*RM.p[i].im,d.y*J*(1-tb)/ia.length*RM.p[i].im*0.6,d.z*J*(1-tb)/ia.length*RM.p[i].im);
-  rmImpulse(s.b,d.x*J*tb*RM.p[s.b].im,d.y*J*tb*RM.p[s.b].im*0.6,d.z*J*tb*RM.p[s.b].im);
+  const J=clamp(dmg*0.026,0.9,20); const ia=Array.isArray(s.a)?s.a:[s.a]; const tb=s.name==='head'&&h.tc>=1?1:h.tc;
+  rmPush(ia.map(i=>[i,(1-tb)/ia.length+0.12]).concat([[s.b,tb+0.12]]),d.x*J,d.y*J*0.5,d.z*J);
   // ferida + sangue de entrada (volta para o atirador) e de saída (para frente) nos tiros fortes
   const artery=(s.name==='head'&&h.tc<1)||(s.part==='leg'&&s.name.startsWith('thigh')&&h.tc<0.45&&Math.random()<0.6)||(s.part==='arm'&&s.name.startsWith('uarm')&&h.tc<0.35&&Math.random()<0.4);
   const w=rmAddWound(s,hp,n,dmg,artery);
@@ -274,7 +354,7 @@ function rmHitBullet(h,o,d,dmg,wid){ const s=h.s; const hp=new THREE.Vector3(o.x
   if(RM.blood<=0) rmKill(); else if(dmg>=240&&RM.st==='stand') rmFall('impacto');
   hitmarker(RM.st==='dead',s.name==='head'); }
 function rmBlast(p,dmg,rad){ if(!RM.on) return; const R=rad*2.4; let any=false;
-  RM.p.forEach((q,i)=>{ const dx=q.x-p.x, dy=q.y-p.y+0.3, dz=q.z-p.z, d=Math.hypot(dx,dy,dz); if(d>R) return; const k=(1-d/R); const v=dmg*0.014*k/(0.5+q.m*0.08); any=true; rmImpulse(i,dx/(d||1)*v,Math.abs(dy/(d||1))*v+v*0.5,dz/(d||1)*v); });
+  RM.p.forEach((q,i)=>{ const dx=q.x-p.x, dy=q.y-p.y+0.3, dz=q.z-p.z, d=Math.hypot(dx,dy,dz); if(d>R) return; const k=(1-d/R); const v=Math.min(4.5,dmg*0.004*k); any=true; rmImpulse(i,dx/(d||1)*v,Math.abs(dy/(d||1))*v*0.5+v*0.45,dz/(d||1)*v); });
   if(!any) return; const c=rmCom(); const d=Math.hypot(c.x-p.x,c.z-p.z); const k=clamp(1-d/R,0,1); const hit=dmg*k;
   RM.blood-=hit*0.06; RM.lastHit=RM.t; if(RM.st==='stand'&&hit>40) rmFall('explosão');
   if(hit>260){ const keys=['shL','shR','elL','elR','hipL','hipR','knL','knR']; const n=hit>700?3:hit>450?2:1; const dir=new THREE.Vector3(c.x-p.x,0.6,c.z-p.z).normalize(); for(let i=0;i<n;i++) rmSever(keys[(Math.random()*keys.length)|0],dir); if(hit>500&&!RM.openB) rmOpenBelly(dir); }
@@ -288,7 +368,7 @@ function rmSever(key,dir){ const J=RMJ[key]; if(!J) return; const set=new Set(J.
   for(const s of RM.segs){ if(s.a===p&&set.has(s.b)) s.a=ni; }
   set.add(ni); for(const i of set) RM.det.add(i);
   // impulso e jato arterial nos dois lados
-  for(const i of set) rmImpulse(i,dir.x*2.5,1.2+dir.y*2,dir.z*2.5);
+  for(const i of set) rmImpulse(i,dir.x*1.8,0.9+dir.y*1.5,dir.z*1.8);
   let segP=RM.segs.find(s=>s.b===p&&!set.has(s.a)); let pLp=null;
   if(!segP){ segP=RM.segs.find(s=>s.name===(key.startsWith('hip')?'belly':'chest')); segP.f.updateMatrixWorld(); pLp=new THREE.Vector3(src.x,src.y,src.z).applyMatrix4(RMM.copy(segP.f.matrixWorld).invert()); }
   const segC=RM.segs.find(s=>s.a===ni);
@@ -333,10 +413,13 @@ function rmUpdate(dt){ if(!RM.on) return; RM.t+=dt; dt=Math.min(dt,0.05);
   // perda de sangue pelas feridas
   if(RM.st!=='dead'){ let loss=0; for(const w of RM.wounds){ if(w.dead) continue; loss+=w.rate*(w.artery?0.55:0.12)*Math.max(0.15,1-w.age/25); } RM.blood-=loss*dt*(RM._cov||1); if(RM.blood<=0) rmKill(); }
   if(RM.st==='fall'){ RM.fallT+=dt; const c=rmCom(); if(RM.fallT>1.4&&Math.hypot(c.vx,c.vz)<0.4) RM.st=RM.st==='dead'?'dead':'down'; }
-  if(RM.st==='dead'){ RM.deadT+=dt; if(RM.deadT<2&&Math.random()<dt*6){ const i=[7,8,11,12,9,10][(Math.random()*6)|0]; rmImpulse(i,rand(-0.4,0.4),rand(0,0.5),rand(-0.4,0.4)); } }
-  if(RM.st==='down'&&RM.blood>12){ RM.writheT-=dt; if(RM.writheT<=0){ RM.writheT=rand(0.5,1.6)*(60/Math.max(20,RM.blood)); const i=[11,12,13,14,0][(Math.random()*5)|0]; if(!RM.det.has(i)) rmImpulse(i,rand(-0.6,0.6),rand(0.2,0.9),rand(-0.6,0.6)); } }
+  if(RM.st==='dead'){ RM.deadT+=dt; if(RM.deadT<2&&Math.random()<dt*6){ const i=[7,8,11,12,9,10][(Math.random()*6)|0]; rmImpulseInt(i,rand(-0.5,0.5),rand(0,0.6),rand(-0.5,0.5),[2,5,6]); } }
+  if(RM.st==='down'&&RM.blood>12){ RM.writheT-=dt; if(RM.writheT<=0){ RM.writheT=rand(0.5,1.6)*(60/Math.max(20,RM.blood)); const i=[11,12,13,14,0][(Math.random()*5)|0]; if(!RM.det.has(i)) rmImpulseInt(i,rand(-0.7,0.7),rand(0.2,1),rand(-0.7,0.7),[2,5,6]); } }
   rmBalance(dt);
-  RM.acc2+=dt; let n=0; while(RM.acc2>=RM_DT&&n<5){ rmStep(RM_DT); RM.acc2-=RM_DT; n++; } if(n>=5) RM.acc2=0;
+  if(RM.sleep&&P&&P.pos){ const c=RM.p[2]; if(Math.hypot(P.pos.x-c.x,P.pos.z-c.z)<1.4) RM.sleep=false; }
+  RM.acc2+=dt; let n=0; while(RM.acc2>=RM_DT&&n<5){ if(RM.sleep){ if(RM.gut) rmGutStep(RM_DT); } else rmStep(RM_DT); RM.acc2-=RM_DT; n++; } if(n>=5) RM.acc2=0;
+  // corpo morto parado "dorme" (não treme no chão); acorda com tiro, explosão ou encostando
+  if(RM.st==='dead'&&!RM.sleep){ let mx=0; for(const p of RM.p) mx=Math.max(mx,Math.hypot(p.x-p.ox,p.y-p.oy,p.z-p.oz)/RM_DT); RM.sleepT=mx<0.12?(RM.sleepT||0)+dt:0; if(RM.sleepT>1.0&&RM.deadT>2) RM.sleep=true; }
   rmBlood(dt); rmDraw(); }
 function rmBlood(dt){ const alive=RM.st!=='dead'; const hr=alive?1.1+(100-RM.blood)/60:0; const beat=Math.pow(Math.max(0,Math.sin(RM.t*Math.PI*2*hr)),3);
   const gH=RM._guard||[null,null]; let cov=1;

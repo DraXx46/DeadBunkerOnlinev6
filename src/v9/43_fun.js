@@ -78,7 +78,7 @@ function buildFun(){ const root=MAPG.fun; const z0=FUN0, z1=FUN1, zc=(z0*S+(z1+1
 function buildFunSalao(root){ const sg=new THREE.Mesh(new THREE.PlaneGeometry(6,1.2),funSign('SALÃO DE JOGOS',6,1.2,'#2bf3ff')); sg.position.set(SX(18)+1.05,3.9,SZ(12.5)); sg.rotation.y=Math.PI/2; root.add(sg);
   const fl=new THREE.MeshLambertMaterial({map:tex(256,256,(g,w,h)=>{ for(let y=0;y<8;y++) for(let x=0;x<8;x++){ g.fillStyle=(x+y)%2?'#1a0a2a':'#e8d8f0'; g.fillRect(x*32,y*32,32,32); } })});
   const f=new THREE.Mesh(new THREE.PlaneGeometry(30,36),fl); f.rotation.x=-Math.PI/2; f.position.set(SX(10),0.03,SZ(12.5)); f.material.map.wrapS=f.material.map.wrapT=THREE.RepeatWrapping; f.material.map.repeat.set(4,4.8); root.add(f);
-  for(const [x,r,col] of [[10,8,0xffb0f0],[10,17,0xb0f0ff]]){ const L=lightTake(col,1.6,16,1.4); if(L) L.position.set(SX(x),3.2,SZ(r)); }
+  for(const [x,r,col] of [[10,8,0xffc890],[10,17,0xffd8a8]]){ const L=lightTake(col,1.6,16,1.4); if(L) L.position.set(SX(x),3.2,SZ(r)); }
   for(const z of [SZ(4)-0.9,SZ(21)+0.9]) neonBar(root,[SX(3)-0.9,3.0,z],[SX(17)+0.9,3.0,z],NEON.purple,0.04);
   FUN.poolSpot={x:SX(7),z:SZ(16.5),ry:0};
   { const bxp=SX(3)-0.95, bz=SZ(7.5); const board=new THREE.Mesh(new THREE.CircleGeometry(0.34,40),new THREE.MeshLambertMaterial({map:funDartTex(),emissive:0x222222})); board.position.set(bxp,1.73,bz); board.rotation.y=Math.PI/2; root.add(board);

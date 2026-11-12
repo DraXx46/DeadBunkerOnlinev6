@@ -19655,10 +19655,12 @@ function rmLimbCol(){ const P0=RM.p; const S=RM._segBy||(RM._segBy={}); if(!RM._
     const nx=px/d, ny=py/d, nz=pz/d, pen=r-d; const w=(1-s)*(1-s)*A.im+s*s*B.im+(1-t)*(1-t)*C.im+t*t*D.im; if(w<=0) continue; const lam=pen/w;
     const mv=(Q,k)=>{ Q.x+=nx*k; Q.y+=ny*k; Q.z+=nz*k; }; mv(A,lam*(1-s)*A.im); mv(B,lam*s*B.im); mv(C,-lam*(1-t)*C.im); mv(D,-lam*t*D.im); } }
 // jogador empurra o corpo: correção de posição sem "chute" e velocidade mínima de empurrão (nunca arremessa)
-function rmPlayerPush(dt){ if(!P||!P.pos||G.state!=='playing') return; const px=P.pos.x, pz=P.pos.z, py=(P.base||0)+(P.y||0); const vp=Math.min(2.2,Math.hypot(P.vx||0,P.vz||0)+0.6);
-  for(const p of RM.p){ if(p.y<py-0.1||p.y>py+1.85) continue; const dx=p.x-px, dz=p.z-pz, d=Math.hypot(dx,dz), R=0.32+p.r; if(d>=R||d<1e-4) continue;
-    const nx=dx/d, nz=dz/d, k=(R-d)*0.35; p.x+=nx*k; p.z+=nz*k; p.ox+=nx*k; p.oz+=nz*k;
-    const vn=((p.x-p.ox)*nx+(p.z-p.oz)*nz)/dt; if(vn<vp){ const add=(vp-vn)*dt*0.25; p.ox-=nx*add; p.oz-=nz*add; } RM.sleep=false; } }
+function rmPlayerPush(dt){ if(!P||!P.pos||G.state!=='playing') return; const px=P.pos.x, pz=P.pos.z, py=(P.base||0)+(P.y||0);
+  // em pé ele é empurrado (e dá passos); caído é um corpo pesado: o jogador passa por cima e só mexe de leve braço, perna e cabeça
+  const up=RM.st==='stand'; const kpos=up?0.15:0.1, vp=up?Math.min(0.8,Math.hypot(P.vx||0,P.vz||0)*0.3+0.3):0.3, dmax=up?0.006:0.003;
+  for(const p of RM.p){ if(p.y<py-0.1||p.y>py+1.85) continue; if(!up&&p.m>5) continue; if(up&&p.y<py+0.45) continue; const dx=p.x-px, dz=p.z-pz, d=Math.hypot(dx,dz), R=0.32+p.r; if(d>=R||d<1e-4) continue;
+    const nx=dx/d, nz=dz/d, k=Math.min(dmax,(R-d)*kpos); p.x+=nx*k; p.z+=nz*k; p.ox+=nx*k; p.oz+=nz*k;
+    const vn=((p.x-p.ox)*nx+(p.z-p.oz)*nz)/dt; if(vn<vp){ const add=(vp-vn)*dt*0.15; p.ox-=nx*add; p.oz-=nz*add; } RM.sleep=false; } }
 function rmJointDamp(k){ const P0=RM.p; for(const [a,b] of rmDPairs()){ const A=P0[a], B=P0[b]; let nx=B.x-A.x, ny=B.y-A.y, nz=B.z-A.z; const L=Math.hypot(nx,ny,nz); if(L<1e-5) continue; nx/=L; ny/=L; nz/=L;
     const rv=((B.x-B.ox)-(A.x-A.ox))*nx+((B.y-B.oy)-(A.y-A.oy))*ny+((B.z-B.oz)-(A.z-A.oz))*nz; const w=A.m+B.m, im=rv*k;
     A.ox-=nx*im*B.m/w; A.oy-=ny*im*B.m/w; A.oz-=nz*im*B.m/w; B.ox+=nx*im*A.m/w; B.oy+=ny*im*A.m/w; B.oz+=nz*im*A.m/w; } }
@@ -19892,7 +19894,9 @@ const RMF={on:false,d:null,s:null};
     if(!h) return t; if(RMF.d.proj) return h.t; const kind=RH.kind; RH.kind='none';
     const dmg=RMF.d.dmg*(RMF.d.range?clamp(1.25-h.t/RMF.d.range,0.25,1):1); try{ rmHitBullet(h,o,d,dmg,RMF.s&&RMF.s.id); }catch(e){ console.warn('[Bunker] homem de testes',e); } return h.t; }; }
 { const ex0=explodeSplash; explodeSplash=function(p,dmg,rad){ const r=ex0.apply(this,arguments); if(CUR==='fun'&&RM.on) try{ rmBlast(p,dmg,rad); }catch(e){} return r; }; }
-v9On('frame',dt=>{ if(CUR!=='fun') return; if(!RM.built){ try{ rmBuild(); }catch(e){ console.warn('[Bunker] lab de física',e); RM.built=true; return; } } rmUpdate(dt); });
+// em pé ele é sólido: o jogador encosta e para (empurra de leve), não atravessa
+function rmBlockPlayer(){ if(!RM.on||RM.st!=='stand'||!P||!P.pos) return; const c=RM.p[2]; const dx=P.pos.x-c.x, dz=P.pos.z-c.z, d=Math.hypot(dx,dz), R=0.5; if(d<R&&d>1e-4){ P.pos.x=c.x+dx/d*R; P.pos.z=c.z+dz/d*R; } }
+v9On('frame',dt=>{ if(CUR!=='fun') return; if(!RM.built){ try{ rmBuild(); }catch(e){ console.warn('[Bunker] lab de física',e); RM.built=true; return; } } rmUpdate(dt); rmBlockPlayer(); });
 CMDS.homem={d:'homem · reseta o homem do laboratório de física (Parque 4FUN)',f:()=>{ if(CUR!=='fun'){ cprint('Só no Parque 4FUN.','err'); return; } if(!RM.built) rmBuild(); rmReset(); cprint('Homem resetado.'); }};
 
 /* ---- 59_funreskin.js ---- */

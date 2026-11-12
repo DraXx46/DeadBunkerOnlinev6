@@ -1,8 +1,8 @@
 /* ================= v9 · GRUPO SEM SALA DE ESPERA =================
    Com o grupo montado no menu, o "Estou pronto" fica no próprio menu (o botão Jogar dos membros vira "Estou pronto"):
    cada membro confirma ali, e todos veem quem já está pronto. Quando o líder escolhe o mapa,
-   a sala é criada, o grupo entra sozinho e a escolha de personagem começa direto, sem passar pela sala de espera
-   (a tela de carregamento cobre a troca). Se alguém não chegar em 25 s, começa com quem já entrou. */
+   a sala é criada, o grupo entra sozinho e a escolha de personagem começa direto, sem passar pela sala de espera.
+   Se alguém não chegar em 25 s, começa com quem já entrou. */
 const PTY={auto:false,t0:0,started:false};
 // membros: o próprio botão Jogar vira "Estou pronto"; líder: o botão mostra quem falta
 function ptyMe(){ if(!SOC.party) return null; const me=(SOC.acc&&SOC.acc.name)||pgPlayerName(); return SOC.party.members.find(m=>fkey(m.name)===fkey(me))||null; }
@@ -27,14 +27,11 @@ v9On('menu',()=>{ try{ ptyRender(); }catch(e){} });
   if(inParty()&&isLeader()){
     if(!ptyAllReady()&&!PTY.force){ const falta=SOC.party.members.filter(m=>!m.ready&&!m.leader).map(m=>m.name).join(', ');
       toast(`Esperando ficar pronto: ${falta}`,{actions:[['Começar assim mesmo',()=>{ PTY.force=true; playChoice(k); },'ok']]}); return; }
-    PTY.force=false; PTY.auto=true; PTY.t0=performance.now(); PTY.started=false; MLD.hold=true; }
+    PTY.force=false; PTY.auto=true; PTY.t0=performance.now(); PTY.started=false; }
   return pc.apply(this,arguments); }; }
-// membro: quando o líder abre a sala, entra direto e a tela de carregamento segura até a escolha de personagem
-{ const pf=partyFollow; partyFollow=async function(){ MLD.hold=true; try{ return await pf.apply(this,arguments); }finally{ setTimeout(()=>{ if(G.state==='menu') MLD.hold=false; },1500); } }; }
-{ const op=openPick; openPick=function(){ MLD.hold=false; try{ mldEnd(); }catch(e){} return op.apply(this,arguments); }; }
 // anfitrião do grupo: começa a escolha de personagem sozinho quando todos entraram e estão prontos
 v9On('always',()=>{
-  if(!PTY.auto) return; if(NET.mode!=='host'||G.state!=='lobby'){ if(G.state==='playing'||!NET.mode&&performance.now()-PTY.t0>8000){ PTY.auto=false; MLD.hold=false; } return; }
+  if(!PTY.auto) return; if(NET.mode!=='host'||G.state!=='lobby'){ if(G.state==='playing'||!NET.mode&&performance.now()-PTY.t0>8000){ PTY.auto=false; } return; }
   if(PTY.started) return; let ps=[]; try{ ps=NET.gr?NET.gr.peers():[]; }catch(e){}
   const want=SOC.party?SOC.party.members.length:1, ready=ps.filter(p=>p.peer===NET.me||p.ready).length, age=performance.now()-PTY.t0;
   if((ps.length>=want&&ready>=ps.length)||(age>25000&&ready>=ps.length)){ PTY.started=true; beginRoomGame(); }

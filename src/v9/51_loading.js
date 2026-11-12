@@ -1,9 +1,9 @@
 /* ================= v9 · TELA DE CARREGAMENTO DOS MAPAS =================
-   Aparece ao escolher um mapa, entrar numa sala e começar a partida. Mostra fotos do jogo passando (com zoom lento),
+   Aparece depois da escolha de personagem (solo: ao começar a partida; online: quando todos travaram). Mostra fotos passando (com zoom lento),
    o nome do mapa, dicas que vão trocando e uma barra com as etapas reais: montar o mapa, modelos e texturas,
-   vozes do seu personagem (e do motorista no ônibus) e o aquecimento dos shaders. Some sozinha quando tudo está pronto
-   (no mínimo ~2,5 s para dar tempo de ler, no máximo 14 s). Enquanto ela está na tela, ninguém te machuca. */
-const MLD={on:false,t0:0,map:null,photos:[],pi:0,ti:0,phT:0,tiT:0,frames:0,stage:'',pend:0,done:0,hideT:0,why:''};
+   vozes do seu personagem (e do motorista no ônibus) e o aquecimento dos shaders. Fica no mínimo 15 s, e a partida
+   só começa quando ela termina e tudo já baixou. Enquanto ela está na tela, ninguém te machuca. */
+const MLD={on:false,started:false,pending:null,sg:null,t0:0,map:null,photos:[],pi:0,ti:0,phT:0,tiT:0,frames:0,stage:'',pend:0,done:0,hideT:0,why:''};
 const MLD_TIPS=[
   'Tiro na cabeça dá muito mais dano, e mais pontos.',
   'Reconstrua as janelas entre os ataques: cada tábua vale pontos.',
@@ -91,32 +91,43 @@ function mldBegin(map,why){
     MLD.el.querySelector('.dots').innerHTML=MLD.photos.slice(0,6).map(()=>'<u></u>').join(''); }
   MLD.el.classList.add('on'); mldUpdate();
 }
-function mldProgress(){
+const MLD_MIN=15000;   // a tela fica no mínimo 15 s (barra "falsa" que anda com o tempo, mas só chega ao fim com tudo baixado)
+const MLD_STAGES=[[0,'Montando o mapa'],[3000,'Carregando modelos e texturas'],[7000,'Carregando vozes'],[11000,'Aquecendo os gráficos'],[14000,'Preparando a partida']];
+function mldReal(){
   const vf=mldVoiceFiles(), vl=vf.filter(f=>Snd.hasSample&&Snd.hasSample(f)).length, vk=!Snd.ctx||!vf.length?1:vl/vf.length;
-  const tk=MLD.pend?Math.min(0.95,MLD.done/(MLD.done+MLD.pend)):1, fk=Math.min(1,MLD.frames/4), mk=MAPS[MLD.map]&&CUR===MLD.map?1:0.3;
-  let stage='Montando o mapa'; if(mk>=1) stage=MLD.pend?'Carregando modelos e texturas':vk<1?'Carregando vozes':fk<1?'Aquecendo os gráficos':'Pronto';
-  return {p:0.3*mk+0.3*tk+0.25*vk+0.15*fk, stage, ready:mk>=1&&!MLD.pend&&vk>=1&&fk>=1};
+  const tk=MLD.pend?Math.min(0.95,MLD.done/(MLD.done+MLD.pend)):1, mk=MAPS[MLD.map]&&CUR===MLD.map?1:0.3;
+  return {p:0.4*mk+0.3*tk+0.3*vk, ready:mk>=1&&!MLD.pend&&vk>=1, vk, tk};
+}
+function mldProgress(){
+  const age=performance.now()-MLD.t0, R=mldReal(), tp=Math.min(1,age/MLD_MIN);
+  let p=Math.min(tp*0.97,R.p*0.97+0.03*tp), stage=MLD_STAGES.filter(s=>age>=s[0]).pop()[1];
+  if(tp>=1&&!R.ready){ p=Math.min(0.97,R.p); stage=R.vk<1?'Baixando as vozes':R.tk<1?'Baixando modelos e texturas':'Montando o mapa'; }
+  else if(tp>=1&&!MLD.started){ p=0.98; stage=MLD.pending?'Começando':'Esperando o anfitrião começar'; }
+  if(MLD.started) { p=1; stage='Pronto'; }
+  return {p,stage,ready:R.ready&&tp>=1};
 }
 function mldUpdate(){ if(!MLD.on) return; const r=mldProgress(), el=MLD.el;
   el.querySelector('.bar i').style.width=(Math.round(r.p*100))+'%'; el.querySelector('.st b').textContent=r.stage; el.querySelector('.st em').textContent=Math.round(r.p*100)+'%';
   const dots=el.querySelectorAll('.dots u'); dots.forEach((d,i)=>d.classList.toggle('on',i===(MLD.pi-1)%dots.length)); return r; }
-function mldEnd(){ if(!MLD.on) return; MLD.on=false; MLD.el.querySelector('.bar i').style.width='100%'; MLD.el.querySelector('.st b').textContent='Pronto'; MLD.el.querySelector('.st em').textContent='100%';
+function mldEnd(){ if(!MLD.on) return; MLD.on=false; MLD.started=false; MLD.pending=null; MLD.el.querySelector('.bar i').style.width='100%'; MLD.el.querySelector('.st b').textContent='Pronto'; MLD.el.querySelector('.st em').textContent='100%';
   setTimeout(()=>{ if(!MLD.on) MLD.el.classList.remove('on'); },220); }
-v9On('always',()=>{ if(!MLD.on) return; const n=performance.now(); MLD.frames++;
+// a partida só começa quando a tela termina: 15 s no mínimo e tudo baixado
+function mldRelease(){ if(!MLD.on||MLD.started||!MLD.pending) return; MLD.started=true; MLD.frames=0; const a=MLD.pending; MLD.pending=null;
+  try{ MLD.sg.apply(null,a); }catch(e){ console.warn('[Bunker v9] start',e); } }
+function mldTick(){ if(!MLD.on) return; const n=performance.now(), age=n-MLD.t0;
   if(n-MLD.phT>5200){ MLD.phT=n; mldShowPhoto(); } if(n-MLD.tiT>4800){ MLD.tiT=n; mldTip(); }
-  const r=mldUpdate(), age=n-MLD.t0;
-  // na sala de espera / escolha de personagem não precisa esperar as vozes
-  if(MLD.hold&&age<40000) return;
-  const ok=r.ready||(MLD.why!=='start'&&!MLD.pend&&MLD.frames>=4&&CUR===MLD.map);
-  if((ok&&age>2500)||age>14000) mldEnd(); });
-// a tela também anda quando o jogo ainda não roda quadros (menu parado)
-setInterval(()=>{ if(MLD.on&&performance.now()-MLD.t0>(MLD.hold?42000:16000)) mldEnd(); },1000);
-
-// pontos de entrada: escolher mapa, entrar em sala, começar a partida
-const nextPaint=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r())));
-{ const pc=playChoice; playChoice=async function(k){ if(typeof mpBusy!=='undefined'&&mpBusy) return pc.apply(this,arguments); mldBegin(k,'pick'); await nextPaint(); return pc.apply(this,arguments); }; }
-{ const jg=joinGame; joinGame=async function(){ mldBegin(null,'join'); await nextPaint(); try{ return await jg.apply(this,arguments); }finally{ if(G.state==='menu') mldEnd(); } }; }
-{ const er=enterRoomLobby; enterRoomLobby=function(map){ if(map!==CUR||!MLD.on) mldBegin(MAPS[map]?map:'bunker','lobby'); return er.apply(this,arguments); }; }
-{ const sg=startGame; startGame=function(){ mldBegin(CUR,'start'); MLD.frames=0; return sg.apply(this,arguments); }; }
+  const r=mldUpdate();
+  if(MLD.started){ if(MLD.frames>=4) mldEnd(); return; }
+  if((r.ready||age>45000)&&MLD.pending) mldRelease();
+  else if(age>75000&&!MLD.pending) mldEnd();   // o anfitrião nunca começou
+}
+v9On('always',()=>{ if(MLD.on){ MLD.frames++; mldTick(); } });
+setInterval(()=>{ if(MLD.on&&(G.state==='menu'||G.state==='lobby')) mldTick(); },250);   // também anda com o jogo parado no menu
+// pontos de entrada: só depois da escolha de personagem (solo: ao começar; online: quando todos travaram)
+{ const sg=startGame; MLD.sg=sg; startGame=function(){
+  if(MLD.on&&MLD.started) return sg.apply(this,arguments);            // liberado pela própria tela
+  if(!MLD.on) mldBegin(CUR,'start');
+  MLD.pending=Array.from(arguments); mldTick(); }; }
+{ const pn=pickNetMsg; pickNetMsg=function(m){ const r=pn.apply(this,arguments); if(m&&m.type==='pickDone'&&!MLD.on) mldBegin(CUR,'start'); return r; }; }
 // ninguém leva dano enquanto a tela de carregamento está aberta
 { const hp=hurtPlayer; hurtPlayer=function(){ if(MLD.on) return; return hp.apply(this,arguments); }; }

@@ -131,9 +131,10 @@ function chxSkin(root){
   const skel=new THREE.Skeleton(bones,invs); const out=[];
   const ss=(a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
   for(const gr of groups.values()){
-    const pos=new Float32Array(gr.nv*3), nor=new Float32Array(gr.nv*3), uv=new Float32Array(gr.nv*2), si=new Uint16Array(gr.nv*4), sw=new Float32Array(gr.nv*4), idx=new Uint32Array(gr.ni);
+    const vc=gr.m.vertexColors?new Float32Array(gr.nv*3).fill(1):null; const pos=new Float32Array(gr.nv*3), nor=new Float32Array(gr.nv*3), uv=new Float32Array(gr.nv*2), si=new Uint16Array(gr.nv*4), sw=new Float32Array(gr.nv*4), idx=new Uint32Array(gr.ni);
     let v0=0, i0=0;
     for(const pt of gr.parts){ const ge=pt.ge, Pp=ge.attributes.position, Nn=ge.attributes.normal, U=ge.attributes.uv, n=Pp.count;
+      if(vc&&ge.attributes.color){ const C=ge.attributes.color; for(let k=0;k<n;k++){ vc[(v0+k)*3]=C.getX(k); vc[(v0+k)*3+1]=C.getY(k); vc[(v0+k)*3+2]=C.getZ(k); } }
       const M=_cxA.multiplyMatrices(rInv,pt.o.matrixWorld); _cxN.getNormalMatrix(M); const flip=M.determinant()<0; const ob=bi.get(pt.owner);
       const myJ=J.filter(j=>j.par===pt.owner||j.ch===pt.owner);
       for(let k=0;k<n;k++){ const V=_cxV.fromBufferAttribute(Pp,k).applyMatrix4(M); const o3=(v0+k)*3; pos[o3]=V.x; pos[o3+1]=V.y; pos[o3+2]=V.z;
@@ -149,7 +150,7 @@ function chxSkin(root){
       const I=ge.index; const cnt=I?I.count:n;
       for(let k=0;k<cnt;k+=3){ const a=I?I.getX(k):k, b=I?I.getX(k+1):k+1, c=I?I.getX(k+2):k+2; idx[i0+k]=v0+a; idx[i0+k+1]=v0+(flip?c:b); idx[i0+k+2]=v0+(flip?b:c); }
       v0+=n; i0+=cnt; }
-    const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(pos,3)); geo.setAttribute('normal',new THREE.BufferAttribute(nor,3)); geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));
+    const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(pos,3)); geo.setAttribute('normal',new THREE.BufferAttribute(nor,3)); geo.setAttribute('uv',new THREE.BufferAttribute(uv,2)); if(vc) geo.setAttribute('color',new THREE.BufferAttribute(vc,3));
     geo.setAttribute('skinIndex',new THREE.BufferAttribute(si,4)); geo.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4)); geo.setIndex(new THREE.BufferAttribute(gr.nv>65535?idx:new Uint16Array(idx),1));
     geo.computeBoundingSphere(); geo.boundingSphere.radius+=1.2;
     const mt=gr.m; if(!mt.skinning){ mt.skinning=true; mt.needsUpdate=true; }

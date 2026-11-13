@@ -20589,6 +20589,7 @@ body.padmode .tabs.pgtabs::after{content:"R2"}
 body.padmode .chc.padfocus{transform:translateX(6px);transition:transform .12s}
 .pgcat{position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:9001;padding:8px 18px;border-radius:999px;background:rgba(10,8,8,.82);border:1px solid rgba(244,192,58,.5);
   color:#f4c03a;font:700 13px/1 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;pointer-events:none;animation:pgcat 1.1s ease forwards}
+.v9bp .nav .pg{all:unset;display:flex;align-items:center;gap:10px}
 @keyframes pgcat{0%{opacity:0;transform:translate(-50%,-6px)}12%{opacity:1;transform:translate(-50%,0)}75%{opacity:1}100%{opacity:0}}`);
 const PGK={X:'<i class="pg x">✕</i>',O:'<i class="pg o">○</i>',SQ:'<i class="pg sq">□</i>',TRI:'<i class="pg tri">△</i>',L1:'<i class="pg sh">L1</i>',R1:'<i class="pg sh">R1</i>',L2:'<i class="pg sh">L2</i>',R2:'<i class="pg sh">R2</i>',OPT:'<i class="pg sh">☰</i>',RS:'<i class="pg sh">R</i>'};
 const PUI_LEG=document.createElement('div'); PUI_LEG.id='padleg'; document.body.appendChild(PUI_LEG);
@@ -20613,7 +20614,14 @@ function puiBtns(){ return [...document.querySelectorAll('button,[data-a]')].fil
 function puiFind(kind){ const L=puiBtns(); const t=b=>(b.textContent||'').replace(/\s+/g,' ').trim();
   if(kind==='back'){ const pri=['#bx-close','#set-back','#ars-close','#resume','#kv-close','#ch-back','#iv-back','#ex-close'];
     for(const s of pri){ const e=document.querySelector(s); if(e&&padVisible(e)) return e; }
-    return L.find(b=>b.dataset.a==='close')||L.find(b=>b.dataset.snd==='back')||L.find(b=>/(^|-)(close|back)$/.test(b.id||''))||L.find(b=>b.classList.contains('x')||b.classList.contains('close'))||L.find(b=>PUI_TXT.back.test(t(b)))||null; }
+    const isBk=b=>b.dataset.a==='close'||b.dataset.snd==='back'||/(^|-)(close|back)$/.test(b.id||'')||b.classList.contains('x')||b.classList.contains('close')||PUI_TXT.back.test(t(b));
+    const v=L.find(b=>b.dataset.a==='close')||L.find(b=>b.dataset.snd==='back')||L.find(b=>/(^|-)(close|back)$/.test(b.id||''))||L.find(b=>b.classList.contains('x')||b.classList.contains('close'))||L.find(b=>PUI_TXT.back.test(t(b)));
+    if(v) return v;
+    // o botão pode estar fora da tela (rolagem): pega o da janela mais de cima
+    const top=b=>{ let p=b; while(p&&p.parentElement&&p.parentElement!==document.body) p=p.parentElement; return p; };
+    const all=[...document.querySelectorAll('button,[data-a]')].filter(b=>!b.disabled&&b.getClientRects().length&&isBk(b)); let best=null, bi=-1; const kids=[...document.body.children];
+    for(const b of all){ const tp=top(b); const cs=tp&&getComputedStyle(tp); if(!tp||cs.display==='none'||cs.visibility==='hidden'||tp.hidden) continue; const i=kids.indexOf(tp); if(i>bi){ bi=i; best=b; } }
+    return best; }
   if(kind==='claim'){ return L.find(b=>b.dataset.a==='all')||L.find(b=>b.dataset.a==='claim')||L.find(b=>PUI_TXT.claim.test(t(b)))||null; }
   if(kind==='buy'){ const f=PAD.nav.el; const near=f&&f.closest&&f.closest('.kcard,.card,.tile,.ivi,.item,li,article,section,.chinfo,.box');
     const c=L.filter(b=>PUI_TXT.buy.test(t(b))||b.id==='bx-open'||b.id==='ch-pick'&&/comprar/i.test(t(b)));
@@ -20635,14 +20643,21 @@ function puiCurCat(){ if(puiHubClear()) return 0; const ids=puiCats().map(b=>b.i
   for(const k of ['passbtn','chbtn','extrabtn','helpbtn','setbtn','shopbtn','arsbtn','charbtn']){ const i=ids.indexOf(k); if(i>=0&&det[k]&&det[k]()) return i; }
   return -1; }
 function puiCatFlash(name){ const d=document.createElement('div'); d.className='pgcat'; d.textContent=name; document.body.appendChild(d); setTimeout(()=>d.remove(),1150); }
+const PUI_BOX={charbtn:'#chlist',arsbtn:'#v9inv',shopbtn:'#arsenal',passbtn:'.v9bp',chbtn:'.v9chp:not(.v9pubw)',setbtn:'#settings',helpbtn:'#settings',extrabtn:'#extras'};
+function puiOpenCat(i){ const cats=puiCats(), b=cats[i]; if(!b) return; PUI.cat=i;
+  try{ if(i>0) b.click(); for(const t of cats) t.classList.toggle('on',t===b);
+    // Configurações abre na última aba; se era "Como jogar", volta para a primeira (senão vira a categoria Ajuda)
+    if(b.id==='setbtn'){ const on=document.querySelector('#settabs .on'); if(on&&on.dataset.st==='info'){ const f=document.querySelector('#settabs button'); if(f) f.click(); } } }catch(e){} }
+// foco inicial dentro da tela recém-aberta (aba ativa, item escolhido ou o primeiro botão)
+function puiFocusIn(id){ const sel=PUI_BOX[id]; const L=padFocusables(); let box=sel&&document.querySelector(sel); let pick=null;
+  if(box){ const inn=L.filter(e=>box.contains(e)); pick=inn.find(e=>e.classList.contains('chc')&&e.classList.contains('on'))||inn.find(e=>e.classList.contains('tile')&&e.classList.contains('sel'))||inn.find(e=>e.closest('.tabs')&&e.classList.contains('on'))||inn[0]||null; }
+  padFocus(pick||padDefault(L)); }
 function puiCat(d){ if(PUI.switching) return; const cats=puiCats(); if(!cats.length) return false; const cur=puiCurCat(); if(cur<0) return false;
   const n=cats.length, tgt=(cur+d+n)%n; PUI.switching=true; PUI.cat=tgt; puiHap('cat'); try{ Snd.ui('tab'); }catch(e){}
   let tries=0; const step=()=>{ if(!puiHubClear()&&tries<6){ tries++; puiBack(); setTimeout(step,90); return; }
-    try{ if(tgt>0) cats[tgt].click(); for(const t of cats) t.classList.toggle('on',t===cats[tgt]);
-      // Configurações abre na última aba; se era "Como jogar", volta para a primeira (senão vira a categoria Ajuda)
-      if(cats[tgt].id==='setbtn'){ const on=document.querySelector('#settabs .on'); if(on&&on.dataset.st==='info'){ const f=document.querySelector('#settabs button'); if(f) f.click(); } } }catch(e){}
+    puiOpenCat(tgt);
     puiCatFlash((cats[tgt].childNodes[0]&&cats[tgt].childNodes[0].textContent||cats[tgt].textContent).trim());
-    setTimeout(()=>{ PUI.switching=false; const L=padFocusables(); padFocus(padDefault(L)); },140); };
+    setTimeout(()=>{ PUI.switching=false; puiFocusIn(cats[tgt].id); },160); };
   step(); return true; }
 document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.mtabs .mtab'); if(b){ const i=puiCats().indexOf(b); if(i>=0) PUI.cat=i; } },true);
 /* ---- abas internas e páginas ---- */
@@ -20703,7 +20718,7 @@ padMenus=function(b,was,L,R,dt){ const edge=i=>(b[i]||0)>0.5&&!((was[i]||0)>0.5)
       else { e.click(); puiHap('ok'); } }
     else padMove('down'); }
   if(edge(PB.O)){ puiBack(); puiHap('back'); }
-  if(edge(PB.OPT)){ if(G.state==='paused') resumeGame(); else if(G.state==='lobby'&&LP.on) closeLobbyPause(false); else if(G.state==='menu'&&puiHubClear()){ const s=document.getElementById('setbtn'); if(s){ s.click(); PUI.cat=puiCats().indexOf(s); puiHap('tab'); } } else puiBack(); }
+  if(edge(PB.OPT)){ if(G.state==='paused') resumeGame(); else if(G.state==='lobby'&&LP.on) closeLobbyPause(false); else if(G.state==='menu'&&puiHubClear()){ const i=puiCats().findIndex(b=>b.id==='setbtn'); if(i>=0){ puiOpenCat(i); puiHap('tab'); setTimeout(()=>puiFocusIn('setbtn'),120); } } else puiBack(); }
   const hub=G.state==='menu'&&puiCurCat()>=0;
   if(edge(PB.R1)){ if(hub) puiCat(1); else puiSub(1); }
   if(edge(PB.L1)){ if(hub) puiCat(-1); else puiSub(-1); }

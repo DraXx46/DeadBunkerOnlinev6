@@ -3713,7 +3713,7 @@ function updateCity(dt){
   if(CUR!=='bunker') return;
   for(const s of city.smoke){ const top=s.local?6:84; s.y+=s.sp*dt; if(s.y>top) s.y=0; const k=s.y/top; if(s.local){ s.s.position.set(s.x+s.drift*s.y,2.0+s.y,s.z); const sz=1.2+k*3.5; s.s.scale.set(sz,sz,1); s.s.material.opacity=0.45*(1-k)*(k<0.1?k/0.1:1); continue; } s.s.position.set(s.x+s.drift*s.y*0.6,s.y,s.z); const sz=10+k*36; s.s.scale.set(sz,sz,1); s.s.material.opacity=0.5*(1-k)*(k<0.08?k/0.08:1); s.s.material.color.setRGB(0.16+0.12*(1-k),0.12+0.05*(1-k),0.1); }
   for(const g of city.glows){ g.ph+=dt; const f=0.75+Math.sin(g.ph*3.1)*0.15+Math.sin(g.ph*7.7)*0.1; if(g.flame){ g.s.material.opacity=0.8*f; } else g.s.material.opacity=g.base*f; }
-  city.nextFlash-=dt; if(city.nextFlash<=0){ city.nextFlash=rand(5,16); const a=rand(0,Math.PI*2); city.flash.position.set(48+Math.cos(a)*130,rand(4,14),24+Math.sin(a)*130); city.flashT=0.5; if(G.state!=='menu') setTimeout(()=>Snd.distant(city.flash.position.x,city.flash.position.z),rand(500,1400)); }
+  city.nextFlash-=dt; if(city.nextFlash<=0&&city.flash){ city.nextFlash=rand(5,16); const a=rand(0,Math.PI*2); city.flash.position.set(48+Math.cos(a)*130,rand(4,14),24+Math.sin(a)*130); city.flashT=0.5; if(G.state!=='menu') setTimeout(()=>Snd.distant(city.flash.position.x,city.flash.position.z),rand(500,1400)); }
   if(city.flashT>0){ city.flashT-=dt; city.flash.material.opacity=Math.max(0,city.flashT/0.5)*0.9; }
 }
 

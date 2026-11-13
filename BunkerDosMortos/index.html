@@ -20406,13 +20406,15 @@ v9Css(`#bscope .tube,#bscope .ret{display:none!important}
 #bscope .rng{position:absolute;right:19%;bottom:15%;font:600 11px/1 var(--f-type,monospace);letter-spacing:.14em;color:#ff4a2a;text-shadow:0 0 5px rgba(255,60,30,.8);opacity:var(--o)}
 #bscope .zl{position:absolute;left:19%;bottom:15%;font:600 10px/1 var(--f-type,monospace);letter-spacing:.2em;color:rgba(230,230,220,.55);opacity:var(--o)}`);
 { const g=document.querySelector('#bscope .glass'); if(g){ const a=document.createElement('div'); a.className='rng'; g.appendChild(a); const b=document.createElement('div'); b.className='zl'; g.appendChild(b); } }
-const BSC_FS=`uniform sampler2D tIn; uniform vec2 uRes,uC,uS; uniform vec4 uMi; uniform float uRg,uRf,uO,uK,uT,uDim,uKs;
+const BSC_FS=`uniform sampler2D tIn; uniform vec2 uRes,uC,uS; uniform vec4 uMi; uniform float uRg,uRf,uO,uK,uT,uDim,uKs,uMode;
 float hsh(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
 float ln(float d,float w,float px){ return 1.-smoothstep(w-px,w+px,d); }
 vec3 sIn(vec2 u,float ca){ vec2 c=uRes*.5; vec2 k=vec2(uKs)/uRes; return vec3(texture2D(tIn,(c+u*(1.+ca))*k).r,texture2D(tIn,(c+u)*k).g,texture2D(tIn,(c+u*(1.-ca))*k).b); }
 void main(){
   vec2 p=gl_FragCoord.xy, dd=p-uC; vec2 U=vec2(uMi.x*dd.x+uMi.y*dd.y,uMi.z*dd.x+uMi.w*dd.y); float r=length(U);
-  if(r>1.05){ gl_FragColor=vec4(0.,0.,0.,uDim); return; }
+  float px=1./max(uRg,1.);
+  if(uMode<.5){ gl_FragColor=vec4(0.,0.,0.,uDim*smoothstep(1.,1.08,r)); return; }   // passo 1: escurece o mundo em volta
+  if(r>1.){ discard; }
   // imagem ampliada: o centro da ocular mostra sempre o ponto de mira; o tamanho acompanha a ocular
   vec2 Ui=dd/uRg; float rr=min(length(Ui),1.3); float bar=1.+.11*rr*rr; float ca=(.003+(1.-uO)*.03)*rr*rr*rr;
   vec2 u=Ui*uRf*bar;
@@ -20424,7 +20426,7 @@ void main(){
   c+=vec3(.05,.06,.07)*smoothstep(.55,0.,length(U-vec2(-.38,.42)))*(.4+uO*.6);
   c+=(hsh(floor(p*.5)+floor(uT*24.))-.5)*.016;
   // retículo duplex (preso à luneta)
-  float aq=smoothstep(.15,.9,uO), px=1./max(uRg,1.); vec2 a2=abs(U);
+  float aq=smoothstep(.15,.9,uO); vec2 a2=abs(U);
   float wT=.011, wt=max(.0017,px*.75), ret=0.;
   ret=max(ret,ln(a2.y,wT,px)*step(.42,a2.x)); ret=max(ret,ln(a2.x,wT,px)*step(.42,a2.y));
   ret=max(ret,ln(a2.y,wt,px)*step(a2.x,.42)); ret=max(ret,ln(a2.x,wt,px)*step(a2.y,.42));
@@ -20438,10 +20440,10 @@ void main(){
   // sombra do olho e parede interna do tubo
   float sh=smoothstep(.76,1.02,length(U-uS)); c*=1.-sh*.97;
   c*=1.-smoothstep(.9,1.,r)*.85;
-  gl_FragColor=vec4(clamp(c,0.,1.),1.); }`;
+  gl_FragColor=vec4(clamp(c,0.,1.),1.-smoothstep(1.-px*1.5,1.,r)); }`;
 function bscEnsure(){ const sz=renderer.getDrawingBufferSize(new THREE.Vector2()); const w=sz.x|0, h=sz.y|0;
   if(!BSC.mat){ BSC.cam=new THREE.OrthographicCamera(-1,1,1,-1,0,1); BSC.scn=new THREE.Scene();
-    BSC.mat=new THREE.ShaderMaterial({uniforms:{tIn:{value:null},uRes:{value:new THREE.Vector2()},uC:{value:new THREE.Vector2()},uS:{value:new THREE.Vector2()},uMi:{value:new THREE.Vector4(1,0,0,1)},uRg:{value:100},uRf:{value:100},uO:{value:0},uK:{value:0},uT:{value:0},uDim:{value:0},uKs:{value:1}},
+    BSC.mat=new THREE.ShaderMaterial({uniforms:{tIn:{value:null},uRes:{value:new THREE.Vector2()},uC:{value:new THREE.Vector2()},uS:{value:new THREE.Vector2()},uMi:{value:new THREE.Vector4(1,0,0,1)},uRg:{value:100},uRf:{value:100},uO:{value:0},uK:{value:0},uT:{value:0},uDim:{value:0},uKs:{value:1},uMode:{value:0}},
       depthTest:false,depthWrite:false,transparent:true,vertexShader:'void main(){ gl_Position=vec4(position.xy,0.,1.); }',fragmentShader:BSC_FS});
     const q=new THREE.Mesh(new THREE.PlaneGeometry(2,2),BSC.mat); q.frustumCulled=false; BSC.scn.add(q); }
   if(BSC.rti&&BSC.w0===w&&BSC.h0===h) return; BSC.w0=w; BSC.h0=h; if(BSC.rti) BSC.rti.dispose();
@@ -20458,7 +20460,7 @@ function bscParts(){ const g=gunModel&&gunModel.userData.scope3d; if(!g) return 
 /* ---- estado por quadro ---- */
 function bscCancel(){ return !!(Wp.knifeOut||Wp.knifeT>0||Wp.swapT>0||Wp.drinkT>0||Wp.upT>0||P.down||(typeof DOGQ!=='undefined'&&DOGQ.on)); }
 function bscActiveGun(){ const s=curSlot(); return !!(s&&s.id==='ptrs'&&gunModel&&gunModel.userData.scope3d&&(G.state==='playing'||G.state==='paused')); }
-v9On('frame',dt=>{ dt=Math.min(dt||0.016,0.05); BSC.t+=dt;
+v9On('frame',dt=>{ if(BSC.vmHid){ vmScene.visible=true; BSC.vmHid=false; } dt=Math.min(dt||0.016,0.05); BSC.t+=dt;
   const isB=bscActiveGun(), cancel=!isB||bscCancel();
   // 48_heavy escondia a arma e a luneta 3D ao mirar: agora a arma vai até o olho
   HV.coverVm=false; const g3=gunModel&&gunModel.userData.scope3d; if(g3) g3.visible=true;
@@ -20511,7 +20513,7 @@ function bscRender(dt,mainFn){ bscEnsure(); const w=BSC.w0, h=BSC.h0, U=BSC.mat.
   const scoped=!!(Wp.scoped&&(G.state==='playing'||G.state==='paused')&&!P.down);
   if(scoped&&BSC.rawSet){ vmRoot.quaternion.copy(BSC.rawQ); bscPose(); } // com a mira fechada o jogo não atualiza a arma
   const E=bscEllipse(w,h), P3=bscParts();
-  BSC.lens=!!E; if(P3){ P3.hole.visible=!!E; if(P3.glass) P3.glass.visible=!E; }
+  BSC.lens=!!E; if(P3){ P3.hole.visible=false; if(P3.glass) P3.glass.visible=!E; }
   const f0=camera.fov; if(!scoped) BSC.fovOut=f0;
   if(E){ const k=Math.max(0.3,Math.min(1,E.Rg/Z.Rf*1.2));
     BSC.rti.viewport.set(0,0,Math.max(2,Math.round(w*k)),Math.max(2,Math.round(h*k)));
@@ -20526,10 +20528,14 @@ function bscRender(dt,mainFn){ bscEnsure(); const w=BSC.w0, h=BSC.h0, U=BSC.mat.
     const id=1/E.det; U.uMi.value.set(E.b[1]*id,-E.b[0]*id,-E.a[1]*id,E.a[0]*id);
     U.tIn.value=BSC.rti.texture; U.uRes.value.set(w,h); U.uC.value.set(E.C[0],E.C[1]); U.uRg.value=E.Rg; U.uRf.value=Z.Rf; U.uKs.value=BSC.ks;
     U.uO.value=Math.max(0,Math.min(1,(e-0.25)/0.72)); U.uK.value=HV.kick; U.uT.value=BSC.t; U.uDim.value=Math.max(0,Math.min(1,(e-0.55)/0.45))*0.6; U.uS.value.set(BSC.sx,BSC.sy);
-    renderer.render(BSC.scn,BSC.cam); }
+    U.uMode.value=0; renderer.render(BSC.scn,BSC.cam); }
   else BSC.e=0;
-  // com a mira fechada o jogo não desenha a arma: desenhamos aqui (é ela que faz o anel da ocular)
-  if(scoped){ renderer.clearDepth(); renderer.render(vmScene,vmCam); }
+  // a arma é desenhada aqui (com a mira fechada o jogo nem desenharia) e a lente vai POR CIMA dela:
+  // nada do modelo entre o olho e a ocular aparece dentro do vidro
+  renderer.clearDepth(); try{ if(!scoped&&typeof vmLightFrame==='function') vmLightFrame(dt); }catch(e){}
+  if(!CINEMA.noVm) renderer.render(vmScene,vmCam);
+  if(!scoped){ vmScene.visible=false; BSC.vmHid=true; }
+  if(E){ U.uMode.value=1; renderer.render(BSC.scn,BSC.cam); }
   bscHud(E); }
 function bscHud(E){ const el=document.getElementById('bscope'); if(!el) return; el.classList.add('gl');
   const show=!!E&&BSC.e>0.5; el.classList.toggle('on',show); document.body.classList.toggle('barscope',!!E||!!Wp.scoped);

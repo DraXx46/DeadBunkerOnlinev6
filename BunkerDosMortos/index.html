@@ -20464,14 +20464,14 @@ v9On('frame',dt=>{ if(BSC.vmHid){ vmScene.visible=true; BSC.vmHid=false; } dt=Ma
   const isB=bscActiveGun(), cancel=!isB||bscCancel();
   // 48_heavy escondia a arma e a luneta 3D ao mirar: agora a arma vai até o olho
   HV.coverVm=false; const g3=gunModel&&gunModel.userData.scope3d; if(g3) g3.visible=true;
-  if(cancel){ BSC.q=0; BSC.qv=0; BSC.cut=true; }
-  else if(BSC.cut&&P.ads<0.3) BSC.cut=false;
+  // faca/troca/etc.: corta na hora; depois a correção volta suave (sem tranco se o jogador continuar mirando)
+  if(cancel){ BSC.q=0; BSC.qv=0; BSC.wc=0; } else BSC.wc=Math.min(1,(BSC.wc==null?1:BSC.wc)+dt/0.28);
   const intent=!cancel&&IN.ads&&!Wp.reloading&&V9B.cyc<=0&&P.ads>0.5;
   if(!cancel){
     if(Wp.scoped){ BSC.q=1; BSC.qv=0; }
     else if(intent){ const tq=V9B.open*V9B.open*(3-2*V9B.open); BSC.qv+=((tq-BSC.q)*260-BSC.qv*30)*dt; BSC.q=Math.max(0,Math.min(1,BSC.q+BSC.qv*dt)); }
     else { BSC.q=Math.max(0,BSC.q-dt/0.18); BSC.qv=0; } }
-  const a=Math.max(0,Math.min(1,(P.ads-0.08)/0.85)); BSC.w=BSC.cut?0:a*a*(3-2*a);
+  const a=Math.max(0,Math.min(1,(P.ads-0.08)/0.85)), wc=BSC.wc==null?1:BSC.wc; BSC.w=a*a*(3-2*a)*wc*wc*(3-2*wc);
   // sombra do olho: atraso do olho ao girar, passada, respiração e coice
   const dy=angLerp(BSC.ly,P.yaw,1)-BSC.ly, dp=P.pitch-BSC.lp; BSC.ly=P.yaw; BSC.lp=P.pitch;
   const mv=Math.min(1,Math.hypot(P.vx||0,P.vz||0)/4);

@@ -1550,7 +1550,12 @@ const Snd=(()=>{
   // legacy-style helpers used across the game
   const noise=o=>{ if(ctx) burst(outNode(1,o.pan||0,o.wet||0.15,null),o); };
   const tone=o=>{ if(ctx) osc(outNode(1,o.pan||0,o.wet||0.15,null),o); };
-  function spatial(x,z,range){ x=fin(x,lx); z=fin(z,lz); const dx=x-lx, dz=z-lz, d=Math.hypot(dx,dz)||0.001; const k=clamp(1-d/range,0,1); return {d,vol:Math.pow(k,1.4),pan:clamp((dx*Math.cos(lyaw)-dz*Math.sin(lyaw))/d,-1,1)*Math.min(1,d/2),lp:lerp(16000,700,clamp(d/range,0,1))}; }
+  // v9: som 3D pela direção do olhar — lado (pan), atrás fica mais abafado e um pouco mais baixo, e parede no meio abafa (oclusão)
+  function spatial(x,z,range){ x=fin(x,lx); z=fin(z,lz); const dx=x-lx, dz=z-lz, d=Math.hypot(dx,dz)||0.001; const k=clamp(1-d/range,0,1);
+    const side=(dx*Math.cos(lyaw)-dz*Math.sin(lyaw))/d, fwd=(-dx*Math.sin(lyaw)-dz*Math.cos(lyaw))/d, near=Math.min(1,d/1.6), back=Math.max(0,-fwd)*near;
+    let vol=Math.pow(k,1.4)*(1-0.24*back), lp=lerp(16000,700,clamp(d/range,0,1))*(1-0.55*back);
+    if(d>2.2&&k>0){ let occ=false; try{ occ=typeof losClear==='function'&&!losClear({x:lx,z:lz},{x,z}); }catch(e){} if(occ){ vol*=0.55; lp=Math.min(lp,1000); } }
+    return {d,vol,pan:clamp(side*1.08,-1,1)*Math.min(1,d/2),lp:Math.max(320,lp)}; }
 
   /* layered gunshot: snap, supersonic crack, body, low blast, chest kick, rumble tail, and the room or street answering back */
   const GUNS={
@@ -21020,6 +21025,41 @@ function cfxLoop(){ if(CFX.raf) return; CFX.last=performance.now(); const step=n
 CMDS.carta_fx={d:'carta_fx <tema|id> · mostra o efeito de escolher uma carta (temas: '+Object.keys(CFXT).join(', ')+')',f:a=>{ const k=(a[0]||'fireboom').toLowerCase(); let c=CARD_BY[k]||{id:'_',icon:'',name:k}; if(!CARD_BY[k]) CFX_ID._=k;
   const d=document.createElement('button'); d.className='card'; d.innerHTML=`<span class="ctier">teste</span><h3>${c.name||k}</h3><ul><li class="pro">${cfxThemeOf(c)}</li></ul>`; Object.assign(d.style,{position:'fixed',left:'calc(50% - 110px)',top:'30%',width:'220px',height:'300px',zIndex:69}); document.body.appendChild(d);
   setTimeout(()=>{ cfxRun(d,c); setTimeout(()=>d.remove(),50); },30); cprint('efeito: '+cfxThemeOf(c)); } };
+
+/* ---- 64_feel.js ---- */
+/* ================= v9 · SENSAÇÃO DE JOGO =================
+   Câmera lenta no último zumbi da rodada: o tempo desacelera, a câmera fecha um pouco, o som abafa e a cor some por um
+   instante; depois tudo volta com um "respiro". No solo o mundo inteiro desacelera; no online (onde o tempo é do anfitrião)
+   o efeito é só local: câmera, som, cor e o ragdoll do último corpo caindo devagar. */
+const SLOW={on:false,t:0,k:1,ts0:1,fov:0,last:null};
+const SLOW_IN=0.12, SLOW_HOLD=0.95, SLOW_OUT=0.55;   // segundos reais
+v9Css(`#game.slowfx{filter:saturate(.45) contrast(1.12) brightness(.96);transition:filter .25s}
+#slowvig{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:0;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 45%,rgba(0,0,0,.55) 100%);transition:opacity .25s}
+#slowvig.on{opacity:1}`);
+const SLOW_V=document.createElement('div'); SLOW_V.id='slowvig'; document.body.appendChild(SLOW_V);
+function slowStart(){ if(SLOW.on) return; SLOW.on=true; SLOW.t=0; SLOW.solo=!NET.mode; SLOW.ts0=CHEAT.ts||1;
+  try{ Snd.muffle(true); }catch(e){}
+  try{ const o=Snd.out(0.8,0,0.4,null); if(o){ const t=Snd.now; Snd.burstTo(o,{t,type:'lowpass',freq:500,dur:0.9,gain:0.35,attack:0.05}); Snd.oscTo(o,{t,type:'sine',freq:62,freqEnd:34,dur:1.2,gain:0.5,attack:0.01}); Snd.oscTo(o,{t:t+0.02,type:'sine',freq:880,freqEnd:220,dur:0.9,gain:0.05,attack:0.02}); } }catch(e){}
+  try{ padRumble(0.6,0.2,140); setTimeout(()=>padRumble(0.25,0,260),180); }catch(e){}
+  const g=document.getElementById('game'); if(g) g.classList.add('slowfx'); SLOW_V.classList.add('on'); }
+function slowEnd(){ SLOW.on=false; SLOW.k=1; if(SLOW.solo) CHEAT.ts=SLOW.ts0; try{ Snd.muffle(false); }catch(e){}
+  try{ const o=Snd.out(0.6,0,0.3,null); if(o) Snd.burstTo(o,{t:Snd.now,type:'bandpass',freq:1200,q:0.7,dur:0.45,gain:0.25,attack:0.12}); }catch(e){}
+  const g=document.getElementById('game'); if(g) g.classList.remove('slowfx'); SLOW_V.classList.remove('on'); }
+// o tempo real (não o do jogo) conduz o efeito
+let slowLast=performance.now();
+setInterval(()=>{ const now=performance.now(), rdt=Math.min(0.1,(now-slowLast)/1000); slowLast=now; if(!SLOW.on) return;
+  if(G.state!=='playing'&&G.state!=='paused'){ slowEnd(); return; }
+  if(G.state==='paused') return; SLOW.t+=rdt; const t=SLOW.t;
+  let k; if(t<SLOW_IN) k=1-(t/SLOW_IN)*0.78; else if(t<SLOW_IN+SLOW_HOLD) k=0.22; else if(t<SLOW_IN+SLOW_HOLD+SLOW_OUT){ const q=(t-SLOW_IN-SLOW_HOLD)/SLOW_OUT; k=0.22+0.78*q*q*(3-2*q); } else { slowEnd(); return; }
+  SLOW.k=k; if(SLOW.solo) CHEAT.ts=SLOW.ts0*k;
+  SLOW.fov=(1-k)/0.78; },16);
+// o último corpo cai devagar também no online (o ragdoll é local)
+{ const zt0=zrTick; zrTick=function(E,dt){ return zt0.call(this,E,SLOW.on&&!SLOW.solo?dt*SLOW.k:dt); }; }
+// câmera fecha um pouco durante o efeito
+{ const vc0=v9Cam; v9Cam=function(dt){ const r=vc0.apply(this,arguments); if(SLOW.on&&SLOW.fov>0.01&&G.state==='playing'){ camera.fov=Math.max(20,camera.fov-SLOW.fov*7); camera.updateProjectionMatrix(); } return r; }; }
+// gatilho: fim de rodada (o último zumbi acabou de cair) — no anfitrião, no solo e nos convidados
+v9On('roundEnd',r=>{ try{ if(!(r>0)||G.state!=='playing'||(typeof x1Live==='function'&&x1Live())||CUR==='sandbox'||CUR==='fun') return; if(CFG.noSlow) return; slowStart(); }catch(e){} });
+CMDS.camera_lenta={d:'camera_lenta [on|off] · efeito de câmera lenta no último zumbi da rodada (teste: sem argumento)',f:a=>{ const c=(a[0]||'').toLowerCase(); if(c==='off'){ CFG.noSlow=true; cprint('câmera lenta desligada'); return; } if(c==='on'){ CFG.noSlow=false; cprint('câmera lenta ligada'); return; } slowStart(); cprint('câmera lenta'); } };
 
 /*</V9>*/
 /* ================= MAIN LOOP ================= */

@@ -90,8 +90,10 @@ v9On('frame',dt=>{ if(BSC.vmHid){ vmScene.visible=true; BSC.vmHid=false; } dt=Ma
 });
 /* ---- pose: leva a ocular até o eixo do olho (distância diminui com a abertura), sem inclinação, com coice ---- */
 const _bq=new THREE.Quaternion(), _bq2=new THREE.Quaternion(), _bv=new THREE.Vector3(), _bv2=new THREE.Vector3(), _bI=new THREE.Quaternion(), _bx=new THREE.Quaternion();
+// raio real do vidro no mundo da arma (o modelo pode estar em escala)
+function bscRW(){ const P3=bscParts(); if(!P3) return BSC_HR; P3.g.updateMatrixWorld(true); const a=P3.g.localToWorld(new THREE.Vector3(0,BSC_Y,BSC_HZ)), b=P3.g.localToWorld(new THREE.Vector3(BSC_HR,BSC_Y,BSC_HZ)); return a.distanceTo(b)||BSC_HR; }
 function bscZ(){ const sz=renderer.getDrawingBufferSize(new THREE.Vector2()); const h=sz.y, m=Math.min(sz.x,sz.y); const Rf=m*0.43;
-  return {zf:BSC_HR*(h/2)/(Rf*Math.tan(vmCam.fov*Math.PI/360)), Rf}; }
+  return {zf:bscRW()*(h/2)/(Rf*Math.tan(vmCam.fov*Math.PI/360)), Rf}; }
 function bscPose(){ if(BSC.w<=0.0005) return; const P3=bscParts(); if(!P3) return;
   vmRoot.updateMatrixWorld(true); const g=P3.g;
   g.getWorldQuaternion(_bq); _bv.set(0,BSC_Y,BSC_HZ); g.localToWorld(_bv);   // _bv = ocular agora (espaço da câmera da arma)
@@ -140,7 +142,8 @@ function bscRender(dt,mainFn){ bscEnsure(); const w=BSC.w0, h=BSC.h0, U=BSC.mat.
   // a arma é desenhada aqui (com a mira fechada o jogo nem desenharia) e a lente vai POR CIMA dela:
   // nada do modelo entre o olho e a ocular aparece dentro do vidro
   renderer.clearDepth(); try{ if(!scoped&&typeof vmLightFrame==='function') vmLightFrame(dt); }catch(e){}
-  if(!CINEMA.noVm) renderer.render(vmScene,vmCam);
+  const hid=[]; if(BSC.e>0.6) for(const o of vmScene.children){ if(o!==vmRoot&&!o.isLight&&o.visible){ o.visible=false; hid.push(o); } }
+  try{ if(!CINEMA.noVm) renderer.render(vmScene,vmCam); } finally{ for(const o of hid) o.visible=true; }
   if(!scoped){ vmScene.visible=false; BSC.vmHid=true; }
   if(E){ U.uMode.value=1; renderer.render(BSC.scn,BSC.cam); }
   bscHud(E); }

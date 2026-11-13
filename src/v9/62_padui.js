@@ -75,14 +75,20 @@ function puiCatFlash(name){ const d=document.createElement('div'); d.className='
 function puiCat(d){ if(PUI.switching) return; const cats=puiCats(); if(!cats.length) return false; const cur=puiCurCat(); if(cur<0) return false;
   const n=cats.length, tgt=(cur+d+n)%n; PUI.switching=true; PUI.cat=tgt; puiHap('cat'); try{ Snd.ui('tab'); }catch(e){}
   let tries=0; const step=()=>{ if(!puiHubClear()&&tries<6){ tries++; puiBack(); setTimeout(step,90); return; }
-    try{ if(tgt>0) cats[tgt].click(); for(const t of cats) t.classList.toggle('on',t===cats[tgt]); }catch(e){}
+    try{ if(tgt>0) cats[tgt].click(); for(const t of cats) t.classList.toggle('on',t===cats[tgt]);
+      // Configurações abre na última aba; se era "Como jogar", volta para a primeira (senão vira a categoria Ajuda)
+      if(cats[tgt].id==='setbtn'){ const on=document.querySelector('#settabs .on'); if(on&&on.dataset.st==='info'){ const f=document.querySelector('#settabs button'); if(f) f.click(); } } }catch(e){}
     puiCatFlash((cats[tgt].childNodes[0]&&cats[tgt].childNodes[0].textContent||cats[tgt].textContent).trim());
     setTimeout(()=>{ PUI.switching=false; const L=padFocusables(); padFocus(padDefault(L)); },140); };
   step(); return true; }
 document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.mtabs .mtab'); if(b){ const i=puiCats().indexOf(b); if(i>=0) PUI.cat=i; } },true);
 /* ---- abas internas e páginas ---- */
 function puiTabsEl(){ return [...document.querySelectorAll('.tabs')].find(t=>{ const b=t.querySelector('button'); return b&&padVisible(b); })||null; }
-function puiSub(d){ const t=puiTabsEl(); if(t){ padTab(d); puiHap('tab'); return true; }
+// troca de aba sem perder o foco (telas que se refazem ao clicar, como Personagens)
+function puiTab(d){ const t=puiTabsEl(); if(!t) return false; const bs=[...t.querySelectorAll('button')].filter(e=>!e.disabled); if(!bs.length) return false; let i=bs.findIndex(e=>e.classList.contains('on')); i=(i+d+bs.length)%bs.length;
+  const f=PAD.nav.el, wasTab=f&&t.contains(f); bs[i].click(); try{ Snd.ui('tab'); }catch(e){} puiHap('tab');
+  setTimeout(()=>{ const cur=PAD.nav.el; if(wasTab||!cur||!document.contains(cur)){ const t2=puiTabsEl(); const b2=t2&&[...t2.querySelectorAll('button')].filter(e=>!e.disabled)[i]; if(b2) padFocus(b2); } },40); return true; }
+function puiSub(d){ if(puiTab(d)) return true;
   const L=puiBtns(); const nx=L.find(b=>b.dataset.a===(d>0?'next':'prev'))||L.find(b=>(d>0?/^(›|>|→|próxim)/i:/^(‹|<|←|anterior)/i).test((b.textContent||'').trim()));
   if(nx){ nx.click(); puiHap('tab'); return true; } return false; }
 /* ---- personagens ---- */
@@ -136,8 +142,8 @@ padMenus=function(b,was,L,R,dt){ const edge=i=>(b[i]||0)>0.5&&!((was[i]||0)>0.5)
   if(edge(PB.O)){ puiBack(); puiHap('back'); }
   if(edge(PB.OPT)){ if(G.state==='paused') resumeGame(); else if(G.state==='lobby'&&LP.on) closeLobbyPause(false); else if(G.state==='menu'&&puiHubClear()){ const s=document.getElementById('setbtn'); if(s){ s.click(); PUI.cat=puiCats().indexOf(s); puiHap('tab'); } } else puiBack(); }
   const hub=G.state==='menu'&&puiCurCat()>=0;
-  if(edge(PB.R1)){ if(hub) puiCat(1); else { padTab(1); puiHap('tab'); } }
-  if(edge(PB.L1)){ if(hub) puiCat(-1); else { padTab(-1); puiHap('tab'); } }
+  if(edge(PB.R1)){ if(hub) puiCat(1); else puiSub(1); }
+  if(edge(PB.L1)){ if(hub) puiCat(-1); else puiSub(-1); }
   if(edge(PB.R2)) puiSub(1); if(edge(PB.L2)) puiSub(-1);
   if(edge(PB.SQ)){ if(inChars){ const pk=document.getElementById('ch-pick'); if(pk&&!pk.disabled) pk.click(); else puiHap('lock'); }
     else { const c=puiFind('claim'); if(c){ c.click(); puiHap('claim'); } } }

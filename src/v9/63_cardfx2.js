@@ -5,8 +5,8 @@
    e vibração próprios no DualSense. Tudo é local, por cima do jogo, e some em ~1,5 s. */
 const CFX={L:null,cv:null,g:null,w:0,h:0,dpr:1,P:[],run:[],raf:0,last:0};
 v9Css(`#cfxl{position:fixed;inset:0;z-index:70;pointer-events:none;overflow:hidden}
-#cfxl canvas{position:absolute;inset:0;width:100%;height:100%}
-#cfxl .card{position:fixed;margin:0;transform-origin:50% 50%;will-change:transform,clip-path,filter,opacity;pointer-events:none;animation:none!important;transition:none!important}
+#cfxl canvas{position:absolute;inset:0;width:100%;height:100%;z-index:2}
+#cfxl .card{position:fixed;z-index:1;margin:0;transform-origin:50% 50%;will-change:transform,clip-path,filter,opacity;pointer-events:none;animation:none!important;transition:none!important}
 #cfxl .cfxov{position:absolute;inset:0;border-radius:inherit;pointer-events:none}`);
 function cfxEnsure(){ if(CFX.L) return; const L=document.createElement('div'); L.id='cfxl'; const cv=document.createElement('canvas'); L.appendChild(cv); document.body.appendChild(L);
   CFX.L=L; CFX.cv=cv; CFX.g=cv.getContext('2d'); const rs=()=>{ CFX.dpr=Math.min(2,devicePixelRatio||1); CFX.w=innerWidth; CFX.h=innerHeight; cv.width=CFX.w*CFX.dpr|0; cv.height=CFX.h*CFX.dpr|0; }; rs(); addEventListener('resize',rs); }
@@ -62,12 +62,14 @@ function cfxFireTheme(gold,boom){ return { dur:boom?1.45:1.35,
     if(gold){ cfxSyn((o,t)=>{ [[880,0],[1320,0.12],[1760,0.26]].forEach(([f,d])=>Snd.oscTo(o,{t:t+d,type:'sine',freq:f,dur:1.1,gain:0.12,attack:0.005})); }); }
     cfxCrackle(1.2,0.22,1800); cfxR(0.25,0.55,220,boom?0.15:0); cfxR(0.55,0.4,300,0.4); cfxR(0.15,0.5,420,0.75); st.ch=document.createElement('div'); st.ch.className='cfxov'; st.el.appendChild(st.ch); },
   tick(st,dt,g){ const k=st.k, start=boom?0.12:0.04, p=cl01((k-start)/(1-start-0.08)), b=st.c; if(boom&&k<0.12){ st.tx=cr(-6,6); st.ty=cr(-6,6); }
-    const line=100-eo(p)*112; const pts=cfxJag(st,line,10,st.seed);
+    const pe=p*p*(3-2*p); const line=100-pe*114; const pts=cfxJag(st,line,10,st.seed);
     st.el.style.clipPath=`polygon(0% -20%,100% -20%,${pts.slice().reverse().map(q=>q[0]+'% '+q[1]+'%').join(',')})`;
     st.ch.style.background=`linear-gradient(to top,rgba(10,4,0,.95) ${100-line-2}%,rgba(90,30,0,.55) ${100-line+6}%,rgba(0,0,0,0) ${100-line+22}%)`;
     st.f=`sepia(${0.2+p*0.5}) brightness(${1-p*0.25})`+(boom&&k<0.2?' brightness(1.6)':'');
-    if(p>0&&p<1){ const n=Math.ceil(dt*120); for(let i=0;i<n;i++){ const q=pts[(Math.random()*pts.length)|0]; const x=b.x+q[0]/100*b.w, y=b.y+q[1]/100*b.h;
-        cfxP({type:'flame',x,y,vx:cr(-20,20),vy:cr(-140,-60),life:cr(0.25,0.55),max:0.55,size:cr(8,18),add:true,c0:gold?'rgba(255,255,230,1)':undefined,c1:gold?'rgba(255,210,90,.8)':undefined});
+    if(p>0&&p<1){ // borda em brasa
+      g.globalCompositeOperation='lighter'; g.lineJoin='round'; for(const [lw,col,al] of [[9,gold?'#ffe28a':'#ff7a1a',0.35],[3,gold?'#fffbe0':'#ffd36a',0.95]]){ g.globalAlpha=al; g.strokeStyle=col; g.lineWidth=lw; g.beginPath(); pts.forEach((q,i)=>{ const x=b.x+q[0]/100*b.w, y=b.y+q[1]/100*b.h; i?g.lineTo(x,y):g.moveTo(x,y); }); g.stroke(); }
+      const n=Math.ceil(dt*240); for(let i=0;i<n;i++){ const q=pts[(Math.random()*pts.length)|0]; const x=b.x+q[0]/100*b.w, y=b.y+q[1]/100*b.h;
+        cfxP({type:'flame',x,y:y+cr(-4,6),vx:cr(-25,25),vy:cr(-170,-70),life:cr(0.3,0.65),max:0.65,size:cr(12,26),add:true,c0:gold?'rgba(255,255,230,1)':undefined,c1:gold?'rgba(255,210,90,.8)':undefined});
         if(Math.random()<0.5) cfxP({type:'ember',x,y,vx:cr(-60,60),vy:cr(-260,-90),ay:-40,drag:0.4,life:cr(0.5,1.1),max:1.1,size:cr(1,2.4),col:gold?'#fff1a8':'#ffb347',add:true});
         if(Math.random()<0.18) cfxP({type:'smoke',x,y:y-10,vx:cr(-15,15),vy:cr(-70,-40),life:cr(0.8,1.4),max:1.4,size:cr(10,22),col:'#2a2420'}); } }
     if(st.flash>0){ st.flash-=dt*3; g.globalCompositeOperation='lighter'; g.globalAlpha=cl01(st.flash)*0.5; const gr=g.createRadialGradient(b.cx,b.cy,0,b.cx,b.cy,Math.max(b.w,b.h)*1.6); gr.addColorStop(0,'#fff2c0'); gr.addColorStop(1,'rgba(255,120,0,0)'); g.fillStyle=gr; g.fillRect(0,0,CFX.w,CFX.h); }
@@ -102,7 +104,7 @@ CFXT.boom={dur:1.35, init(st){ cfxS('helmet_ping',{vol:0.7,rate:1.7}); cfxS('rl_
 CFXT.ice={dur:1.35, init(st){ cfxS('freeze_hit',{vol:0.85}); cfxCrackle(0.8,0.18,6000); for(let i=0;i<6;i++) cfxR(0.15,0.35,30,i*0.11); cfxS('shield_break',{vol:0.8,rate:1.35},0.8); cfxR(0.7,0.9,120,0.8);
     st.ov=document.createElement('div'); st.ov.className='cfxov'; st.el.appendChild(st.ov); },
   tick(st,dt,g){ const k=st.k, b=st.c, T=0.6;
-    if(k<T){ const q=eo(k/T); st.ov.style.background=`radial-gradient(ellipse at 50% 50%,rgba(220,245,255,${q*0.2}) ${Math.max(0,60-q*60)}%,rgba(200,235,255,${0.35+q*0.55}) ${Math.max(5,100-q*70)}%)`; st.ov.style.boxShadow=`inset 0 0 ${10+q*40}px rgba(230,250,255,${0.4+q*0.5})`;
+    if(k<T){ const q=eo(k/T); st.ov.style.background=`radial-gradient(ellipse at 50% 50%,rgba(220,245,255,${q*0.08}) ${Math.max(0,70-q*45)}%,rgba(200,235,255,${0.25+q*0.4}) 100%)`; st.ov.style.boxShadow=`inset 0 0 ${10+q*40}px rgba(230,250,255,${0.4+q*0.5})`;
       st.f=`saturate(${1-q*0.75}) hue-rotate(${q*25}deg) brightness(${1+q*0.25})`;
       if(Math.random()<dt*40){ const e=cfxEdge(st); cfxP({type:'frost',x:e[0]+cr(-6,6),y:e[1]+cr(-6,6),life:cr(0.6,1.2),max:1.2,size:cr(4,9),rot:Math.random()*3,col:'#e8f8ff'}); } }
     else if(k<0.62){ st.tx=cr(-2,2); }
@@ -111,10 +113,10 @@ CFXT.ice={dur:1.35, init(st){ cfxS('freeze_hit',{vol:0.85}); cfxCrackle(0.8,0.18
     cfxVig(g,'rgba(160,215,255,1)',0.3*Math.sin(Math.PI*k)); } };
 // SANGUE: escorre pela carta, respingos e coração batendo
 CFXT.blood={dur:1.5, init(st){ cfxS('gore_splat',{vol:0.7}); cfxHeart(0.05); cfxHeart(0.8); st.drips=Array.from({length:7},()=>({x:Math.random(),len:0,sp:cr(0.5,1.3),w:cr(3,7)}));
-    const b=st.c; cfxBurst(18,b.cx,b.y+b.h*0.25,(i,x,y)=>({type:'drop',x:x+cr(-b.w*0.4,b.w*0.4),y,vx:cr(-160,160),vy:cr(-240,-40),ay:900,life:cr(0.5,0.9),max:0.9,size:cr(2,4),col:'#8a0d0d'})); },
-  tick(st,dt,g){ const k=st.k, b=st.c; g.globalCompositeOperation='source-over'; g.fillStyle='#7a0a0a';
-    for(const d of st.drips){ d.len=Math.min(1.3,d.len+dt*d.sp*(0.5+Math.random())); const x=b.x+d.x*b.w, y0=b.y, y1=b.y+Math.min(b.h,d.len*b.h); g.globalAlpha=0.92*(k<0.8?1:1-(k-0.8)/0.2); g.fillRect(x-d.w/2,y0,d.w,y1-y0); g.beginPath(); g.arc(x,y1,d.w*0.75,0,6.283); g.fill();
-      if(d.len>=1&&Math.random()<dt*6) cfxP({type:'drop',x,y:y1,vy:cr(80,160),ay:900,life:0.5,max:0.5,size:cr(2,3),col:'#7a0a0a'}); }
+    const b=st.c; cfxBurst(18,b.cx,b.y+b.h*0.25,(i,x,y)=>({type:'drop',x:x+cr(-b.w*0.4,b.w*0.4),y,vx:cr(-160,160),vy:cr(-240,-40),ay:900,life:cr(0.5,0.9),max:0.9,size:cr(2,4),col:'#b0101a'})); },
+  tick(st,dt,g){ const k=st.k, b=st.c; g.globalCompositeOperation='source-over';
+    for(const d of st.drips){ d.len=Math.min(1.3,d.len+dt*d.sp*(0.5+Math.random())); const x=b.x+d.x*b.w+st.tx, y0=b.y+st.ty, y1=y0+Math.min(b.h,d.len*b.h); g.globalAlpha=0.95*(k<0.8?1:1-(k-0.8)/0.2); g.fillStyle='#c3121c'; g.fillRect(x-d.w/2,y0,d.w,y1-y0); g.beginPath(); g.arc(x,y1,d.w*0.75,0,6.283); g.fill(); g.fillStyle='rgba(255,140,140,.55)'; g.fillRect(x-d.w/2+1,y0,Math.max(1,d.w*0.25),y1-y0);
+      if(d.len>=1&&Math.random()<dt*6) cfxP({type:'drop',x,y:y1,vy:cr(80,160),ay:900,life:0.5,max:0.5,size:cr(2,3),col:'#b0101a'}); }
     st.f=`sepia(${k*0.6}) hue-rotate(-20deg) saturate(${1+k*1.5}) brightness(${1-k*0.3})`;
     if(k>0.75){ const q=(k-0.75)/0.25; st.ty=ei(q)*90; st.op=1-q; }
     const beat=Math.max(Math.exp(-Math.pow((k-0.06)*12,2)),Math.exp(-Math.pow((k-0.56)*12,2))); st.sc=1+beat*0.05; cfxVig(g,'rgba(140,0,0,1)',0.2+beat*0.3); } };
@@ -236,9 +238,11 @@ const CFX_ICON={flame:'fire',bolt:'shock',grenade:'boom',ice:'ice',fang:'blood',
   clover:'luck',lungs:'breath',star:'star',skull:'skull',knee:'kneel',glass:'glass',scale:'armor',hourglass:'time',dice:'roulette',push:'push'};
 function cfxThemeOf(c){ if(!c) return 'star'; return CFX_ID[c.id]||CFX_ICON[c.icon]||'star'; }
 /* ---- execução ---- */
-function cfxRun(cardEl,c){ cfxEnsure(); const r=cardEl.getBoundingClientRect(); if(r.width<10) return; const name=cfxThemeOf(c), T=CFXT[name]||CFXT.star;
+function cfxRun(cardEl,c){ cfxEnsure(); const rb=cardEl.getBoundingClientRect(); const W=cardEl.offsetWidth||rb.width, H=cardEl.offsetHeight||rb.height; if(W<10) return;
+  // tamanho de layout (a carta pode estar no meio da animação de entrada, girada)
+  const cx=rb.left+rb.width/2, cy=rb.top+rb.height/2; const r={left:cx-W/2,top:cy-H/2,width:W,height:H,right:cx+W/2,bottom:cy+H/2}; const name=cfxThemeOf(c), T=CFXT[name]||CFXT.star;
   const el=cardEl.cloneNode(true); el.removeAttribute('id'); el.classList.remove('picked','gone','swapin'); el.classList.add('cfxcard'); for(const x of el.querySelectorAll('[id]')) x.removeAttribute('id');
-  Object.assign(el.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',position:'fixed'}); CFX.L.appendChild(el); cardEl.style.visibility='hidden';
+  Object.assign(el.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',position:'fixed',zIndex:'1',visibility:'visible',animation:'none'}); CFX.L.appendChild(el); cardEl.style.visibility='hidden';
   const st={el,r,c:null,t:0,dur:T.dur,k:0,tx:0,ty:0,rot:0,ry:0,sk:0,sc:1,op:1,f:'',seed:Math.random()*10,T,name,card:c};
   st.c=cfxPts(st);
   if(c&&c.pact){ cfxBurst(16,st.c.cx,st.c.cy,(i,x,y)=>({type:'smoke',x:x+cr(-r.width/2,r.width/2),y:y+cr(-r.height/2,r.height/2),vx:cr(-40,40),vy:cr(-60,-10),life:cr(0.9,1.5),max:1.5,size:cr(14,26),col:'#2a0a2a'})); }

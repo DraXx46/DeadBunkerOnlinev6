@@ -20743,6 +20743,11 @@ const CFX={L:null,cv:null,g:null,w:0,h:0,dpr:1,P:[],run:[],raf:0,last:0};
 v9Css(`#cfxl{position:fixed;inset:0;z-index:70;pointer-events:none;overflow:hidden}
 #cfxl canvas{position:absolute;inset:0;width:100%;height:100%;z-index:2}
 #cfxl .card{position:fixed;z-index:1;margin:0;transform-origin:50% 50%;will-change:transform,clip-path,filter,opacity;pointer-events:none;animation:none!important;transition:none!important}
+body.padmode .card[data-i] .ck{font-size:0}
+body.padmode .card[data-i] .ck::after{font-size:13px;font-weight:800}
+body.padmode .card[data-i="0"] .ck::after{content:"□";color:#ff86d8}
+body.padmode .card[data-i="1"] .ck::after{content:"△";color:#5ee6a8}
+body.padmode .card[data-i="2"] .ck::after{content:"○";color:#ff7474}
 #cfxl .cfxov{position:absolute;inset:0;border-radius:inherit;pointer-events:none}`);
 function cfxEnsure(){ if(CFX.L) return; const L=document.createElement('div'); L.id='cfxl'; const cv=document.createElement('canvas'); L.appendChild(cv); document.body.appendChild(L);
   CFX.L=L; CFX.cv=cv; CFX.g=cv.getContext('2d'); const rs=()=>{ CFX.dpr=Math.min(2,devicePixelRatio||1); CFX.w=innerWidth; CFX.h=innerHeight; cv.width=CFX.w*CFX.dpr|0; cv.height=CFX.h*CFX.dpr|0; }; rs(); addEventListener('resize',rs); }

@@ -38,8 +38,8 @@ function mxPrep(gl){ let sm=null; gl.scene.traverse(o=>{ if(o.isSkinnedMesh&&!sm
     const d=rp[c].clone().sub(rp[i]).normalize(); const nrm=new THREE.Vector3(0,-1,0);
     // polegar: dobra na direção da base do dedo médio e um pouco para a palma (fecha por cima dos dedos)
     if(f==='Thumb'){ const m=rp[idx[side+'HandMiddle2']]||rp[idx[side+'HandMiddle1']]; nrm.copy(m).sub(rp[i]).normalize().add(new THREE.Vector3(0,-0.5,0)).normalize(); }
-    const ax=new THREE.Vector3().crossVectors(d,nrm); if(ax.lengthSq()<1e-6) continue; ax.normalize(); fingers.push({i,g,f,k,ax}); }
-  const tex=sm.material&&sm.material.map; if(tex){ tex.encoding=THREE.sRGBEncoding; try{ tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy()); }catch(e){} }
+    const ax=new THREE.Vector3().crossVectors(d,nrm); if(ax.lengthSq()<1e-6) continue; ax.normalize(); fingers.push({i,g,f,k,ax,fi:MX_FING.indexOf(f)}); }
+  const tex=sm.material&&sm.material.map; if(tex){ tex.encoding=THREE.LinearEncoding; tex.needsUpdate=true; try{ tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy()); }catch(e){} }
   const mat=new THREE.MeshPhongMaterial({map:tex,skinning:true,shininess:8,specular:0x161616});
   const pos=k=>rp[idx[k]].clone();
   return {geo:sm.geometry,mat,tex,bindMatrix:sm.bindMatrix.clone(),boneInverses:sk.boneInverses.map(m=>m.clone()),names,idx,par,rq,rp,lq,lp,ls,lSide,rSide,corr,fingers,anims:gl.animations||[],pos}; }
@@ -53,7 +53,7 @@ function mxBuild(id,vk,L,opts){ const D=MXC.data[id]; opts=opts||{};
   for(const [g,side] of [['L',D.lSide],['R',D.rSide]]){ const up=P(side+'UpLeg'), kn=P(side+'Leg');
     const lg=new THREE.Group(); lg.position.copy(up); body.add(lg); lg.add(new THREE.Object3D());   // filho 0: lugar da coxa (o online pega o joelho como filho 1)
     const k=new THREE.Group(); k.position.set(0,kn.y-up.y,0); lg.add(k); legs.push({lg,kn:k}); }
-  const sp=P('Spine'), chest=new THREE.Group(); chest.position.set(0,sp.y,0); body.add(chest); const up=new THREE.Group(); up.position.set(0,-sp.y,0); chest.add(up);
+  const sp=P('Spine'), chest=new THREE.Group(); chest.position.copy(sp); body.add(chest); const up=new THREE.Group(); up.position.copy(sp).negate(); chest.add(up);
   const head=new THREE.Group(); head.position.copy(P('Head')); up.add(head);
   for(const [g,side] of [['L',D.lSide],['R',D.rSide]]){ const sh=P(side+'Arm'), el=P(side+'ForeArm'), wr=P(side+'Hand'), C=D.corr[g];
     const a=new THREE.Group(); a.position.copy(sh); up.add(a);
@@ -72,6 +72,9 @@ function mxBuild(id,vk,L,opts){ const D=MXC.data[id]; opts=opts||{};
     [I(D.lSide+'UpLeg'),'legL'],[I(D.lSide+'Leg'),'kneeL'],[I(D.rSide+'UpLeg'),'legR'],[I(D.rSide+'Leg'),'kneeR'],
     [I(D.lSide+'Arm'),'armL'],[I(D.lSide+'ForeArm'),'foL'],[I(D.lSide+'Hand'),'handL'],[I(D.rSide+'Arm'),'armR'],[I(D.rSide+'ForeArm'),'foR'],[I(D.rSide+'Hand'),'handR']];
   const drive=new Array(bones.length).fill(null); for(const [i,k] of map) if(i!=null) drive[i]=k;
+  const clavOf=new Array(bones.length).fill(null); clavOf[I(D.lSide+'Shoulder')]=arms[0].a.userData; clavOf[I(D.rSide+'Shoulder')]=arms[1].a.userData;   // clavícula opcional (userData.clav)
+  arms[0].a.userData.sh0=arms[0].a.position.clone(); arms[1].a.userData.sh0=arms[1].a.position.clone();
+  arms[0].a.userData.piv=P(D.lSide+'Shoulder'); arms[1].a.userData.piv=P(D.rSide+'Shoulder');
   const corrOf=new Array(bones.length).fill(null); for(const [g,side] of [['L',D.lSide],['R',D.rSide]]) for(const k of ['Arm','ForeArm','Hand']) corrOf[I(side+k)]=D.corr[g];
   const G={}, W=bones.map(()=>new THREE.Quaternion()), curlQ=new THREE.Quaternion(), tmp=new THREE.Quaternion();
   const hipRest=D.lp[I('Hips')].clone();
@@ -79,17 +82,18 @@ function mxBuild(id,vk,L,opts){ const D=MXC.data[id]; opts=opts||{};
     G.body=body.quaternion.clone(); G.chest=G.body.clone().multiply(chest.quaternion); const Qup=G.chest.clone().multiply(up.quaternion); G.head=Qup.clone().multiply(head.quaternion);
     for(const [g,A] of [['L',arms[0]],['R',arms[1]]]){ G['arm'+g]=Qup.clone().multiply(A.a.quaternion); G['fo'+g]=G['arm'+g].clone().multiply(A.fo.quaternion); G['hand'+g]=G['fo'+g].clone().multiply(A.hand.quaternion); }
     for(const [g,Lg] of [['L',legs[0]],['R',legs[1]]]){ G['leg'+g]=G.body.clone().multiply(Lg.lg.quaternion); G['knee'+g]=G['leg'+g].clone().multiply(Lg.kn.quaternion); }
-    const cL=arms[0].a.userData.curl, cR=arms[1].a.userData.curl;
-    for(let i=0;i<bones.length;i++){ const p=D.par[i], key=drive[i];
+    const UL=arms[0].a.userData, UR=arms[1].a.userData;
+    for(let i=0;i<bones.length;i++){ const p=D.par[i], key=drive[i], cv=clavOf[i]&&clavOf[i].clav;
       if(key){ W[i].copy(G[key]); if(corrOf[i]) W[i].multiply(corrOf[i]); W[i].multiply(D.rq[i]); }
+      else if(cv){ W[i].copy(Qup).multiply(cv).multiply(D.rq[i]); }
       else { W[i].copy(p>=0?W[p]:_mq2.identity()).multiply(D.lq[i]); }
       // local = inversa(pai) * mundo
-      if(key){ bones[i].quaternion.copy(p>=0?tmp.copy(W[p]).invert():tmp.identity()).multiply(W[i]); } else bones[i].quaternion.copy(D.lq[i]); }
+      if(key||cv){ bones[i].quaternion.copy(p>=0?tmp.copy(W[p]).invert():tmp.identity()).multiply(W[i]); } else bones[i].quaternion.copy(D.lq[i]); }
     // dedos: dobra em volta do eixo de descanso
-    for(const F of D.fingers){ const c=F.g==='L'?cL:cR; if(c<=0.001) continue; const amt=(F.f==='Thumb'?[0.55,0.5,0.45]:[0.85,1.15,0.8])[F.k-1]*c;
+    for(const F of D.fingers){ const U=F.g==='L'?UL:UR; const c=U.fc?U.fc[F.fi]:U.curl; if(c<=0.001) continue; const amt=(F.f==='Thumb'?[0.55,0.5,0.45]:[0.85,1.15,0.8])[F.k-1]*c;
       curlQ.setFromAxisAngle(F.ax,amt); const b=bones[F.i]; // local = descanso * (inv(R)*rot*R)
       tmp.copy(D.rq[F.i]).invert().multiply(curlQ).multiply(D.rq[F.i]); b.quaternion.multiply(tmp); }
-    const hb=bones[I('Hips')]; if(hb) hb.position.copy(hipRest).add(body.position);
+    const hb=bones[I('Hips')]; if(hb) hb.position.copy(hipRest).applyQuaternion(body.quaternion).add(body.position);   // gira em volta do mesmo pivô do grupo do jogo
   }
   const umw=root.updateMatrixWorld.bind(root); root.updateMatrixWorld=function(f){ try{ sync(); }catch(e){} return umw(f); };
   parts.mxSync=sync;
@@ -106,7 +110,7 @@ function mxSnapshot(sm){ const g=sm.geometry, P=g.attributes.position, n=P.count
 
 /* ---------- dedos por pose ---------- */
 { const pc=poseChar; poseChar=function(p,pose,t){ const r=pc.apply(this,arguments);
-    if(p&&p.mx){ const L=p.armL.userData, R=p.armR.userData; if(pose==='gun'){ L.curl=0.8; R.curl=0.95; } else if(pose==='knife'){ L.curl=0.35; R.curl=1; } else { L.curl=0.3; R.curl=0.3; } }
+    if(p&&p.mx){ const L=p.armL.userData, R=p.armR.userData; L.fc=null; R.fc=null; for(const [a,U] of [[p.armL,L],[p.armR,R]]) if(U.clav){ U.clav=null; if(U.sh0) a.position.copy(U.sh0); } if(pose==='gun'){ L.curl=0.8; R.curl=0.95; } else if(pose==='knife'){ L.curl=0.35; R.curl=1; } else { L.curl=0.3; R.curl=0.3; } }
     return r; }; }
 
 /* ---------- troca no buildChar ---------- */

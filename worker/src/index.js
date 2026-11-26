@@ -371,14 +371,27 @@ async function onMessage(client, ws, buffer) {
       if (keyOf(client.user) !== ADMIN_KEY) { sendError(ws, reqId, 'Comando restrito ao administrador.'); return; }
       const drax = Math.max(0, Math.min(1000000, Math.floor(Number(msg.drax) || 0)));
       const rubi = Math.max(0, Math.min(1000000, Math.floor(Number(msg.rubi) || 0)));
-      if (!drax && !rubi) { sendError(ws, reqId, 'Informe uma quantidade maior que zero.'); return; }
+      /* pacote de desenvolvedor: faca, personagem no máximo, níveis de conta e mensagem (o cliente aplica e mostra a animação) */
+      const pk = msg.type === 'adminGive' && msg.pack && typeof msg.pack === 'object' ? msg.pack : null, pack = {};
+      if (pk) {
+        if (pk.knife && /^[a-z]{3,16}$/.test(String(pk.knife.t || ''))) pack.knife = { t: String(pk.knife.t), r: Math.max(0, Math.min(5, Math.floor(Number(pk.knife.r) || 4))), s: /^[a-z]{3,16}$/.test(String(pk.knife.s || '')) ? String(pk.knife.s) : '' };
+        if (CHAR_IDS.includes(String(pk.charMax || ''))) pack.charMax = String(pk.charMax);
+        const acc = Math.max(0, Math.min(100, Math.floor(Number(pk.acc) || 0))); if (acc) pack.acc = acc;
+        if (pk.msg) pack.msg = String(pk.msg).slice(0, 140);
+      }
+      const extra = !!(pack.knife || pack.charMax || pack.acc);
+      if (!drax && !rubi && !extra) { sendError(ws, reqId, 'Informe uma quantidade maior que zero.'); return; }
       if (msg.type === 'adminGive') {
         const to = keyOf(String(msg.to || ''));
         if (!users.has(to)) { sendError(ws, reqId, 'Jogador não encontrado.'); return; }
-        giftPut(to, { id: randHex(8), drax, rubi, from: client.user });
-        send(ws, { type: 'ok', reqId, text: `Enviado: ${drax} drax e ${rubi} rubi para ${users.get(to).name}.` });
+        const g = { id: randHex(8), drax, rubi, from: client.user };
+        if (pk) Object.assign(g, pack, { dev: true });
+        giftPut(to, g);
+        const parts = [drax && `${drax} drax`, rubi && `${rubi} rubi`, pack.knife && `faca ${pack.knife.t}`, pack.charMax && `${pack.charMax} no máximo`, pack.acc && `+${pack.acc} níveis de conta`].filter(Boolean);
+        send(ws, { type: 'ok', reqId, text: `Enviado para ${users.get(to).name}: ${parts.join(', ')}. ${online.has(to) ? 'Ele está online e recebe agora.' : 'Ele recebe quando entrar.'}` });
         return;
       }
+      if (!drax && !rubi) { sendError(ws, reqId, 'Informe uma quantidade maior que zero.'); return; }
       const code = randHex(5).toUpperCase();
       codes.set(code, { drax, rubi, used: false });
       STORE && STORE.put('c:' + code, codes.get(code)).catch(() => {});

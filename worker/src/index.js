@@ -13,7 +13,7 @@ const codes = new Map();  // código -> { drax, rubi, used, usedBy }
 function giftPut(k, g) {
   const arr = (gifts.get(k) || []).concat([g]);
   gifts.set(k, arr); STORE && STORE.put('g:' + k, arr).catch(() => {});
-  const c = online.get(k); if (c) send(c.ws, { type: 'gifts', items: [g] });
+  const c = online.get(k); if (c && (!g.dev || c.gift2)) send(c.ws, { type: 'gifts', items: [g] });
 }
 const rooms = new Map();
 const clients = new Map();
@@ -353,7 +353,8 @@ async function onMessage(client, ws, buffer) {
       else if (!client.friends) client.friends = new Set();
       if (msg.look && typeof msg.look === 'object') client.look = { c: String(msg.look.c || '').slice(0, 24), v: String(msg.look.v || '').slice(0, 24), lvl: Math.max(0, Math.min(999, Number(msg.look.lvl) || 0)) };
       send(ws, { type: 'loginOk', reqId, name: u.name, admin: k === ADMIN_KEY });
-      if ((gifts.get(k) || []).length) send(ws, { type: 'gifts', items: gifts.get(k) });
+      client.gift2 = Array.isArray(msg.caps) && msg.caps.includes('gift2');
+      const gl = (gifts.get(k) || []).filter(g => !g.dev || client.gift2); if (gl.length) send(ws, { type: 'gifts', items: gl });
       sendSocial(client); socialChanged();
       return;
     }

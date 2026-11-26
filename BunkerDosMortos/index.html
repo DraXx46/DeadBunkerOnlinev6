@@ -23001,6 +23001,9 @@ CMDS.presente_dev={d:'presente_dev <jogador> · pacote de desenvolvedor: karambi
 CMDS.presente_teste={d:'presente_teste mostra a animação de presente com um pacote de exemplo (não dá nada)',f:()=>{
   const it=rollItem(4,null,'karambit'); PROG.items.push(it); const s={id:'t',dev:true,msg:'Valeu por jogar o Dead Bunker!',drax:25000,rubi:300,knife:it.uid,charMax:'moreira',acc:{L0:7,L1:17}};
   giftShowOne(s,()=>{ PROG.items=PROG.items.filter(x=>x.uid!==it.uid); }); }};
+/* avisa o servidor que esta versão sabe abrir o pacote completo; versões antigas não recebem o pacote de desenvolvedor
+   (ficaria só o drax/rubi e o resto se perderia) — o servidor segura até o jogador atualizar */
+{ const nr=netRequest; netRequest=function(type,payload){ if(type==='login'){ payload=Object.assign({},payload||{}); payload.caps=['gift2']; } return nr.call(this,type,payload); }; }
 
 /*</V9>*/
 /* ================= MAIN LOOP ================= */

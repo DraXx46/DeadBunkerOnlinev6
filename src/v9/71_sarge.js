@@ -9,7 +9,7 @@
    · dedos: cada mão tem um "fechar" de 0 a 1 (firme segurando arma, leve parado). As falanges dobram em direção à
      palma; o polegar dobra menos. Dá para ajustar com parts.armL/armR.userData.curl.
    Só o visual base (sem skin comprada) usa o modelo novo. */
-const MXC={on:true,defs:{moreira:{url:'chars/sargento.glb',vk:null}},data:{},loading:{}};
+const MXC={on:true,clavDrop:0.2,clavFwd:0.06,defs:{moreira:{url:'chars/sargento.glb',vk:null}},data:{},loading:{}};
 const MX_FING=['Thumb','Index','Middle','Ring','Pinky'];
 const _mq=new THREE.Quaternion(), _mq2=new THREE.Quaternion(), _mv=new THREE.Vector3(), _mv2=new THREE.Vector3(), _mm=new THREE.Matrix4();
 
@@ -73,8 +73,10 @@ function mxBuild(id,vk,L,opts){ const D=MXC.data[id]; opts=opts||{};
     [I(D.lSide+'Arm'),'armL'],[I(D.lSide+'ForeArm'),'foL'],[I(D.lSide+'Hand'),'handL'],[I(D.rSide+'Arm'),'armR'],[I(D.rSide+'ForeArm'),'foR'],[I(D.rSide+'Hand'),'handR']];
   const drive=new Array(bones.length).fill(null); for(const [i,k] of map) if(i!=null) drive[i]=k;
   const clavOf=new Array(bones.length).fill(null); clavOf[I(D.lSide+'Shoulder')]=arms[0].a.userData; clavOf[I(D.rSide+'Shoulder')]=arms[1].a.userData;   // clavícula opcional (userData.clav)
-  arms[0].a.userData.sh0=arms[0].a.position.clone(); arms[1].a.userData.sh0=arms[1].a.position.clone();
-  arms[0].a.userData.piv=P(D.lSide+'Shoulder'); arms[1].a.userData.piv=P(D.rSide+'Shoulder');
+  // a clavícula leva parte da descida do braço (o modelo veio em pose T): o ombro cai e o deltoide não dobra em degrau
+  for(const [k,side] of [[0,D.lSide],[1,D.rSide]]){ const U=arms[k].a.userData, piv=P(side+'Shoulder'), shR=arms[k].a.position.clone(), sx=Math.sign(shR.x-piv.x)||1;
+    U.piv=piv; U.shR=shR; U.clavB=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,sx*MXC.clavFwd,-sx*MXC.clavDrop,'YXZ'));
+    U.sh0=shR.clone().sub(piv).applyQuaternion(U.clavB).add(piv); arms[k].a.position.copy(U.sh0); }
   const corrOf=new Array(bones.length).fill(null); for(const [g,side] of [['L',D.lSide],['R',D.rSide]]) for(const k of ['Arm','ForeArm','Hand']) corrOf[I(side+k)]=D.corr[g];
   const G={}, W=bones.map(()=>new THREE.Quaternion()), curlQ=new THREE.Quaternion(), tmp=new THREE.Quaternion();
   const hipRest=D.lp[I('Hips')].clone();
@@ -83,7 +85,7 @@ function mxBuild(id,vk,L,opts){ const D=MXC.data[id]; opts=opts||{};
     for(const [g,A] of [['L',arms[0]],['R',arms[1]]]){ G['arm'+g]=Qup.clone().multiply(A.a.quaternion); G['fo'+g]=G['arm'+g].clone().multiply(A.fo.quaternion); G['hand'+g]=G['fo'+g].clone().multiply(A.hand.quaternion); }
     for(const [g,Lg] of [['L',legs[0]],['R',legs[1]]]){ G['leg'+g]=G.body.clone().multiply(Lg.lg.quaternion); G['knee'+g]=G['leg'+g].clone().multiply(Lg.kn.quaternion); }
     const UL=arms[0].a.userData, UR=arms[1].a.userData;
-    for(let i=0;i<bones.length;i++){ const p=D.par[i], key=drive[i], cv=clavOf[i]&&clavOf[i].clav;
+    for(let i=0;i<bones.length;i++){ const p=D.par[i], key=drive[i], cv=clavOf[i]&&(clavOf[i].clav||clavOf[i].clavB);
       if(key){ W[i].copy(G[key]); if(corrOf[i]) W[i].multiply(corrOf[i]); W[i].multiply(D.rq[i]); }
       else if(cv){ W[i].copy(Qup).multiply(cv).multiply(D.rq[i]); }
       else { W[i].copy(p>=0?W[p]:_mq2.identity()).multiply(D.lq[i]); }

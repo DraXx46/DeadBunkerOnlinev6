@@ -21756,7 +21756,7 @@ CMDS.sala_menu={cheat:1,d:'sala_menu [on|off] · sala online no menu (off volta 
    · dedos: cada mão tem um "fechar" de 0 a 1 (firme segurando arma, leve parado). As falanges dobram em direção à
      palma; o polegar dobra menos. Dá para ajustar com parts.armL/armR.userData.curl.
    Só o visual base (sem skin comprada) usa o modelo novo. */
-const MXC={on:true,defs:{moreira:{url:'chars/sargento.glb',vk:null}},data:{},loading:{}};
+const MXC={on:true,clavDrop:0.2,clavFwd:0.06,defs:{moreira:{url:'chars/sargento.glb',vk:null}},data:{},loading:{}};
 const MX_FING=['Thumb','Index','Middle','Ring','Pinky'];
 const _mq=new THREE.Quaternion(), _mq2=new THREE.Quaternion(), _mv=new THREE.Vector3(), _mv2=new THREE.Vector3(), _mm=new THREE.Matrix4();
 
@@ -21820,8 +21820,10 @@ function mxBuild(id,vk,L,opts){ const D=MXC.data[id]; opts=opts||{};
     [I(D.lSide+'Arm'),'armL'],[I(D.lSide+'ForeArm'),'foL'],[I(D.lSide+'Hand'),'handL'],[I(D.rSide+'Arm'),'armR'],[I(D.rSide+'ForeArm'),'foR'],[I(D.rSide+'Hand'),'handR']];
   const drive=new Array(bones.length).fill(null); for(const [i,k] of map) if(i!=null) drive[i]=k;
   const clavOf=new Array(bones.length).fill(null); clavOf[I(D.lSide+'Shoulder')]=arms[0].a.userData; clavOf[I(D.rSide+'Shoulder')]=arms[1].a.userData;   // clavícula opcional (userData.clav)
-  arms[0].a.userData.sh0=arms[0].a.position.clone(); arms[1].a.userData.sh0=arms[1].a.position.clone();
-  arms[0].a.userData.piv=P(D.lSide+'Shoulder'); arms[1].a.userData.piv=P(D.rSide+'Shoulder');
+  // a clavícula leva parte da descida do braço (o modelo veio em pose T): o ombro cai e o deltoide não dobra em degrau
+  for(const [k,side] of [[0,D.lSide],[1,D.rSide]]){ const U=arms[k].a.userData, piv=P(side+'Shoulder'), shR=arms[k].a.position.clone(), sx=Math.sign(shR.x-piv.x)||1;
+    U.piv=piv; U.shR=shR; U.clavB=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,sx*MXC.clavFwd,-sx*MXC.clavDrop,'YXZ'));
+    U.sh0=shR.clone().sub(piv).applyQuaternion(U.clavB).add(piv); arms[k].a.position.copy(U.sh0); }
   const corrOf=new Array(bones.length).fill(null); for(const [g,side] of [['L',D.lSide],['R',D.rSide]]) for(const k of ['Arm','ForeArm','Hand']) corrOf[I(side+k)]=D.corr[g];
   const G={}, W=bones.map(()=>new THREE.Quaternion()), curlQ=new THREE.Quaternion(), tmp=new THREE.Quaternion();
   const hipRest=D.lp[I('Hips')].clone();
@@ -21830,7 +21832,7 @@ function mxBuild(id,vk,L,opts){ const D=MXC.data[id]; opts=opts||{};
     for(const [g,A] of [['L',arms[0]],['R',arms[1]]]){ G['arm'+g]=Qup.clone().multiply(A.a.quaternion); G['fo'+g]=G['arm'+g].clone().multiply(A.fo.quaternion); G['hand'+g]=G['fo'+g].clone().multiply(A.hand.quaternion); }
     for(const [g,Lg] of [['L',legs[0]],['R',legs[1]]]){ G['leg'+g]=G.body.clone().multiply(Lg.lg.quaternion); G['knee'+g]=G['leg'+g].clone().multiply(Lg.kn.quaternion); }
     const UL=arms[0].a.userData, UR=arms[1].a.userData;
-    for(let i=0;i<bones.length;i++){ const p=D.par[i], key=drive[i], cv=clavOf[i]&&clavOf[i].clav;
+    for(let i=0;i<bones.length;i++){ const p=D.par[i], key=drive[i], cv=clavOf[i]&&(clavOf[i].clav||clavOf[i].clavB);
       if(key){ W[i].copy(G[key]); if(corrOf[i]) W[i].multiply(corrOf[i]); W[i].multiply(D.rq[i]); }
       else if(cv){ W[i].copy(Qup).multiply(cv).multiply(D.rq[i]); }
       else { W[i].copy(p>=0?W[p]:_mq2.identity()).multiply(D.lq[i]); }
@@ -22104,7 +22106,7 @@ CMDS.maos={cheat:1,d:'maos [on|off] · mãos novas detalhadas na primeira pessoa
       ferrolho, bate no carregador, vira para ver o outro lado e guarda de volta; bate a poeira das mangas e das
       coxas e ajeita a farda; massageia a nuca estalando o pescoço; puxa o cinto; olha o relógio; vigia em volta;
       estala os dedos. Entre um e outro: respiração, troca de apoio, cabeça viva e microexpressões. */
-const SGL={on:true,force:null,now:null,S:0.82,gp:{n:0.006,f:0.044,u:-0.014,rake:0.3,roll:0}};
+const SGL={on:true,force:null,now:null,smooth:8,S:0.82,gp:{n:0.006,f:0.044,u:-0.014,rake:0.3,roll:0}};
 const _sa=new THREE.Vector3(), _sb=new THREE.Vector3(), _sc=new THREE.Vector3(), _sd=new THREE.Vector3(), _se=new THREE.Vector3();
 const _sq1=new THREE.Quaternion(), _sq2=new THREE.Quaternion(), _sq3=new THREE.Quaternion(), _sm1=new THREE.Matrix4();
 const SV3=(a)=>new THREE.Vector3(a[0],a[1],a[2]);
@@ -22196,6 +22198,30 @@ function sgLidUpdate(m,b){ const U=m.userData; if(Math.abs(b-U.last)<0.004) retu
     const h=U.S.at(x,y)||{z:0.08,n:new THREE.Vector3(0,0,1)}; v.set(x,y,h.z).addScaledVector(h.n,0.0009+0.0005*b).applyMatrix4(U.inv); P[k*3]=v.x; P[k*3+1]=v.y; P[k*3+2]=v.z;
     n.copy(h.n).applyMatrix3(nrm).normalize(); N[k*3]=n.x; N[k*3+1]=n.y; N[k*3+2]=n.z; }
   m.geometry.attributes.position.needsUpdate=true; m.geometry.attributes.normal.needsUpdate=true; m.geometry.computeBoundingSphere(); }
+/* pesos dos ombros: o auto-rig deixa o deltoide quase todo num osso só, e o braço caído dobra em quina.
+   Suaviza (Laplaciano sobre a malha soldada) só a parte dos pesos que é de tronco/clavícula/braço, perto do ombro. */
+function sgSmoothShoulders(D,iters,alpha){ const g=D.geo, P=g.attributes.position, SI=g.attributes.skinIndex, SW=g.attributes.skinWeight, idx=g.index.array, n=P.count;
+  const weld=new Int32Array(n), key=new Map(); let nw=0;
+  for(let i=0;i<n;i++){ const k=Math.round(P.getX(i)*2e4)+','+Math.round(P.getY(i)*2e4)+','+Math.round(P.getZ(i)*2e4); let w=key.get(k); if(w==null){ w=nw++; key.set(k,w); } weld[i]=w; }
+  const nb=Array.from({length:nw},()=>new Set()); for(let t=0;t<idx.length;t+=3){ const a=weld[idx[t]],b=weld[idx[t+1]],c=weld[idx[t+2]]; nb[a].add(b).add(c); nb[b].add(a).add(c); nb[c].add(a).add(b); }
+  for(const side of [D.lSide,D.rSide]){ const set=['Spine1','Spine2',side+'Shoulder',side+'Arm'].map(k=>D.idx[k]).filter(v=>v!=null); const arm=D.pos(side+'Arm');
+    // pesos por vértice soldado (só os ossos do conjunto), e quais entram
+    const W=Array.from({length:nw},()=>new Float32Array(set.length)), act=new Uint8Array(nw), fall=new Float32Array(nw), rep=new Int32Array(nw).fill(-1);
+    for(let i=0;i<n;i++){ const w=weld[i]; if(rep[w]>=0) continue; rep[w]=i; const d=Math.hypot(P.getX(i)-arm.x,(P.getY(i)-arm.y)*1.15,P.getZ(i)-arm.z); if(d<0.17){ act[w]=1; fall[w]=d<0.09?1:sgSm((0.17-d)/0.08); }
+      for(let k=0;k<4;k++){ const j=set.indexOf(SI.array[i*4+k]); if(j>=0) W[w][j]+=SW.array[i*4+k]; } }
+    const sum=w=>W[w].reduce((a,b)=>a+b,0);
+    for(let it=0;it<iters;it++){ const nwW=W.map(x=>x.slice());
+      for(let w=0;w<nw;w++){ if(!act[w]) continue; const m=sum(w); if(m<1e-4) continue; const avg=new Float32Array(set.length); let c=0;
+        for(const o of nb[w]){ const mo=sum(o); if(mo<1e-4) continue; for(let j=0;j<set.length;j++) avg[j]+=W[o][j]/mo; c++; } if(!c) continue;
+        const a=alpha*fall[w]; for(let j=0;j<set.length;j++) nwW[w][j]=(1-a)*W[w][j]+a*m*avg[j]/c; }
+      for(let w=0;w<nw;w++) W[w]=nwW[w]; }
+    // grava de volta (mantém os outros ossos, fica com os 4 maiores)
+    for(let i=0;i<n;i++){ const w=weld[i]; if(!act[w]) continue; const acc=new Map();
+      for(let k=0;k<4;k++){ const b=SI.array[i*4+k], v=SW.array[i*4+k]; if(v>0&&set.indexOf(b)<0) acc.set(b,(acc.get(b)||0)+v); }
+      for(let j=0;j<set.length;j++) if(W[w][j]>1e-4) acc.set(set[j],(acc.get(set[j])||0)+W[w][j]);
+      const top=[...acc.entries()].sort((a,b)=>b[1]-a[1]).slice(0,4); let s=0; for(const e of top) s+=e[1];
+      for(let k=0;k<4;k++){ SI.array[i*4+k]=top[k]?top[k][0]:0; SW.array[i*4+k]=top[k]?top[k][1]/(s||1):0; } } }
+  SI.needsUpdate=true; SW.needsUpdate=true; }
 /* boca aberta: fundo escuro + borda dos dentes, colados na superfície (presos ao osso da cabeça) */
 function sgMouthGeo(D){ // grade de profundidade do rosto em volta da boca (raio de frente contra a malha original)
   const g=D.geo0, P=g.attributes.position, idx=g.index.array, tris=[];
@@ -22208,7 +22234,9 @@ function sgMouthGeo(D){ // grade de profundidade do rosto em volta da boca (raio
 
 /* ======================= 2) BRAÇOS POR IK ======================= */
 function sgArmInfo(D,g){ const side=g==='L'?D.lSide:D.rSide, C=D.corr[g], r=k=>D.pos(side+k);
-  const sh=r('Arm'), el=r('ForeArm'), wr=r('Hand');
+  const shR=r('Arm'), el=r('ForeArm'), wr=r('Hand'), piv=r('Shoulder'), sx=Math.sign(shR.x-piv.x)||1;
+  const clavB=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,sx*MXC.clavFwd,-sx*MXC.clavDrop,'YXZ'));
+  const sh=shR.clone().sub(piv).applyQuaternion(clavB).add(piv);
   const u1=el.clone().sub(sh).applyQuaternion(C), u2=wr.clone().sub(el).applyQuaternion(C);
   const mid=r('HandMiddle1'); const F0=mid.clone().sub(wr).applyQuaternion(C).normalize();
   const A=r('HandIndex1').sub(r('HandPinky1')); let N=new THREE.Vector3().crossVectors(A,mid.clone().sub(wr)); if(N.y>0) N.negate(); N.applyQuaternion(C);
@@ -22217,21 +22245,24 @@ function sgArmInfo(D,g){ const side=g==='L'?D.lSide:D.rSide, C=D.corr[g], r=k=>D
   const hl=mid.distanceTo(wr);
   const palm=F0.clone().multiplyScalar(hl*0.62).add(N.clone().multiplyScalar(0.012));       // centro da palma, a partir do punho
   const B0=new THREE.Matrix4().makeBasis(F0,N,new THREE.Vector3().crossVectors(F0,N));
-  return {g,sh,u1,u2,L1:u1.length(),L2:u2.length(),F0,N0:N,A0,palm,B0,B0i:B0.clone().transpose(),hl}; }
+  return {g,sh,shR,piv,clavB,u1,u2,L1:u1.length(),L2:u2.length(),F0,N0:N,A0,palm,B0,B0i:B0.clone().transpose(),hl}; }
 /* rotação da mão (espaço do "up") que leva o descanso (F0,N0) para (F,N) */
 function sgHandQ(A,F,N,out){ const f=_sa.copy(F).normalize(), nn=_sb.copy(N); nn.sub(_sc.copy(f).multiplyScalar(nn.dot(f))); if(nn.lengthSq()<1e-8) nn.set(0,0,1); nn.normalize();
   _sm1.makeBasis(f,nn,_sc.crossVectors(f,nn)).multiply(A.B0i); return out.setFromRotationMatrix(_sm1); }
 const _qx=new THREE.Quaternion(), _ax=new THREE.Vector3(1,0,0);
 function sgIKlen(A,phi){ _qx.setFromAxisAngle(_ax,phi); return _sd.copy(A.u2).applyQuaternion(_qx).add(A.u1).length(); }
 /* resolve o braço: palma em P (espaço "up"), dedos F, palma N, cotovelo para o polo */
-function sgSolve(A,arm,P,F,N,pole,res){ const Qd=sgHandQ(A,F,N,res.qh);
+function sgSolve(A,arm,P,F,N,pole,res,Qin){ const Qd=Qin?res.qh.copy(Qin):sgHandQ(A,F,N,res.qh);
   const wr=_se.copy(A.palm).applyQuaternion(Qd).multiplyScalar(-1).add(P);        // punho = palma - offset
   // clavícula: quando o alvo passa do alcance (ou vai muito à frente/cruzado), o ombro avança/sobe até ~5,5 cm
   const U0=arm.userData; let sh=A.sh;
-  if(U0&&U0.piv&&U0.sh0){ const reach=(A.L1+A.L2)*0.97, ex=_sb.copy(wr).sub(A.sh).length()-reach; const amt=Math.min(0.055,Math.max(0,ex+0.045));
-    if(amt>0.002){ const cl=_sc.copy(A.sh).sub(U0.piv), clen=cl.length(); const dir=_sb.copy(wr).sub(A.sh); dir.sub(_sd.copy(cl).multiplyScalar(dir.dot(cl)/(clen*clen))); if(dir.lengthSq()>1e-8){
-        const ax2=_sd.crossVectors(cl,dir).normalize(); U0.clav=(U0.clav||new THREE.Quaternion()).setFromAxisAngle(ax2,amt/clen);
-        arm.position.copy(A.sh).sub(U0.piv).applyQuaternion(U0.clav).add(U0.piv); sh=arm.position; } }
+  if(U0&&U0.piv&&U0.sh0){ const reach=(A.L1+A.L2)*0.97, ex=_sb.copy(wr).sub(A.sh).length()-reach;
+    // ombro acompanha: avança quando estica, sobe quando a mão vai alto (sobe junto com o cotovelo)
+    const dy0=(wr.y-A.sh.y)/Math.max(1e-4,_sb.copy(wr).sub(A.sh).length()); const amt=Math.min(0.055,Math.max(0,ex+0.045))*Math.max(sgSm((dy0+0.75)/0.45),sgSm((ex-0.015)/0.02)), up=Math.max(0,Math.min(0.03,(wr.y-(A.sh.y-0.08))*0.12));
+    const cl=_sc.copy(A.sh).sub(U0.piv), clen=cl.length(); const dir=_sb.copy(wr).sub(A.sh).normalize().multiplyScalar(amt).add(_sd.set(0,up,0)); dir.sub(_sd.copy(cl).multiplyScalar(dir.dot(cl)/(clen*clen)));
+    const ang=Math.min(0.42,dir.length()/clen);
+    if(ang>0.004){ const ax2=_sd.crossVectors(cl,dir).normalize(); U0.clav=(U0.clav||new THREE.Quaternion()).setFromAxisAngle(ax2,ang).multiply(A.clavB);
+        arm.position.copy(A.shR).sub(U0.piv).applyQuaternion(U0.clav).add(U0.piv); sh=arm.position; }
     else if(U0.clav){ U0.clav=null; arm.position.copy(U0.sh0); } }
   const d=wr.sub(sh); let dist=d.length(); const dn=d.normalize();
   dist=Math.min(Math.max(dist,Math.abs(A.L1-A.L2)+0.03),(A.L1+A.L2)*0.997);
@@ -22268,7 +22299,7 @@ function sgGunInHand(A){ // orientação/posição da pistola no grupo da mão (
   const gripAt=A.palm.clone().add(A.N0.clone().multiplyScalar(gp.n)).add(A.F0.clone().multiplyScalar(gp.f)).add(A.A0.clone().multiplyScalar(gp.u));
   return {q,pos:gripAt.sub(gc)}; }
 /* coldre no quadril direito (lado x<0), um pouco à frente para não bater no braço; cano para baixo, cabo para trás */
-const SGH={grip:[-0.2,0.965,0.085],cant:-0.3};
+const SGH={grip:[-0.19,0.965,0.085],cant:-0.3};
 function sgHolsterGun(){ const B=new THREE.Vector3(0,-1,0), U=new THREE.Vector3(0,0,1); const qc=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),SGH.cant); B.applyQuaternion(qc); U.applyQuaternion(qc);
   const tilt=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),0.1); B.applyQuaternion(tilt); U.applyQuaternion(tilt);   // acompanha o quadril
   const zg=B.clone().negate(), yg=U, xg=new THREE.Vector3().crossVectors(yg,zg); const q=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(xg,yg,zg));
@@ -22278,7 +22309,7 @@ function sgHolsterMesh(){ const S=SGL.S, g=new THREE.Group();
   // corpo do coldre (cobre ferrolho e cano até antes do guarda-mato), em coordenadas da pistola
   const sh=new THREE.Shape(); const pts=[[0.07,0.08],[-0.15,0.08],[-0.162,0.056],[-0.162,-0.028],[-0.035,-0.036],[0.0,-0.058],[0.03,-0.032],[0.045,-0.004],[0.07,-0.002]];
   sh.moveTo(pts[0][0],pts[0][1]); for(const p of pts.slice(1)) sh.lineTo(p[0],p[1]);    // (x = eixo do cano, y = altura)
-  const geo=new THREE.ExtrudeGeometry(sh,{depth:0.046,bevelEnabled:true,bevelThickness:0.005,bevelSize:0.004,bevelSegments:2,steps:1}); geo.translate(0,0,-0.023);
+  const geo=new THREE.ExtrudeGeometry(sh,{depth:0.034,bevelEnabled:true,bevelThickness:0.008,bevelSize:0.006,bevelSegments:3,steps:1}); geo.translate(0,0,-0.017);
   const body=new THREE.Mesh(geo,lea); body.rotation.set(0,-Math.PI/2,0);        // forma → espaço da pistola
   const hold=new THREE.Group(); hold.add(body); hold.scale.setScalar(S); g.add(hold);
   // presilha do cinto e aba com botão
@@ -22310,7 +22341,8 @@ function sgGestures(K){ // K: helpers com pontos já calculados
     {t:1.15,L:Object.assign({},Gg,{c:0.9,fc:[0.62,0.14,0.98,1,1]}),g:1},
     {t:1.45,L:Object.assign({},Gp),lw:0.6},
     {t:1.95,L:front,lk:lkGun,lw:0.9,ch:[0.03,-0.08,0],hd:[0,0,0.05],fx:{bi:0.35,sq:0.15}},
-    {t:2.35,R:K.onGun(front,[0.0,0.095,0.06],[-1,0,0],[0,-1,0],0.55,[0.65,0.5,0.55,0.6,0.65])},
+    {t:2.12,R:K.pose('R',[0.1,1.1,0.24],[-0.35,0.25,0.9],[-0.55,-0.75,0.1],[1,-0.6,-0.4],0.3)},
+    {t:2.38,R:K.onGun(front,[0.0,0.095,0.06],[-1,0,0],[0,-1,0],0.55,[0.65,0.5,0.55,0.6,0.65])},
     {t:2.6,R:K.onGun(front,[0.0,0.088,0.075],[-1,0,0],[0,-1,0],0.55,[0.7,0.45,0.5,0.55,0.6]),e:1},
     {t:2.85,R:K.onGun(front,[0.0,0.088,0.11],[-1,0,0],[0,-1,0],0.6,[0.75,0.5,0.55,0.6,0.65]),ch:[0.11,-0.1,0],hd:[0.1,0.05,0.08],fx:{sq:0.65,b1:0.55,bi:0.15},e:1},
     {t:3.25,e:1},
@@ -22331,11 +22363,11 @@ function sgGestures(K){ // K: helpers com pontos já calculados
     {t:9.2,fx:{}}]};
   /* --- bate a poeira: manga esquerda, manga direita, coxas, ajeita a farda --- */
   const armUpR=K.pose('R',[0.03,1.08,0.27],[-0.98,0.05,0.2],[0.05,-0.25,-0.97],[1,-0.4,-0.6],0.35);
-  const armUpL=K.pose('L',[0.0,1.08,0.27],[0.98,0.05,0.2],[-0.05,-0.25,-0.97],[-1,-0.4,-0.6],0.35);
+  const armUpL=K.pose('L',[0.06,1.1,0.25],[0.98,0.05,0.2],[-0.05,-0.25,-0.97],[-1,-0.4,-0.6],0.35);
   const strokes=[];
   for(let i=0;i<3;i++){ const t0=0.75+i*0.36; strokes.push({t:t0,L:K.brush(armUpR,'R',0.28,0.032,0.12),fx:{bi:0.25,sq:0.2}},{t:t0+0.18,L:K.brush(armUpR,'R',0.82,0.026,0.06),e:i===2?1:0}); }
   const strokes2=[];
-  for(let i=0;i<2;i++){ const t0=2.45+i*0.36; strokes2.push({t:t0,R:K.brush(armUpL,'L',0.5,0.032,0.12)},{t:t0+0.18,R:K.brush(armUpL,'L',0.9,0.026,0.06)}); }
+  for(let i=0;i<2;i++){ const t0=2.45+i*0.36; strokes2.push({t:t0,R:K.brush(armUpL,'L',0.62,0.03,0.1)},{t:t0+0.18,R:K.brush(armUpL,'L',0.95,0.024,0.05)}); }
   const thigh=(s,y,c)=>K.pose(s,[s==='L'?-0.125:0.125,y,0.15],[0,-0.55,0.84],[0,-0.1,-1],[s==='L'?-1:1,0.2,-0.4],c||0.05,'body');
   G.dust={dur:7.7,keys:[
     {t:0,L:R,R:R,fx:{}},
@@ -22343,7 +22375,7 @@ function sgGestures(K){ // K: helpers com pontos já calculados
     ...strokes,
     {t:2.05,R:R,L:armUpL,lk:[-0.08,1.05,0.3],ch:[0.08,-0.12,0]},
     ...strokes2,
-    {t:3.35,R:K.brush(armUpL,'L',0.8,0.05,0.1),L:R,ch:[0.06,0,0]},
+    {t:3.35,R:K.brush(armUpL,'L',0.92,0.045,0.08),L:R,ch:[0.06,0,0]},
     {t:3.7,R:R,L:R,lk:[0,0.9,0.4],lw:0.6,ch:[0.24,0,0],kn:0.5,fx:{bi:0.1,jw:0.1}},
     {t:3.95,L:thigh('L',0.905),R:thigh('R',0.905),ch:[0.34,0,0],kn:0.9},
     {t:4.12,L:thigh('L',0.875),R:thigh('R',0.875),e:1},
@@ -22356,16 +22388,18 @@ function sgGestures(K){ // K: helpers com pontos já calculados
     {t:6.75,L:R,R:R,lw:0,ch:[0,0,0],fx:{sm:0.2}},
     {t:7.7,fx:{}}]};
   /* --- massageia a nuca e estala o pescoço --- */
-  const nape=(dx,dy)=>K.pose('L',[-0.035+dx,1.455+dy,-0.085],[0.55,0.75,0.2],[0.05,-0.15,1],[-0.9,0.45,0.15],0.45);
+  const nape=(dx,dy)=>K.pose('L',[-0.04+dx,1.45+dy,-0.08],[0.6,0.7,0.15],[0.05,-0.15,1],[-1,0.15,0.2],0.45);
   G.neck={dur:5.2,keys:[
     {t:0,L:R,R:R,fx:{}},
-    {t:0.6,L:nape(0,0),hd:[0.18,0,0],fx:{ey:0.4,bi:0.15}},
+    {t:0.32,L:K.pose('L',[-0.19,1.3,0.1],[0.15,0.95,-0.1],[0.6,0,0.8],[-0.8,-0.6,0],0.4)},
+    {t:0.68,L:nape(0,0),hd:[0.18,0,0],fx:{ey:0.4,bi:0.15}},
     {t:0.95,L:nape(0.012,0.008)},{t:1.25,L:nape(-0.006,-0.004)},{t:1.55,L:nape(0.012,0.006)},
     {t:1.95,hd:[0.05,0,0.36],fx:{ey:1,jw:0.18,bi:0.35},e:1},
     {t:2.25,hd:[0.04,0,0.4]},
     {t:2.75,hd:[0.04,0,-0.38],L:nape(0,0.004),fx:{ey:1,jw:0.12,bi:0.4}},
     {t:3.05,hd:[0.04,0,-0.42],e:1},
-    {t:3.6,hd:[0,0,0],L:R,fx:{ey:0,jw:0,bu:0.25,sm:0.25}},
+    {t:3.35,hd:[0.02,0,-0.1],L:K.pose('L',[-0.2,1.24,0.08],[0.15,-0.6,0.6],[0.7,0,0.7],[-0.8,-0.6,0],0.35),fx:{ey:0,jw:0,bu:0.2}},
+    {t:3.75,hd:[0,0,0],L:R,fx:{ey:0,jw:0,bu:0.25,sm:0.25}},
     {t:4.2,ch:[-0.04,0,0]},
     {t:5.2,ch:[0,0,0],fx:{}}]};
   /* --- puxa o cinto para cima (polegares no cinto) --- */
@@ -22380,14 +22414,14 @@ function sgGestures(K){ // K: helpers com pontos já calculados
     {t:2.9,L:R,R:R,ch:[0,0,0],hd:[0,0,0]},
     {t:4.4,fx:{}}]};
   /* --- olha o relógio no punho esquerdo --- */
-  const watch=K.pose('R',[0.02,1.2,0.27],[-0.95,0.05,0.3],[0.15,-0.75,-0.64],[1,-0.6,-0.3],0.35);
+  const watch=K.pose('R',[0.03,1.27,0.25],[-0.95,0.05,0.3],[0.15,-0.75,-0.64],[1,-0.6,-0.3],0.35);
   G.watch={dur:4.0,keys:[
     {t:0,L:R,R:R,fx:{}},
-    {t:0.6,R:watch,lk:[0.0,1.22,0.28],lw:0.95,fx:{bu:0.15}},
+    {t:0.6,R:watch,lk:[0.02,1.29,0.26],lw:0.95,fx:{bu:0.15}},
     {t:0.75,R:K.offset(watch,[0,0.01,0],{})},
-    {t:1.25,L:K.pose('L',[-0.02,1.2,0.32],[0.9,0.1,0.4],[-0.2,-0.8,-0.6],[-1,-0.6,-0.3],0.55,'up',[0.6,0.05,0.85,0.9,0.9]),fx:{bu:0.3,sq:0.2}},
-    {t:1.4,L:K.pose('L',[-0.015,1.195,0.31],[0.9,0.1,0.4],[-0.2,-0.8,-0.6],[-1,-0.6,-0.3],0.55,'up',[0.6,0.05,0.85,0.9,0.9])},
-    {t:1.55,L:K.pose('L',[-0.02,1.2,0.32],[0.9,0.1,0.4],[-0.2,-0.8,-0.6],[-1,-0.6,-0.3],0.55,'up',[0.6,0.05,0.85,0.9,0.9])},
+    {t:1.25,L:K.pose('L',[-0.01,1.275,0.3],[0.9,0.1,0.4],[-0.2,-0.8,-0.6],[-1,-0.6,-0.3],0.55,'up',[0.6,0.05,0.85,0.9,0.9]),fx:{bu:0.3,sq:0.2}},
+    {t:1.4,L:K.pose('L',[-0.005,1.27,0.29],[0.9,0.1,0.4],[-0.2,-0.8,-0.6],[-1,-0.6,-0.3],0.55,'up',[0.6,0.05,0.85,0.9,0.9])},
+    {t:1.55,L:K.pose('L',[-0.01,1.275,0.3],[0.9,0.1,0.4],[-0.2,-0.8,-0.6],[-1,-0.6,-0.3],0.55,'up',[0.6,0.05,0.85,0.9,0.9])},
     {t:2.1,L:R,fx:{bu:0,bi:0.3,sm:0}},
     {t:2.6,R:R,lw:0,lk:[0,1.5,2],fx:{bi:0.2}},
     {t:4.0,fx:{}}]};
@@ -22417,8 +22451,7 @@ const SG_SEQ=[['pistol',2.6],['scan',3.2],['dust',2.8],['neck',3.4],['belt',2.4]
 
 /* ---------- prepara por modelo ---------- */
 function sgPrep(D){ if(D.sg) return D.sg; const A={L:sgArmInfo(D,'L'),R:sgArmInfo(D,'R')};
-  const restE={L:[[0.04,0,-0.13],[-0.14,0,0.04]],R:[[0.04,0,0.13],[-0.14,0,-0.04]]};
-  const rest={L:sgRestHand(A.L,restE.L),R:sgRestHand(A.R,restE.R)};
+  const rest={L:Object.assign(sgRestHand(A.L,SG_RESTE.L),{c:SG_RESTC.L[0],fc:SG_RESTC.L[1]}),R:Object.assign(sgRestHand(A.R,SG_RESTE.R),{c:SG_RESTC.R[0],fc:SG_RESTC.R[1]})};
   const gih=sgGunInHand(A.L), hol=sgHolsterGun();
   const sp=D.pos('Spine');
   const toUp=(p,ch)=>{ const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(ch[0],ch[1],ch[2])).invert(); return SV3(p).sub(sp).applyQuaternion(q).add(sp); };
@@ -22448,7 +22481,7 @@ function sgPrep(D){ if(D.sg) return D.sg; const A={L:sgArmInfo(D,'L'),R:sgArmInf
   // resolve cada chave: herda canais, converte para o espaço "up" e achata num vetor para interpolar
   const out={};
   for(const name in G){ const gst=G[name]; let cur={L:rest.L,R:rest.R,hd:[0,0,0],ch:[0,0,0],lk:[0,1.5,1],lw:0,kn:0,fx:{},g:0};
-    const keys=[]; let prevSol={};
+    const keys=[]; const prevQ={};
     for(const k of gst.keys){ const c=Object.assign({},cur);
       for(const ch of ['hd','ch','lk','lw','kn','g']) if(k[ch]!=null) c[ch]=k[ch];
       if(k.fx) c.fx=Object.assign({},k.fx);
@@ -22464,13 +22497,14 @@ function sgPrep(D){ if(D.sg) return D.sg; const A={L:sgArmInfo(D,'L'),R:sgArmInf
       const vec=[];
       for(const s of ['L','R']){ const h=c[s]; const chs=c.ch;
         const p=h.sp==='body'?toUp(h.p,chs):SV3(h.p), F=h.sp==='body'?dirUp(h.F,chs):SV3(h.F), N=h.sp==='body'?dirUp(h.N,chs):SV3(h.N);
-        vec.push(...p.toArray(),...F.normalize().toArray(),...N.normalize().toArray(),...h.pole,h.c!=null?h.c:0.3,...(h.fc||[-1,-1,-1,-1,-1])); }
+        // orientação da mão como quaternion (no mesmo hemisfério da chave anterior → caminho mais curto)
+        const q=sgHandQ(A[s],F,N,new THREE.Quaternion()); const pq=prevQ[s]; if(pq&&pq.dot(q)<0){ q.x=-q.x; q.y=-q.y; q.z=-q.z; q.w=-q.w; } prevQ[s]=q.clone();
+        vec.push(...p.toArray(),q.x,q.y,q.z,q.w,0,0,...h.pole,h.c!=null?h.c:0.3,...(h.fc||[-1,-1,-1,-1,-1])); }
       vec.push(...c.hd,...c.ch,...c.lk,c.lw,c.kn,...SG_FX.map(f=>c.fx[f]||0));
       keys.push({t:k.t,v:vec,e:!!k.e,g:c.g}); cur=c; }
     out[name]={dur:gst.dur,keys}; }
-  const restVec=(()=>{ const v=[]; for(const s of ['L','R']){ const h=rest[s]; v.push(...h.p,...h.F,...h.N,...h.pole,0.3,-1,-1,-1,-1,-1); } v.push(0,0,0,0,0,0,0,1.5,1,0,0,...SG_FX.map(()=>0)); return v; })();
-  let cyc=0; const seq=SG_SEQ.map(([n,gap])=>{ const s={n,t0:cyc+gap,dur:out[n].dur}; cyc+=gap+out[n].dur; return s; });
-  D.sg={A,rest,gih,hol,G:out,seq,cyc,restVec,sp}; return D.sg; }
+    let cyc=0; const seq=SG_SEQ.map(([n,gap])=>{ const s={n,t0:cyc+gap,dur:out[n].dur}; cyc+=gap+out[n].dur; return s; });
+  D.sg={A,rest,gih,hol,G:out,seq,cyc,sp}; return D.sg; }
 
 /* interpolação Hermite (Catmull-Rom com tempos irregulares; chave com e=1 para "parar") */
 function sgEval(G,lt,out){ const ks=G.keys; let i=0; while(i<ks.length-2&&lt>ks[i+1].t) i++;
@@ -22484,36 +22518,56 @@ function sgEval(G,lt,out){ const ks=G.keys; let i=0; while(i<ks.length-2&&lt>ks[
 
 /* ---------- aplica no personagem ---------- */
 const _sv=[], _res={L:{qa:new THREE.Quaternion(),qf:new THREE.Quaternion(),qh:new THREE.Quaternion()},R:{qa:new THREE.Quaternion(),qf:new THREE.Quaternion(),qh:new THREE.Quaternion()}};
+/* postura de descanso: braços diferentes entre si, cotovelo solto, giro interno leve e mão relaxada (dedos em degradê) */
+const SG_RESTE={L:[[0.05,0.15,-0.115],[-0.2,0,0.05]],R:[[0.09,-0.13,0.105],[-0.3,0,-0.05]]};
+const SG_RESTC={L:[0.34,[0.32,0.28,0.4,0.5,0.6]],R:[0.4,[0.36,0.34,0.46,0.56,0.66]]};
+const sgHash=n=>{ const x=Math.sin(n*127.1+311.7)*43758.5453; return x-Math.floor(x); };
+/* para onde a cabeça olha no descanso: troca de ponto a cada 2,5–4,5 s, gira suave, os olhos chegam antes */
+function sgGaze(t){ let k=Math.floor(t/3.3), t0=k*3.3+sgHash(k)*0.9; if(t<t0){ k--; t0=k*3.3+sgHash(k)*0.9; }
+  const tg=j=>[ (sgHash(j*3+1)-0.5)*0.5, (sgHash(j*3+2)-0.45)*0.13 ]; const a=tg(k-1), b=tg(k); const u=sgSm((t-t0)/0.55);
+  const yaw=a[0]+(b[0]-a[0])*u, pit=a[1]+(b[1]-a[1])*u; const eye=Math.max(-1,Math.min(1,(b[0]-yaw)*3.2))*(1-sgSm((t-t0-0.35)/0.6))+yaw*0.9;
+  return {yaw,pit,eye}; }
 function sgIdle(p,t){ const D=MXC.data[p.cid]; if(!D||!p.sgOn) return; const S=sgPrep(D);
   // qual gesto agora
   let name=null, lt=0; if(SGL.force){ name=SGL.force.g; lt=SGL.force.t; }
   else if(t>=1){ const tt=((t+(p.sgPh||0))%S.cyc+S.cyc)%S.cyc; for(const q of S.seq) if(tt>=q.t0&&tt<q.t0+q.dur){ name=q.n; lt=tt-q.t0; break; } }   // t<1: miniaturas ficam em pé, neutras
-  const br=Math.sin(t*1.7);
-  // respiração e troca de apoio (sempre)
-  p.chest.quaternion.setFromEuler(new THREE.Euler(-0.012*br,0,0)); p.body.rotation.set(0,0,Math.sin(t*0.47)*0.012); p.body.position.set(Math.sin(t*0.47)*0.008,0,0);
+  const tq=t+(p.sgPh||0), br=Math.sin(tq*1.55)*0.75+Math.sin(tq*0.71)*0.25;     // respiração irregular
+  // apoio num pé só (troca devagar): quadril desce do lado solto, ombros compensam ao contrário, pés ficam no chão
+  const ws=Math.sin(tq*0.085+0.6), w=Math.sign(ws)*sgSm(Math.min(1,Math.abs(ws)*1.8)), th=0.03*w;
+  p.body.rotation.set(0,0.04*w,th); p.body.position.set(0.02*w+0.9*th+Math.sin(tq*0.47)*0.003,0,0);
+  const lz=-(0.02*w)/0.88-th, fL=Math.max(0,w), fR=Math.max(0,-w);
   const fx=p.sgFx||(p.sgFx={}); for(const f of SG_FX) fx[f]=0;
-  // microexpressões soltas no descanso
-  const mic=Math.sin(t*0.23+1.3)*Math.sin(t*0.61); fx.bu=Math.max(0,mic-0.55)*0.9; fx.bi=Math.max(0,-mic-0.6)*0.8; fx.lx=Math.sin(t*0.31)*0.25+(Math.sin(t*1.9)>0.93?0.4:0);
-  if(!name){ sgGun(p,0); if(p.sgLegs){ p.legL.rotation.x=p.legR.rotation.x=0; p.legL.children[1].rotation.x=p.legR.children[1].rotation.x=0; p.sgLegs=0; } return; }
-  const v=sgEval(S.G[name],lt,_sv);
-  // canais do tronco/cabeça
-  const ch=[v[36+3],v[36+4],v[36+5]]; _sq3.setFromEuler(new THREE.Euler(ch[0]-0.012*br,ch[1],ch[2])); p.chest.quaternion.copy(_sq3);
-  const kn=Math.max(0,v[36+10]); if(kn>0.001||p.sgLegs){ p.legL.rotation.x=p.legR.rotation.x=-0.32*kn; p.legL.children[1].rotation.x=p.legR.children[1].rotation.x=0.597*kn; p.body.position.y=-0.032*kn; p.sgLegs=kn>0.001?1:0; }
-  // mãos
-  for(const [s,o,arm] of [['L',0,p.armL],['R',18,p.armR]]){ const A=S.A[s];
-    const P=_sa.set(v[o],v[o+1],v[o+2]).clone(), F=new THREE.Vector3(v[o+3],v[o+4],v[o+5]), N=new THREE.Vector3(v[o+6],v[o+7],v[o+8]);
-    sgSolve(A,arm,P,F,N,[v[o+9],v[o+10],v[o+11]],_res[s]);
+  const mic=Math.sin(tq*0.23+1.3)*Math.sin(tq*0.61); fx.bu=Math.max(0,mic-0.55)*0.9; fx.bi=Math.max(0,-mic-0.6)*0.8;
+  const gz=sgGaze(tq);
+  const v=name?sgEval(S.G[name],lt,_sv):null; const dur=name?S.G[name].dur:1;
+  const env=name?Math.min(sgSm(lt/0.6),sgSm((dur-lt)/0.8)):0;     // quanto o gesto manda na cabeça
+  // pernas: joelho do lado solto dobra; agacha quando o gesto pede
+  const kn=v?Math.max(0,v[36+10]):0;
+  p.legL.rotation.set(-0.32*kn-0.1*fL,0,lz); p.legR.rotation.set(-0.32*kn-0.1*fR,0,lz);
+  p.legL.children[1].rotation.x=0.597*kn+0.21*fL; p.legR.children[1].rotation.x=0.597*kn+0.21*fR; p.body.position.y=-0.032*kn-0.005*(fL+fR); p.sgLegs=1;
+  // tronco
+  const ch=v?[v[36+3],v[36+4],v[36+5]]:[0,0,0];
+  _sq3.setFromEuler(new THREE.Euler(ch[0]-0.014*br-0.015,ch[1]-0.03*w,ch[2]-th*1.3)); p.chest.quaternion.copy(_sq3);
+  // braços
+  if(!v){ for(const [s,arm] of [['L',p.armL],['R',p.armR]]){ const E=SG_RESTE[s], sd=s==='L'?-1:1;
+      arm.rotation.set(E[0][0],E[0][1],E[0][2]+sd*br*0.006); arm.userData.fo.rotation.set(E[1][0]-br*0.01,E[1][1],E[1][2]); arm.userData.hand.rotation.set(0,0,0);
+      const U=arm.userData; if(U.clav){ U.clav=null; arm.position.copy(U.sh0); } U.curl=SG_RESTC[s][0]; U.fc=SG_RESTC[s][1].slice(); } }
+  else for(const [s,o,arm] of [['L',0,p.armL],['R',18,p.armR]]){ const A=S.A[s];
+    const P=_sa.set(v[o],v[o+1],v[o+2]).clone(), Qd=new THREE.Quaternion(v[o+3],v[o+4],v[o+5],v[o+6]).normalize();
+    sgSolve(A,arm,P,null,null,[v[o+9],v[o+10],v[o+11]],_res[s],Qd);
     const U=arm.userData; U.curl=Math.max(0,Math.min(1,v[o+12])); if(v[o+13]>=-0.5){ U.fc=(U.fc&&U.fc.length===5)?U.fc:[0,0,0,0,0]; for(let k=0;k<5;k++) U.fc[k]=Math.max(0,Math.min(1.05,v[o+13+k])); } else U.fc=null; }
-  // cabeça: canal próprio + olhar para um ponto
-  const hd=[v[36],v[36+1],v[36+2]], lw=Math.max(0,Math.min(1,v[36+9]));
-  _sq1.setFromEuler(new THREE.Euler(hd[0]+Math.sin(t*0.6)*0.02,hd[1]+Math.sin(t*0.35)*0.05,hd[2]));
-  if(lw>0.001){ const dx=v[36+6]-0.0, dy=v[36+7]-1.585, dz=v[36+8]-0.06; const yaw=Math.max(-1.1,Math.min(1.1,Math.atan2(dx,dz))), pit=Math.max(-0.45,Math.min(0.8,Math.atan2(-dy,Math.hypot(dx,dz))));
-    _sq2.setFromAxisAngle(_ax,pit); const qy=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw).multiply(_sq2); _sq1.slerp(qy,lw); }
-  // a cabeça vive no espaço do "up"; desconta o giro do tronco para o olhar não dobrar
-  if(lw>0.001){ const inv=_sq3.clone().invert(); _sq2.copy(_sq1); _sq1.copy(inv).multiply(_sq2).slerp(_sq2,1-lw); }
-  p.head.quaternion.copy(_sq1);
-  for(let k=0;k<SG_FX.length;k++) fx[SG_FX[k]]=Math.max(fx[SG_FX[k]]*0.4,v[36+11+k]);
-  sgGun(p,v.g); }
+  // cabeça: olhar do descanso misturado com o do gesto
+  const hRest=new THREE.Quaternion().setFromEuler(new THREE.Euler(gz.pit-0.03+Math.sin(tq*0.6)*0.012,gz.yaw,th*0.6+Math.sin(tq*0.37)*0.012,'YXZ'));
+  if(v){ const hd=[v[36],v[36+1],v[36+2]], lw=Math.max(0,Math.min(1,v[36+9]));
+    _sq1.setFromEuler(new THREE.Euler(hd[0],hd[1],hd[2]));
+    if(lw>0.001){ const dx=v[36+6], dy=v[36+7]-1.585, dz=v[36+8]-0.06; const yaw=Math.max(-1.1,Math.min(1.1,Math.atan2(dx,dz))), pit=Math.max(-0.45,Math.min(0.8,Math.atan2(-dy,Math.hypot(dx,dz))));
+      _sq2.setFromAxisAngle(_ax,pit); const qy=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw).multiply(_sq2);
+      const inv=_sq3.clone().invert(); qy.premultiply(inv); _sq1.slerp(qy,lw); }   // olhar em espaço do corpo, descontando o tronco
+    p.head.quaternion.copy(hRest).slerp(_sq1,env); }
+  else p.head.quaternion.copy(hRest);
+  fx.lx=gz.eye*(1-env);
+  if(v) for(let k=0;k<SG_FX.length;k++) fx[SG_FX[k]]=Math.max(fx[SG_FX[k]]*(1-env*0.6),k===7?v[36+11+k]+fx.lx:v[36+11+k]);
+  sgGun(p,v?v.g:0); }
 
 const sgNow=()=>SGL.now!=null?SGL.now:performance.now()/1000;
 /* pistola: no coldre ou na mão */
@@ -22557,7 +22611,7 @@ function sgMouthUpdate(m,j){ const U=m.userData, P=m.geometry.attributes.positio
   m.geometry.attributes.position.needsUpdate=true; U.teeth.geometry.attributes.position.needsUpdate=true; m.geometry.computeBoundingSphere(); }
 
 /* ======================= ligações ======================= */
-{ const mp=mxPrep; mxPrep=function(gl){ const D=mp(gl); try{ D.geo0=D.geo; sgSubdivideFace(D); console.log('[Bunker] rosto do sargento: +'+D.face.verts+' vértices, '+SGF.names.length+' expressões'); }catch(e){ console.warn('[Bunker] rosto',e); } return D; }; }
+{ const mp=mxPrep; mxPrep=function(gl){ const D=mp(gl); try{ if(SGL.smooth) sgSmoothShoulders(D,SGL.smooth,0.55); }catch(e){ console.warn('[Bunker] ombros',e); } try{ D.geo0=D.geo; sgSubdivideFace(D); console.log('[Bunker] rosto do sargento: +'+D.face.verts+' vértices, '+SGF.names.length+' expressões'); }catch(e){ console.warn('[Bunker] rosto',e); } return D; }; }
 { const mb=mxBuild; mxBuild=function(id,vk,L,opts){ const root=mb.apply(this,arguments); const p=root.userData; if(!SGL.on||id!=='moreira') return root;
     try{ const D=MXC.data[id], S=sgPrep(D);
       // coldre + pistola no quadril
@@ -22575,7 +22629,7 @@ function sgMouthUpdate(m,j){ const U=m.userData, P=m.geometry.attributes.positio
     if(mine&&pose==='idle'){ const c=p.cid; p.cid='_sg'; let r; try{ r=pc.apply(this,arguments); } finally{ p.cid=c; }   // sem os gestos antigos: os novos cuidam do parado
       try{ sgIdle(p,t); p.sgFxT=sgNow(); p.sgUsed=1; }catch(e){ if(!SGL.err){ SGL.err=1; console.warn('[Bunker] gesto',e); } } return r; }
     const r=pc.apply(this,arguments);
-    if(p&&p.mx&&p.sgOn){ sgGun(p,0); p.sgFxT=0; if(p.sgUsed){ p.sgUsed=0; p.armL.userData.hand.quaternion.identity(); p.armR.userData.hand.quaternion.identity(); if(p.sgLegs){ p.legL.rotation.x=p.legR.rotation.x=0; p.legL.children[1].rotation.x=p.legR.children[1].rotation.x=0; p.body.position.y=0; p.sgLegs=0; } } }
+    if(p&&p.mx&&p.sgOn){ sgGun(p,0); p.sgFxT=0; if(p.sgUsed){ p.sgUsed=0; p.armL.userData.hand.quaternion.identity(); p.armR.userData.hand.quaternion.identity(); if(p.sgLegs){ p.legL.rotation.set(0,0,0); p.legR.rotation.set(0,0,0); p.legL.children[1].rotation.x=p.legR.children[1].rotation.x=0; p.body.position.set(0,0,0); p.body.rotation.set(0,0,0); p.sgLegs=0; } } }
     return r; }; }
 CMDS.sargento={cheat:1,d:'sargento [gesto|auto|off] · gestos do sargento 3D (pistol, dust, neck, belt, watch, scan, knuckles)',f:a=>{ const g=a[0]||'auto';
   if(g==='off'){ SGL.on=false; cprint('gestos do sargento: desligados'); return; } SGL.on=true;

@@ -10025,7 +10025,7 @@ function closeBoxUI(){ if(BX.busy) return; BX.caseMode=null; BX.multi=null; $('#
 $('#bx-close').addEventListener('click',closeBoxUI);
 $('#bx-again').addEventListener('click',()=>{ if(BX.busy) return; if(BX.caseMode){ const c=BX.caseMode; closeBoxUI(); openCaseMulti(c,1); return; } if(!boxCount(BX.t)&&BOX_BY[BX.t].shop){ buyArtBox(BX.t,1); return; } openBoxUI(BX.t); });
 $('#bx-again10').addEventListener('click',()=>{ if(BX.busy) return; if(BX.caseMode){ openCaseMulti(BX.caseMode,10); return; } if(boxCount(BX.t)<2&&BOX_BY[BX.t].shop){ buyArtBox(BX.t,10); return; } openBoxUI(BX.t,false,10); });
-function boxAfter(){ const left=boxCount(BX.t), sb=BOX_BY[BX.t]||{};
+function boxAfter(){ const left=boxCount(BX.t), sb=BOX_BY[BX.t]||{}; if(!left&&!sb.shop){ $('#bx-again').hidden=true; $('#bx-again10').hidden=true; return; }
   $('#bx-again').hidden=!left&&!sb.shop; $('#bx-again').textContent=left?'Abrir outra':`Comprar 1 · ◆ ${sb.price.toLocaleString('pt-BR')}`; $('#bx-again').disabled=!left&&PROG.drax<sb.price;
   $('#bx-again10').hidden=left<2&&!sb.shop; $('#bx-again10').textContent=left>=2?`Mais ×${Math.min(10,left)}`:`Comprar ×10 · ◆ ${(sb.price*10).toLocaleString('pt-BR')}`; $('#bx-again10').disabled=left<2&&PROG.drax<sb.price*10; }
 $('#bx-open10').addEventListener('click',()=>openBoxMulti(10));
@@ -10078,13 +10078,13 @@ $('#bx-open').addEventListener('click',()=>{
   if(BX.auto){ BX.skip=true; box.classList.add('open','gone'); if(d3){ bx3Open(true); setTimeout(()=>{ $('#boxer').classList.add('dim'); boxReveal(prize); },420); } else setTimeout(()=>boxReveal(prize),120); return; }
   if(d3) bx3Open(false); $('#bx-skip').hidden=false; box.classList.add('shake');
   setTimeout(()=>{ box.classList.remove('shake'); box.classList.add('open'); try{ Snd.reelTick(1.6); Snd.ui('unlock'); }catch(e){} },560);
-  setTimeout(()=>{ box.classList.add('gone'); $('#boxer').classList.add('dim'); if(BX.skip){ boxReveal(prize); return; } boxSpin(b,prize); },d3?1500:1100);
+  setTimeout(()=>{ box.classList.add('gone'); $('#boxer').classList.add('dim'); if(BX.skip){ boxReveal(prize); return; } try{ boxSpin(b,prize); }catch(e){ console.warn(e); boxReveal(prize); } },d3?1500:1100);
 });
 function boxSpin(b,prize){
   const reel=$('#bx-reel'), strip=$('#bx-strip'); reel.hidden=false; const N=62, WIN=54; const tiles=[];
   const teas=prize.red||!(b.red>0)?[]:[WIN-6,WIN+2,Math.floor(rand(8,WIN-12))];
   for(let i=0;i<N;i++) tiles.push(i===WIN?prize:teas.includes(i)?{red:true}:rollBox(b));
-  strip.innerHTML=tiles.map(prizeTile).join(''); strip.style.transition='none'; strip.style.transform='translateX(0px)';
+  strip.innerHTML=tiles.map(t=>prizeTile(t)).join(''); strip.style.transition='none'; strip.style.transform='translateX(0px)';
   requestAnimationFrame(()=>{ const tileW=strip.firstElementChild.getBoundingClientRect().width+8, wrapW=reel.getBoundingClientRect().width;
     const target=WIN*tileW+tileW/2-wrapW/2+rand(-tileW*0.36,tileW*0.36); const dur=7.2, t0=performance.now(); let last=-1;
     const step=now=>{ const k=BX.skip?1:clamp((now-t0)/1000/dur,0,1); const e=1-Math.pow(1-k,4.2); const x=target*e; strip.style.transform=`translateX(${-x}px)`;

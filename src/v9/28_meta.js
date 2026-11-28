@@ -146,58 +146,125 @@ v9Css(`.v9lo{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-to
 const _v9omp=openMapPick; openMapPick=function(){ const r=_v9omp.apply(this,arguments); try{ const d=document.querySelector('.v9lo'); if(d&&d.refresh) d.refresh(); mpSelect(MAPS[CUR]&&CUR!=='x1'&&CUR!=='sandbox'&&MPI[CUR]?CUR:'bunker'); }catch(e){} return r; };
 
 /* ---------------- escolha de mapa interativa: vitrine grande do mapa + fileira de cartões com foto ---------------- */
-const MPI={bunker:{d:2,t:'Médio',img:'img/map_bunker.jpg',sec:'Junte as peças da máquina do tempo, conserte o carro para a cidade e enfrente o Mutante Ácido.',f:['Cidade destruída de carro','Máquina do tempo','Chefe: Mutante Ácido'],s:[3,4,5]},
-  farm:{d:3,t:'Grande',img:'img/map_farm.jpg',sec:'O laboratório debaixo da mata guarda a melhor arma do mapa.',f:['Mansão de dois andares','Laboratório secreto','Campos abertos'],s:[5,3,4]},
-  tz:{d:4,t:'Viagem',img:'img/map_tz.jpg',sec:'Cada parada do ônibus tem algo para pegar. Não fique para trás.',f:['Ônibus em movimento','5 paradas na neblina','Zumbis no teto'],s:[4,5,3]},
-  hosp:{d:3,t:'Médio',img:'img/map_hosp.jpg',sec:'Ache as peças e vá para 2087: o hospício vira um laboratório de testes.',f:['Laboratório 2087','Celas e necrotério','Chefe do laboratório'],s:[3,4,5]},
-  x1:{d:0,t:'Arena',img:'',sec:'Sem zumbis: rodadas de compra, 7 segundos de preparação e respawn na base.',f:['1 contra 1','Compra de armas','Online'],s:[1,5,1]}};
-const MPS={sel:'bunker'};
-v9Css(`#mappick .dossier{max-width:min(1320px,96vw);display:grid;grid-template-columns:1.5fr 1fr;grid-template-areas:"file file" "h2 h2" "hero opts" "maps maps" "row row";gap:4px 22px}
-#mappick .dossier>.file{grid-area:file}#mappick .dossier>h2{grid-area:h2;margin-bottom:6px}#mappick .mpopts{grid-area:opts;align-self:start}#mappick .maps{grid-area:maps}#mappick .dossier>.row{grid-area:row}
-.v9hero{grid-area:hero;position:relative;height:clamp(260px,40vh,420px);overflow:hidden;border:1px solid #3a3022;background:#0a0706;cursor:pointer}
-.v9hero .bg{position:absolute;inset:-6%;background:center/cover no-repeat;transition:transform .25s ease-out,opacity .35s;animation:v9kb2 18s ease-in-out infinite alternate}
-@keyframes v9kb2{from{scale:1}to{scale:1.1}}
-.v9hero:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(6,4,3,.95) 0%,rgba(6,4,3,.4) 45%,rgba(6,4,3,.1) 100%),linear-gradient(90deg,rgba(6,4,3,.7),transparent 60%)}
-.v9hero .ct{position:absolute;left:22px;right:22px;bottom:18px;z-index:2}.v9hero h3{margin:0;font:700 clamp(34px,4.4vw,58px)/1 "Stardos Stencil",Impact;color:#f4ead2;text-shadow:0 3px 14px #000}
-.v9hero .meta{margin:6px 0;font-size:13px;color:#d8cbbb;letter-spacing:.06em}.v9hero .meta .sk{color:#ff5a3a;letter-spacing:3px}
-.v9hero .ds{margin:0 0 8px;font-size:14px;color:#c8bba6;max-width:640px}.v9hero .chips{display:flex;gap:6px;flex-wrap:wrap}.v9hero .chips span{padding:3px 9px;font-size:12px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.5)}
-.v9hero .bars{position:absolute;right:22px;top:18px;z-index:2;width:190px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#c8bba6}.v9hero .bars div{margin-bottom:7px}.v9hero .bars i{display:block;height:5px;margin-top:3px;background:#2a1a14}.v9hero .bars i b{display:block;height:100%;background:linear-gradient(90deg,#b0201a,#ff8a3a);transition:width .4s}
-.v9hero .go{position:absolute;right:22px;bottom:18px;z-index:3;padding:12px 30px;font-size:18px}.v9hero .rec{color:#ffd24a}
-.v9hero.x1 .bg{background:radial-gradient(circle at 30% 30%,#5a3a10,#120a04 70%)!important}
-#mappick .maps{display:grid!important;grid-template-columns:repeat(5,1fr)!important;gap:10px;margin-top:12px}
-#mappick .mapc{position:relative;height:150px;padding:0!important;overflow:hidden;justify-content:flex-end;transform-style:preserve-3d;transition:transform .2s ease-out,border-color .15s,box-shadow .2s;background:#0a0706 center/cover no-repeat}
-#mappick .mapc:before{content:"";position:absolute;inset:0;background:var(--img) center/cover no-repeat;transition:transform .4s;filter:saturate(.85)}#mappick .mapc:hover:before{transform:scale(1.08)}
-#mappick .mapc:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.9),rgba(0,0,0,.05) 70%)}
-#mappick .mapc .mt{position:relative;z-index:2;padding:0 12px 10px;font-size:20px!important;line-height:1.05}#mappick .mapc .md{display:none}
-#mappick .mapc.on{border-color:#ff5a3a;box-shadow:0 0 0 1px #ff5a3a,0 10px 30px rgba(224,48,31,.35)}#mappick .mapc .rb{position:absolute;z-index:2;top:8px;right:8px;padding:2px 7px;font-size:11px;background:rgba(0,0,0,.7);color:#ffd24a}
-#mappick .mapc.x1card:before{background:radial-gradient(circle at 30% 30%,#5a3a10,#120a04 70%)}
-.v9hint{grid-area:row;justify-self:end;align-self:center;font-size:12px;color:#8a8478}
-@media (max-width:860px){#mappick .dossier{grid-template-columns:1fr;grid-template-areas:"file" "h2" "hero" "opts" "maps" "row"}#mappick .maps{grid-template-columns:repeat(3,1fr)!important}}`);
-const HERO=v9El('div','v9hero',`<div class="bg"></div><div class="bars"></div><div class="ct"><h3></h3><div class="meta"></div><p class="ds"></p><div class="chips"></div></div><button class="cta go" type="button" data-snd="confirm">Jogar</button>`);
-(function(){ const d=document.querySelector('#mappick .dossier'); if(!d) return; d.insertBefore(HERO,d.querySelector('.mpopts'));
-  for(const b of document.querySelectorAll('#mappick .mapc')){ const i=MPI[b.dataset.map]; if(i&&i.img) b.style.setProperty('--img',`url(${i.img})`); }
+/* ---------------- seleção de mapas: limpa, minimalista, em vidro líquido ----------------
+   A foto do mapa ocupa a tela inteira (com zoom lento). Em cima dela: nome, uma frase curta, dificuldade/tamanho/recorde
+   e os botões Jogar e Voltar. Embaixo, a fileira de cartões de vidro; à direita, o painel de vidro com as opções da partida.
+   Clique seleciona, clique duplo ou Jogar entra. Passar o mouse num cartão mostra a foto daquele mapa. */
+const MPI={bunker:{d:2,t:'Médio',img:'img/map_bunker.jpg',b:'Segure as janelas do bunker, conserte o carro e fuja para a cidade em chamas.',sec:'Junte as peças da máquina do tempo, conserte o carro para a cidade e enfrente o Mutante Ácido.',f:['Cidade destruída de carro','Máquina do tempo','Chefe: Mutante Ácido'],s:[3,4,5]},
+  farm:{d:3,t:'Grande',img:'img/map_farm.jpg',b:'Uma fazenda isolada, uma mansão de dois andares e um laboratório escondido debaixo da mata.',sec:'O laboratório debaixo da mata guarda a melhor arma do mapa.',f:['Mansão de dois andares','Laboratório secreto','Campos abertos'],s:[5,3,4]},
+  tz:{d:4,t:'Viagem',img:'img/map_tz.jpg',b:'Preso num posto de gasolina, você pega o ônibus 115 por cinco paradas na neblina.',sec:'Cada parada do ônibus tem algo para pegar. Não fique para trás.',f:['Ônibus em movimento','5 paradas na neblina','Zumbis no teto'],s:[4,5,3]},
+  hosp:{d:3,t:'Médio',img:'img/map_hosp.jpg',b:'Um hospício abandonado no meio do mato, e uma máquina do tempo que leva tudo para 2087.',sec:'Ache as peças e vá para 2087: o hospício vira um laboratório de testes.',f:['Laboratório 2087','Celas e necrotério','Chefe do laboratório'],s:[3,4,5]},
+  x1:{d:0,t:'Arena',img:'img/map_x1.jpg',b:'Só você e seu amigo. Compra de armas, 7 segundos de preparação e respawn na base.',sec:'Sem zumbis: rodadas de compra, 7 segundos de preparação e respawn na base.',f:['1 contra 1','Compra de armas','Online'],s:[1,5,1]}};
+const MPS={sel:'bunker',bgi:0,bgk:null};
+v9Css(`
+#mappick{background:#050505!important;padding:0!important;overflow:hidden}
+#mappick .mgbg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:#050505}
+#mappick .mgbg i{position:absolute;inset:-5%;background:center/cover no-repeat;opacity:0;transition:opacity .9s ease;will-change:opacity,transform}
+#mappick .mgbg i.on{opacity:1;animation:mgKen 22s ease-in-out infinite alternate}
+@keyframes mgKen{from{transform:scale(1) translate3d(0,0,0)}to{transform:scale(1.09) translate3d(-1.2%,-.8%,0)}}
+#mappick .mgbg b{position:absolute;inset:0;background:linear-gradient(90deg,rgba(4,4,6,.78) 0%,rgba(4,4,6,.38) 38%,rgba(4,4,6,0) 62%),linear-gradient(0deg,rgba(4,4,6,.92) 0%,rgba(4,4,6,.35) 32%,rgba(4,4,6,0) 55%),linear-gradient(180deg,rgba(4,4,6,.55) 0%,rgba(4,4,6,0) 18%)}
+#mappick .dossier{position:relative;z-index:1;max-width:none!important;margin:0!important;height:100%;display:block!important;padding:0!important}
+#mappick .dossier>h2,#mappick .v9hint,#mappick .dossier>.row{display:none!important}
+#mappick .dossier>.file{position:absolute;left:clamp(20px,5.5vw,96px);top:clamp(70px,10vh,104px);font-size:11px;letter-spacing:.42em;color:rgba(255,255,255,.62)}
+/* vidro líquido */
+.lgl{position:relative;isolation:isolate;border-radius:22px;border:1px solid rgba(255,255,255,.16);
+  background:linear-gradient(155deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.06) 38%,rgba(255,255,255,.025) 100%);
+  -webkit-backdrop-filter:blur(20px) saturate(175%);backdrop-filter:blur(20px) saturate(175%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.42),inset 1px 0 0 rgba(255,255,255,.12),inset 0 -1px 0 rgba(255,255,255,.06),inset 0 0 24px rgba(255,255,255,.04),0 18px 48px rgba(0,0,0,.42)}
+.lgl::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+  background:radial-gradient(120% 70% at var(--mx,30%) var(--my,0%),rgba(255,255,255,.22),rgba(255,255,255,0) 55%);mix-blend-mode:screen;opacity:.8;transition:opacity .3s}
+.lgl::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1px;
+  background:linear-gradient(150deg,rgba(255,255,255,.55),rgba(255,255,255,0) 30%,rgba(255,255,255,0) 70%,rgba(255,255,255,.22));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+/* vitrine (texto sobre a foto) */
+.mghero{position:absolute;left:clamp(20px,5.5vw,96px);bottom:clamp(218px,28vh,262px);max-width:min(620px,58vw);color:#f5f1ea}
+.mghero .k{font:500 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.42em;text-transform:uppercase;color:rgba(255,255,255,.55);margin:0 0 10px}
+.mghero h3{margin:0;font:700 clamp(40px,5.6vw,84px)/.95 var(--f-display);letter-spacing:.01em;text-transform:uppercase;text-shadow:0 6px 40px rgba(0,0,0,.55)}
+.mghero p.ds{margin:14px 0 0;font:400 clamp(15px,1.35vw,18px)/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:rgba(255,255,255,.82);max-width:520px;text-wrap:pretty}
+.mghero .meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:16px}
+.mghero .pill{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 13px;border-radius:999px;font:500 12px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.04em;color:rgba(255,255,255,.86)}
+.mghero .pill .dots{display:inline-flex;gap:4px}.mghero .pill .dots u{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.22)}.mghero .pill .dots u.f{background:#ff5a3a;box-shadow:0 0 8px rgba(255,90,58,.8)}
+.mghero .pill.rec{color:#ffd76a}
+.mghero .acts{display:flex;gap:10px;margin-top:22px}
+.mghero .acts button{all:unset;position:relative;isolation:isolate;box-sizing:border-box;cursor:pointer;height:50px;padding:0 28px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font:700 15px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#fff;transition:transform .18s ease,box-shadow .2s,background .2s}
+.mghero .acts .go{background:linear-gradient(155deg,rgba(255,92,64,.78),rgba(176,24,14,.72));border-color:rgba(255,170,150,.45);box-shadow:inset 0 1px 0 rgba(255,220,210,.6),0 10px 34px rgba(224,48,31,.45)}
+.mghero .acts .go:hover{transform:translateY(-1px);box-shadow:inset 0 1px 0 rgba(255,220,210,.7),0 14px 40px rgba(224,48,31,.6)}
+.mghero .acts .bk{font-weight:500;color:rgba(255,255,255,.86)}
+.mghero .acts button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.mghero.mgsw h3,.mghero.mgsw p.ds,.mghero.mgsw .meta{animation:mgIn .45s cubic-bezier(.2,.7,.2,1) both}.mghero.mgsw p.ds{animation-delay:.04s}.mghero.mgsw .meta{animation-delay:.08s}
+@keyframes mgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* painel de opções */
+#mappick .mpopts{position:absolute;top:clamp(70px,10vh,104px);right:clamp(16px,4vw,64px);width:min(320px,36vw);padding:18px 18px 16px;display:flex;flex-direction:column;gap:12px;color:rgba(255,255,255,.88);font:400 13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#mappick .mpopts::marker{content:none}
+#mappick .mpopts .mgt{font-size:10px;letter-spacing:.38em;text-transform:uppercase;color:rgba(255,255,255,.5);margin:0 0 2px}
+#mappick .mpopts label,#mappick .mpopts .v9lo label{display:flex!important;flex-direction:column;align-items:stretch!important;align-self:stretch!important;width:100%!important;box-sizing:border-box;text-align:left;margin:0!important;gap:6px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+#mappick .mpopts select{appearance:none;-webkit-appearance:none;width:100%;max-width:none;margin:0;height:38px;padding:0 34px 0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.16);color:#fff;font:500 14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:0;text-transform:none;
+  background:rgba(255,255,255,.07) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='white' stroke-opacity='.7' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 13px center;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+#mappick .mpopts select option{background:#16161a;color:#fff}
+#mappick .mpopts select:focus-visible{outline:2px solid rgba(255,255,255,.8);outline-offset:2px}
+#mappick .mpopts .mpchk{flex-direction:row!important;align-items:flex-start!important;gap:10px;text-transform:none;letter-spacing:0;font-size:13px;color:rgba(255,255,255,.82);cursor:pointer}
+#mappick .mpopts .v9pubc[style*="none"]{display:none!important}
+#mappick .mpopts .mpchk input{appearance:none;-webkit-appearance:none;flex:none;width:34px;height:20px;margin:0;border-radius:999px;background:rgba(255,255,255,.16);box-shadow:inset 0 1px 2px rgba(0,0,0,.4);position:relative;cursor:pointer;transition:background .2s}
+#mappick .mpopts .mpchk input::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);transition:transform .2s}
+#mappick .mpopts .mpchk input:checked{background:#e0452f}#mappick .mpopts .mpchk input:checked::after{transform:translateX(14px)}
+#mappick .mpopts .mpchk input:disabled{opacity:.5}
+#mappick .mpopts #mp-note{margin:0;font-size:12px;color:rgba(255,255,255,.5)}#mappick .mpopts #mp-note:empty{display:none}
+#mappick .mpopts .v9lo{display:flex;flex-direction:column;align-items:stretch;width:100%;gap:12px;margin:2px 0 0;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
+#mappick .mpopts .v9lo small{font-size:12px;color:rgba(255,255,255,.5);text-transform:none;letter-spacing:0}
+/* cartões */
+#mappick .maps{position:absolute;left:clamp(20px,5.5vw,96px);right:clamp(16px,4vw,64px);bottom:clamp(20px,4vh,40px);display:flex!important;flex-direction:row!important;gap:14px;margin:0!important;overflow-x:auto;overflow-y:visible;padding:14px 4px 6px;scrollbar-width:none}
+#mappick .maps::-webkit-scrollbar{display:none}
+#mappick .mapc{all:unset;box-sizing:border-box;cursor:pointer;flex:1 1 0;min-width:168px;max-width:270px;height:auto!important;padding:8px!important;display:flex!important;flex-direction:column;gap:9px;border-radius:20px;transform:none;transition:transform .25s cubic-bezier(.2,.7,.2,1),background .25s,box-shadow .25s,border-color .25s;overflow:visible!important}
+#mappick .mapc:before{content:"";position:relative!important;inset:auto!important;display:block;aspect-ratio:16/9;width:100%;border-radius:14px;background:var(--img,#111) center/cover no-repeat!important;filter:saturate(.8) brightness(.78);transition:filter .3s,transform .3s!important;transform:none!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+#mappick .mapc:after{display:none!important}
+#mappick .mapc.x1card{display:none!important}
+#mappick .mapc .mt{position:static!important;padding:0 6px 4px!important;font:600 13px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif!important;letter-spacing:.02em;color:rgba(255,255,255,.74);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mappick .mapc .md{display:none!important}
+#mappick .mapc:hover{transform:translateY(-4px)}
+#mappick .mapc:hover:before{filter:saturate(1) brightness(.95)}
+#mappick .mapc.on{transform:translateY(-6px);border-color:rgba(255,255,255,.4);background:linear-gradient(155deg,rgba(255,255,255,.24),rgba(255,255,255,.08) 45%,rgba(255,255,255,.04));box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px rgba(255,255,255,.12),0 18px 44px rgba(0,0,0,.5),0 0 34px rgba(255,90,58,.18)}
+#mappick .mapc.on:before{filter:none}
+#mappick .mapc.on .mt{color:#fff}
+#mappick .mapc.on .mt::before{content:"";display:inline-block;width:6px;height:6px;margin:0 8px 1px 0;border-radius:50%;background:#ff5a3a;box-shadow:0 0 10px #ff5a3a;vertical-align:middle}
+#mappick .mapc:focus-visible{outline:2px solid #fff;outline-offset:3px}
+#mappick .mapc .rb{position:absolute!important;z-index:2;top:16px!important;right:16px!important;padding:3px 8px!important;border-radius:999px;font:600 11px/1 system-ui,sans-serif!important;background:rgba(0,0,0,.45)!important;color:#ffd76a!important;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+@media (max-height:760px) and (min-width:861px){#mappick .mapc{max-width:220px}.mghero{bottom:236px}.mghero .acts{margin-top:16px}.mghero .meta{margin-top:12px}.mghero h3{font-size:clamp(36px,4.6vw,64px)}}
+@media (max-width:860px){
+  #mappick{overflow:auto!important}
+  #mappick .dossier{display:flex!important;flex-direction:column;gap:16px;padding:76px 16px 24px!important;height:auto;min-height:100%}
+  #mappick .dossier>.file,.mghero,#mappick .mpopts,#mappick .maps{position:static;max-width:none;width:auto}
+  .mghero{order:1;margin-top:26vh}#mappick .maps{order:2;padding:6px 2px}#mappick .mpopts{order:3}
+  #mappick .mapc{min-width:150px}
+}
+@media (prefers-reduced-motion:reduce){#mappick .mgbg i.on{animation:none}.mghero.mgsw *{animation:none!important}}`);
+const HERO=v9El('div','mghero',`<p class="k"></p><h3></h3><p class="ds"></p><div class="meta"></div><div class="acts"><button class="go lgl" type="button" data-snd="confirm">Jogar</button></div>`);
+const MGBG=v9El('div','mgbg','<i></i><i></i><b></b>');
+(function(){ const sc=document.getElementById('mappick'), d=sc&&sc.querySelector('.dossier'); if(!d) return;
+  sc.insertBefore(MGBG,sc.firstChild); d.insertBefore(HERO,d.querySelector('.mpopts'));
+  const opts=d.querySelector('.mpopts'); opts.classList.add('lgl'); opts.insertAdjacentHTML('afterbegin','<p class="mgt">Partida</p>');
+  const bk=document.getElementById('mp-back'); if(bk){ bk.classList.add('bk','lgl'); bk.classList.remove('ghost'); HERO.querySelector('.acts').appendChild(bk); }
+  for(const b of d.querySelectorAll('.mapc')){ const i=MPI[b.dataset.map]; if(i&&i.img) b.style.setProperty('--img',`url(${i.img})`); b.classList.add('lgl'); }
+  // o brilho do vidro acompanha o mouse
+  sc.addEventListener('pointermove',e=>{ const g=e.target.closest&&e.target.closest('.lgl'); if(!g) return; const r=g.getBoundingClientRect(); g.style.setProperty('--mx',((e.clientX-r.left)/r.width*100).toFixed(1)+'%'); g.style.setProperty('--my',((e.clientY-r.top)/r.height*100).toFixed(1)+'%'); });
   const maps=d.querySelector('.maps');
-  // clique seleciona (mostra a vitrine); clique duplo ou o botão Jogar entra no mapa
-  maps.addEventListener('click',e=>{ const b=e.target.closest('.mapc'); if(!b||e.detail===0) return; e.stopPropagation(); e.preventDefault(); if(e.detail===1) mpSelect(b.dataset.map,true); },true);   /* Enter no teclado (detail 0) continua entrando direto */
+  // clique seleciona; clique duplo ou o botão Jogar entra no mapa (Enter no teclado, detail 0, continua entrando direto)
+  maps.addEventListener('click',e=>{ const b=e.target.closest('.mapc'); if(!b||e.detail===0) return; e.stopPropagation(); e.preventDefault(); if(e.detail===1) mpSelect(b.dataset.map,true); },true);
   maps.addEventListener('dblclick',e=>{ const b=e.target.closest('.mapc'); if(b) mpPlay(b.dataset.map); });
-  maps.addEventListener('mousemove',e=>{ const b=e.target.closest('.mapc'); if(!b) return; const r=b.getBoundingClientRect(), x=(e.clientX-r.left)/r.width-0.5, y=(e.clientY-r.top)/r.height-0.5; b.style.transform=`perspective(600px) rotateY(${x*14}deg) rotateX(${-y*12}deg) translateY(-4px)`; });
-  maps.addEventListener('mouseout',e=>{ const b=e.target.closest('.mapc'); if(b&&!b.contains(e.relatedTarget)) b.style.transform=''; });
-  HERO.addEventListener('mousemove',e=>{ const r=HERO.getBoundingClientRect(), x=(e.clientX-r.left)/r.width-0.5, y=(e.clientY-r.top)/r.height-0.5; HERO.querySelector('.bg').style.transform=`translate(${-x*24}px,${-y*16}px)`; });
-  HERO.addEventListener('mouseleave',()=>{ HERO.querySelector('.bg').style.transform=''; });
-  HERO.querySelector('.go').addEventListener('click',e=>{ e.stopPropagation(); mpPlay(MPS.sel); });
-  const h=v9El('div','v9hint','clique para ver · clique duplo ou Jogar para entrar'); d.insertBefore(h,d.querySelector('.row')); })();
+  HERO.querySelector('.go').addEventListener('click',e=>{ e.stopPropagation(); mpPlay(MPS.sel); }); })();
 function mpPlay(k){ try{ playChoice(k); }catch(e){ console.warn('[v9] mapa',e); } }
-function mpSelect(k,snd){ MPS.sel=k; for(const b of document.querySelectorAll('#mappick .mapc')) b.classList.toggle('on',b.dataset.map===k); if(k!=='x1') try{ _v9mth(k); }catch(e){} mpRefresh(k); if(snd) try{ Snd.ui('tab'); }catch(e){} }
-function mpRefresh(k){ k=k||MPS.sel; const i=MPI[k]; if(!i) return; const rec=PROG.v9rec||{}, h=(PROG.v9hist||[]).filter(x=>x.m===k||(k==='hosp'&&x.m==='lab')||(k==='bunker'&&x.m==='city'));
-  const card=document.querySelector(`#mappick .mapc[data-map="${k}"]`); const nm=card?card.querySelector('.mt').textContent:k; const ds=card&&card.querySelector('.md')?card.querySelector('.md').textContent:'';
-  HERO.classList.toggle('x1',k==='x1'); const bg=HERO.querySelector('.bg'); bg.style.backgroundImage=i.img?`url(${i.img})`:''; bg.style.opacity=0; requestAnimationFrame(()=>{ bg.style.opacity=1; });
-  HERO.querySelector('h3').textContent=nm; HERO.querySelector('.ds').textContent=ds;
-  HERO.querySelector('.meta').innerHTML=`${i.d?`<span class="sk">${'☠'.repeat(i.d)}${'·'.repeat(5-i.d)}</span> · `:''}${i.t} · ${rec[k]?`<span class="rec">recorde: rodada ${rec[k]}</span>`:'sem recorde ainda'}${h.length?' · '+h.length+' partida'+(h.length>1?'s':'')+' recente'+(h.length>1?'s':''):''}`;
-  HERO.querySelector('.chips').innerHTML=i.f.map(f=>`<span>${f}</span>`).join('')+(i.sec?`<span style="border-color:#c9a24a;color:#ffd24a">Dica: ${i.sec}</span>`:'');
-  HERO.querySelector('.bars').innerHTML=[['Tamanho',i.s[0]],['Ação',i.s[1]],['Segredos',i.s[2]]].map(([n,v])=>`<div>${n}<i><b style="width:${v*20}%"></b></i></div>`).join('');
+function mpBg(img){ if(MPS.bgk===img) return; MPS.bgk=img; const L=MGBG.querySelectorAll('i'), a=L[MPS.bgi%2], b=L[(MPS.bgi+1)%2]; MPS.bgi++;
+  b.style.backgroundImage=img?`url(${img})`:'radial-gradient(circle at 30% 30%,#3a2410,#0a0604 70%)'; b.style.animation='none'; void b.offsetWidth; b.style.animation=''; b.classList.add('on'); a.classList.remove('on'); }
+function mpSelect(k,snd){ MPS.sel=k; for(const b of document.querySelectorAll('#mappick .mapc')) b.classList.toggle('on',b.dataset.map===k); mpRefresh(k,true); if(snd) try{ Snd.ui('tab'); }catch(e){} }
+function mpRefresh(k,sw){ k=k||MPS.sel; const i=MPI[k]; if(!i) return; const rec=PROG.v9rec||{};
+  mpBg(i.img); if(k!==MPS.shown){ MPS.shown=k; HERO.classList.remove('mgsw'); void HERO.offsetWidth; HERO.classList.add('mgsw'); }
+  const card=document.querySelector(`#mappick .mapc[data-map="${k}"]`); const full=card?card.querySelector('.mt').textContent:k; const pr=full.split(' · ');
+  HERO.querySelector('.k').textContent=pr[1]||({bunker:'Sobrevivência',farm:'Sobrevivência',hosp:'Sobrevivência',x1:'Online'})[k]||'Sobrevivência';
+  HERO.querySelector('h3').textContent=pr[0]; HERO.querySelector('.ds').textContent=i.b||i.sec||'';
+  HERO.querySelector('.meta').innerHTML=(i.d?`<span class="pill lgl" title="Dificuldade"><span class="dots">${[1,2,3,4,5].map(n=>`<u class="${n<=i.d?'f':''}"></u>`).join('')}</span></span>`:'')+
+    `<span class="pill lgl">${i.t}</span><span class="pill lgl ${rec[k]?'rec':''}">${rec[k]?'Recorde · rodada '+rec[k]:'Sem recorde ainda'}</span>`;
   for(const b of document.querySelectorAll('#mappick .mapc')){ const r=rec[b.dataset.map]; let e=b.querySelector('.rb'); if(r){ if(!e){ e=v9El('span','rb'); b.appendChild(e); } e.textContent='R'+r; } else if(e) e.remove(); } }
-const _v9mth=mapThumb; mapThumb=function(k){ _v9mth(k); };   // a foto de fundo do mapa continua; a vitrine é atualizada por mpSelect
-for(const b of document.querySelectorAll('#mappick .mapc')){ b.addEventListener('mouseenter',()=>{ if(!MPS.lock) mpRefresh(b.dataset.map); }); b.addEventListener('mouseleave',()=>{ mpRefresh(MPS.sel); }); b.addEventListener('focus',()=>mpSelect(b.dataset.map)); }
+const _v9mth=mapThumb; mapThumb=function(k){ const el=document.getElementById('mappick'); if(el){ el.style.backgroundImage=''; } if(MPI[k]) mpRefresh(k); for(const b of document.querySelectorAll('#mappick .mapc')) b.classList.toggle('on',b.dataset.map===MPS.sel); };   // a foto agora fica na camada de fundo; a seleção continua no cartão escolhido
+for(const b of document.querySelectorAll('#mappick .mapc')){ b.addEventListener('mouseenter',()=>mpRefresh(b.dataset.map)); b.addEventListener('mouseleave',()=>mpRefresh(MPS.sel)); b.addEventListener('focus',()=>mpSelect(b.dataset.map)); }
 
 /* ---------------- salas públicas ---------------- */
 const PUB={on:false,list:[],timer:0};
@@ -226,19 +293,33 @@ const KB_ACT=[['KeyW','Andar para frente'],['KeyS','Andar para trás'],['KeyA','
   ['KeyE','Usar · comprar · abrir'],['KeyR','Recarregar'],['KeyQ','Trocar de arma'],['KeyV','Golpe de faca'],['KeyF','Faca · inspecionar'],['KeyG','Granada'],['KeyZ','Habilidade'],['KeyX','Ultimate'],
   ['KeyL','Lanterna'],['KeyH','Largar a arma'],['KeyB','Marcar (ping)'],['KeyN','Frases rápidas'],['KeyY','Chat'],['Tab','Placar']];
 const KB_LOCK=new Set(['Escape','Enter','Backquote','Quote','Digit1','Digit2','Digit3','Digit4','F8','F11','F12','MetaLeft','MetaRight']);
-const kbName=c=>!c?'—':/^Key[A-Z]$/.test(c)?c.slice(3):/^Digit/.test(c)?c.slice(5):/^Numpad/.test(c)?'Num '+c.slice(6):({Space:'Espaço',ShiftLeft:'Shift',ShiftRight:'Shift dir.',ControlLeft:'Ctrl',ControlRight:'Ctrl dir.',AltLeft:'Alt',AltRight:'Alt Gr',Tab:'Tab',CapsLock:'Caps',Backspace:'Backspace',ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→',Comma:',',Period:'.',Slash:';',Semicolon:'Ç',BracketLeft:'´',BracketRight:'[',Backslash:']',IntlBackslash:'\\',Minus:'-',Equal:'='})[c]||c;
+const KB_MOUSE={Mouse3:'Botão do meio',Mouse4:'Mouse 4 (lateral)',Mouse5:'Mouse 5 (lateral)',WheelUp:'Rolar ↑',WheelDown:'Rolar ↓'};
+const kbName=c=>!c?'—':KB_MOUSE[c]?KB_MOUSE[c]:/^Key[A-Z]$/.test(c)?c.slice(3):/^Digit/.test(c)?c.slice(5):/^Numpad/.test(c)?'Num '+c.slice(6):({Space:'Espaço',ShiftLeft:'Shift',ShiftRight:'Shift dir.',ControlLeft:'Ctrl',ControlRight:'Ctrl dir.',AltLeft:'Alt',AltRight:'Alt Gr',Tab:'Tab',CapsLock:'Caps',Backspace:'Backspace',ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→',Comma:',',Period:'.',Slash:';',Semicolon:'Ç',BracketLeft:'´',BracketRight:'[',Backslash:']',IntlBackslash:'\\',Minus:'-',Equal:'='})[c]||c;
 const kbCur=d=>KBIND.map[d]||d;
 function kbRender(){ const box=document.getElementById('v9kb'); if(!box) return; box.querySelector('.kl').innerHTML=KB_ACT.map(([d,n])=>`<div class="kr"><span>${n}</span><button type="button" class="ghost ${kbCur(d)!==d?'chg':''}" data-d="${d}">${kbName(kbCur(d))}</button></div>`).join('');
   for(const b of box.querySelectorAll('button[data-d]')) b.onclick=()=>kbCapture(b); }
 function kbCapture(btn){ if(KBIND.cap) return; KBIND.cap=true; btn.textContent='aperte uma tecla…'; btn.classList.add('wait');
-  const done=()=>{ KBIND.cap=false; removeEventListener('keydown',on,true); kbRender(); };
+  btn.textContent='aperte uma tecla ou botão…';
+  const done=()=>{ KBIND.cap=false; removeEventListener('keydown',on,true); removeEventListener('mousedown',onM,true); removeEventListener('wheel',onW,true); removeEventListener('auxclick',noAux,true); kbRender(); };
+  const noAux=e=>{ e.preventDefault(); e.stopImmediatePropagation(); };
+  // botão do meio, laterais (4 e 5) e a rodinha também valem; esquerdo e direito ficam com atirar e mirar
+  const onM=e=>{ const c=KB_MBTN[e.button]; if(!c) return; e.preventDefault(); e.stopImmediatePropagation(); on({code:c,preventDefault(){},stopImmediatePropagation(){}}); };
+  const onW=e=>{ if(Math.abs(e.deltaY)<2) return; e.preventDefault(); e.stopImmediatePropagation(); on({code:e.deltaY<0?'WheelUp':'WheelDown',preventDefault(){},stopImmediatePropagation(){}}); };
   const on=e=>{ e.preventDefault(); e.stopImmediatePropagation(); if(e.code==='Escape'){ done(); return; } if(KB_LOCK.has(e.code)){ btn.textContent='tecla reservada'; setTimeout(done,700); return; }
     const d=btn.dataset.d, old=kbCur(d); const other=KB_ACT.find(([d2])=>d2!==d&&kbCur(d2)===e.code);
     KBIND.map[d]=e.code; if(other) KBIND.map[other[0]]=old;   // troca com a ação que usava essa tecla
     for(const k in KBIND.map) if(KBIND.map[k]===k) delete KBIND.map[k]; KBIND.save(); try{ Snd.ui('confirm'); }catch(_){} done(); };
-  addEventListener('keydown',on,true); }
+  addEventListener('keydown',on,true); setTimeout(()=>{ if(!KBIND.cap) return; addEventListener('mousedown',onM,true); addEventListener('wheel',onW,{capture:true,passive:false}); addEventListener('auxclick',noAux,true); },0); }
+/* botões do mouse e rodinha como teclas: viram a tecla padrão da ação, do mesmo jeito que as teclas remapeadas */
+const KB_MBTN={1:'Mouse3',3:'Mouse4',4:'Mouse5'};
+function kbMouseKey(code,down){ const to=KBIND.fwd[code]; if(!to) return false; dispatchEvent(new KeyboardEvent(down?'keydown':'keyup',{code:to,key:KBIND.keyOf(to),bubbles:true,cancelable:true})); return true; }
+addEventListener('mousedown',e=>{ if(KBIND.cap||!e.isTrusted) return; const c=KB_MBTN[e.button]; if(c&&kbMouseKey(c,true)){ e.preventDefault(); e.stopImmediatePropagation(); } },true);
+addEventListener('mouseup',e=>{ if(KBIND.cap||!e.isTrusted) return; const c=KB_MBTN[e.button]; if(c&&KBIND.fwd[c]){ kbMouseKey(c,false); e.preventDefault(); e.stopImmediatePropagation(); } },true);
+addEventListener('auxclick',e=>{ const c=KB_MBTN[e.button]; if(c&&KBIND.fwd[c]){ e.preventDefault(); e.stopImmediatePropagation(); } },true);   // laterais não voltam a página
+addEventListener('wheel',e=>{ if(KBIND.cap||!e.isTrusted||Math.abs(e.deltaY)<2) return; const c=e.deltaY<0?'WheelUp':'WheelDown'; if(!KBIND.fwd[c]) return; if(G.state!=='playing') return;
+  e.stopImmediatePropagation(); kbMouseKey(c,true); setTimeout(()=>kbMouseKey(c,false),60); },{capture:true,passive:true});
 (function(){ const p=document.querySelector('.setp[data-st="ctrl"]'); if(!p) return; const dl=p.querySelector('#keys'); if(dl) dl.hidden=true;
-  const box=v9El('div','v9kb',`<h4>Teclas</h4><p>Clique numa ação e aperte a nova tecla (Esc cancela). Se a tecla já estiver em uso, as duas ações trocam. Ctrl continua agachando e 1 a 4 continuam trocando de arma.</p><div class="kl"></div><button type="button" class="ghost" id="v9kbreset">Restaurar padrão</button>`); box.id='v9kb'; p.appendChild(box);
+  const box=v9El('div','v9kb',`<h4>Teclas</h4><p>Clique numa ação e aperte a nova tecla, o botão do meio, um botão lateral do mouse ou role a rodinha (Esc cancela). Se já estiver em uso, as duas ações trocam. Ctrl continua agachando e 1 a 4 continuam trocando de arma.</p><div class="kl"></div><button type="button" class="ghost" id="v9kbreset">Restaurar padrão</button>`); box.id='v9kb'; p.appendChild(box);
   box.querySelector('#v9kbreset').onclick=()=>{ KBIND.map={}; KBIND.save(); kbRender(); }; kbRender(); })();
 v9Css(`.v9kb{margin-top:14px}.v9kb h4{margin:0 0 4px;font:12px "Special Elite",monospace;letter-spacing:.2em;text-transform:uppercase;color:#ff5a4a}.v9kb p{margin:0 0 8px;font-size:12px;color:#8a8478}
 .v9kb .kl{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px}.v9kb .kr{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;padding:2px 0;border-bottom:1px solid #1e1a15}

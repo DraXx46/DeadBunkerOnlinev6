@@ -6,7 +6,7 @@
    · longe ou fora da tela: usa a queda animada antiga
    · tronco articulado (barriga e peito separados, com a camisa dobrando) e animações suavizadas
    · tiros e explosões empurram o corpo enquanto ele ainda está caindo; escopeta/sniper podem arrancar braço ou perna */
-const ZRAG={on:true,max:8,life:9,keep:22,active:[],pool:[],ms:0,n:0,starts:0,frozen:0,skips:0};
+const ZRAG={on:true,max:8,hard:16,life:9,topples:0,keep:22,active:[],pool:[],ms:0,n:0,starts:0,frozen:0,skips:0};
 const ZRG={on:false,s:1};
 /* ---- proporções: o esqueleto do laboratório (1,76 m) esticado para o corpo dos zumbis (~1,9 m, ombros largos) ---- */
 const ZRY=[[0,0],[0.085,0.07],[0.5,0.47],[0.925,0.91],[1.02,1.01],[1.185,1.2],[1.425,1.5],[1.47,1.59],[1.655,1.775],[1.8,1.92],[3,3.1]];
@@ -77,12 +77,13 @@ function zrRestPivot(z,o){ const p=new THREE.Vector3(); for(let n=o;n&&n!==z.g;n
 function zrVisible(o,g){ for(let n=o;n&&n!==g;n=n.parent) if(!n.visible) return false; return true; }
 const _zq=new THREE.Quaternion(), _zp=new THREE.Vector3(), _zs=new THREE.Vector3();
 function zrEligible(z){ if(!ZRAG.on||!z||z.kind==='dog'||z.kind==='mega'||z.crawl||!z.hips||!z.spine||!z.legL||!z.armL||!z.root) return false;
-  if(z.dcause) return false; try{ if(CUR==='tz'&&typeof tzInBus==='function'&&tzInBus(z.pos.x,z.pos.z,0.6)) return false; }catch(e){} const c=typeof deathCause==='function'?deathCause(z):''; if(c) return false;
+  if(z.dcause) return false;
+  if(ZRAG.active.length>=(CFG.potato?6:ZRAG.hard)&&!zrEvictable()) return false;   // muitos corpos ainda caindo ao mesmo tempo: este usa a queda animada (nunca fica congelado de pé) try{ if(CUR==='tz'&&typeof tzInBus==='function'&&tzInBus(z.pos.x,z.pos.z,0.6)) return false; }catch(e){} const c=typeof deathCause==='function'?deathCause(z):''; if(c) return false;
   if(typeof camera!=='undefined'){ const d=Math.hypot(z.pos.x-camera.position.x,z.pos.z-camera.position.z); if(d>(CFG.potato?26:42)) return false; }
   return true; }
 function zrStart(z){
   // limite de corpos simulando: o mais antigo congela agora
-  const max=CFG.potato?Math.min(3,ZRAG.max):ZRAG.max; while(ZRAG.active.length>=max) zrFreeze(ZRAG.active[0]);
+  const max=CFG.potato?Math.min(3,ZRAG.max):ZRAG.max; while(ZRAG.active.length>=max){ const c=zrEvictable(); if(!c) break; zrFreeze(c); }   // só congela quem já caiu; os que ainda estão de pé continuam caindo
   const k0=rmInst0(), I=zrInst(); const S=z.g.scale, s=S.y;
   if(!I.RM){ I.RM=JSON.parse(RM0); I.RMPH={B:[],J:[],byName:{},pairs:[],cts:[],scts:[],h:1/720}; }
   rmUse(I); ZRG.on=true; ZRG.s=s;
@@ -125,7 +126,7 @@ function zrStart(z){
   RM.crumple=J>90?0.15:J>45?0.3:0.42;
   // arrancar membro (escopeta, sniper ou revólver forte no braço/perna)
   const sev=[]; if(big&&Math.random()<0.55){ const p=hb.name; if(p.startsWith('uarm')||p.startsWith('farm')||p.startsWith('hand')) sev.push(p.startsWith('uarm')?'sh'+p.slice(-1):'el'+p.slice(-1)); else if(p.startsWith('thigh')||p.startsWith('shin')) sev.push(p.startsWith('thigh')?'hip'+p.slice(-1):'kn'+p.slice(-1)); }
-  const E={z,I,off,bones,t:0,J,lh:!!lh,still:0,x0:z.pos.x,z0:z.pos.z,bleed:[],neck:!!(z.head&&!z.head.visible),hit:hb.name,sev:[]};
+  const E={z,I,off,bones,t:0,tops:0,J,lh:!!lh,still:0,x0:z.pos.x,z0:z.pos.z,bleed:[],neck:!!(z.head&&!z.head.visible),hit:hb.name,sev:[]};
   z._zr=E; ZRAG.active.push(E); ZRAG.starts++;
   z.spine.position.set(0,0.06,0); if(z.headP){ z.headP.rotation.set(0,0,0); } z.g.rotation.set(0,0,0); z.yaw=0; z.g.rotation.order='YXZ';
   E.bleed.push({b:hb.name,lp:qroti(rmv(),hb.q,rmv(hp.x-hb.x.x,hp.y-hb.x.y,hp.z-hb.x.z)),t:1.4});
@@ -158,13 +159,27 @@ function zrWrite(E){ const k0=rmInst0(); rmUse(E.I); try{
 function zrBlood(E,dt){ const N=RMPH.byName; for(const w of E.bleed){ if(w.t<=0) continue; w.t-=dt; const b=N[w.b]; if(!b||b.x.y<-10) continue;
     if(Math.random()<dt*(w.big?30:12)){ const p=qrot(rmv(),b.q,w.lp); emit('blood',b.x.x+p.x,b.x.y+p.y,b.x.z+p.z,w.big?3:1,w.big?2.4:1.4,0.6); } }
   if(E.neck&&E.t<1.8&&Math.random()<dt*24){ const h=N.head; const p=qrot(rmv(),h.q,rmv(0,0.02,0)); emit('blood',h.x.x+p.x,h.x.y+p.y,h.x.z+p.z,2,2.6,0.7); } }
+// altura do peito acima do chão (em unidades do corpo): de pé ~1,3 · ajoelhado ~0,8 · deitado ~0,2
+function zrChestH(E){ const k0=rmInst0(); rmUse(E.I); try{ const c=RMPH.byName.chest||RMPH.byName.abdomen; return (c.x.y-rmFloor(c.x.x,c.x.z))/(E.z.g.scale.y||1); } finally{ rmUse(k0); } }
+function zrUpright(E){ return E.I&&zrChestH(E)>0.95; }
+function zrEvictable(){ let best=null, bh=9; for(const E of ZRAG.active){ if(!E.I) continue; const h=zrChestH(E); if(h<0.95&&(h<bh-0.15||(Math.abs(h-bh)<=0.15&&best&&E.t>best.t))){ best=E; bh=h; } } return best; }
+// corpo mole que ficou equilibrado em pé: empurra o tronco e puxa os pés para trás até ele cair
+function zrTopple(E){ const N=RMPH.byName; let dx=0, dz=0; const lh=E.z._lh; if(lh&&(lh.dx||lh.dz)){ const l=Math.hypot(lh.dx,lh.dz)||1; dx=lh.dx/l; dz=lh.dz/l; } else { const a=Math.random()*6.283; dx=Math.cos(a); dz=Math.sin(a); }
+  const k=1+E.tops*0.6; E.tops++; ZRAG.topples++;
+  for(const [n,f,up] of [['head',3.2,0],['chest',2.8,0],['abdomen',1.6,0],['thighL',-1.1,0.4],['thighR',-1.1,0.4],['shinL',-1.6,0],['shinR',-1.6,0]]){ const b=N[n]; if(!b||b.kin) continue; b.v.x+=dx*f*k; b.v.z+=dz*f*k; b.v.y+=up; }
+  for(const n of ['chest','abdomen']){ const b=N[n]; if(b&&!b.kin){ b.w.x+=dz*4*k; b.w.z-=dx*4*k; } }
+  E.still=0; }
 function zrTick(E,dt){ if(E.frozen) return; dt=Math.min(dt,0.05); const t0=performance.now(), k0=rmInst0(); rmUse(E.I);
   try{ E.t+=dt; RM.t+=dt; rmCtrl(dt); rmPhysStep(dt); zrBlood(E,dt);
     let mv=0; const cd=E.t>1?Math.exp(-3*dt):1; for(const b of RMPH.B){ if(b.kin) continue; if(cd<1){ b.w.x*=cd; b.w.y*=cd; b.w.z*=cd; } mv=Math.max(mv,vlen(b.v),vlen(b.w)*0.06); }
     E.still=mv<0.1?E.still+dt:0; } catch(e){ console.warn('[Bunker] ragdoll do zumbi',e); E.err=1; }
   finally{ rmUse(k0); }
   zrWrite(E); ZRAG.ms+=performance.now()-t0;
-  if(E.err||(E.still>0.25&&E.t>0.8)||E.t>3.4) zrFreeze(E); }
+  if(E.err){ zrFreeze(E); return; }
+  const settled=(E.still>0.25&&E.t>0.8)||E.t>3.4;
+  if(settled||(E.still>0.12&&E.t>0.45)){ let up=false; try{ up=zrUpright(E); }catch(e){}
+    if(up&&E.t<7){ if(E.tops<6){ const k1=rmInst0(); rmUse(E.I); try{ zrTopple(E); } finally{ rmUse(k1); } } else E.t=Math.max(E.t,7); return; }   // nunca congela de pé
+    if(settled) zrFreeze(E); } }
 function zrFreeze(E){ if(!E||E.frozen) return; E.frozen=true; const i=ZRAG.active.indexOf(E); if(i>=0) ZRAG.active.splice(i,1); ZRAG.frozen++;
   const z=E.z; try{ if(Math.hypot(z.pos.x-E.x0,z.pos.z-E.z0)>0.8) bloodPool(z.pos.x,z.pos.z,rand(0.9,1.4)); }catch(e){}
   if(E.I){ ZRAG.pool.push(E.I); E.I=null; } }
@@ -199,4 +214,4 @@ v9On('frame',()=>{ ZRAG.n=ZRAG.active.length; ZRAG.msS=(ZRAG.msS||0)*0.95+ZRAG.m
 CMDS.zrag={d:'zrag [on|off|max N|status] · ragdoll dos zumbis ao morrer',f:a=>{ const c=(a[0]||'status').toLowerCase();
   if(c==='on'||c==='off'){ ZRAG.on=c==='on'; cprint('ragdoll dos zumbis: '+(ZRAG.on?'ligado':'desligado')); return; }
   if(c==='max'){ ZRAG.max=Math.max(1,Math.min(30,parseInt(a[1])||8)); cprint('máximo simulando: '+ZRAG.max); return; }
-  cprint('ragdolls: '+ZRAG.n+' simulando · '+ZRAG.starts+' mortes com física · '+ZRAG.frozen+' congelados · '+(ZRAG.msS||0).toFixed(2)+' ms/quadro · máx '+ZRAG.max+(ZRAG.on?'':' (desligado)')); } };
+  cprint('ragdolls: '+ZRAG.n+' simulando · '+ZRAG.starts+' mortes com física · '+ZRAG.frozen+' congelados · '+ZRAG.topples+' empurrados de pé · '+(ZRAG.msS||0).toFixed(2)+' ms/quadro · máx '+ZRAG.max+(ZRAG.on?'':' (desligado)')); } };

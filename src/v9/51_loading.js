@@ -26,8 +26,8 @@ const MLD_TIPS=[
   'Agachar diminui o coice das armas pesadas.',
   'Jogando em grupo, fiquem perto: reanimar um amigo é mais rápido que recomeçar.'
 ];
-const MLD_PICS={all:['img/load/menu.jpg','img/load/v9_rua.jpg','img/load/v9_faca.jpg','img/load/v9_bar.jpg','img/load/v9_delegacia.jpg','img/load/v9_besta.jpg','img/load/v9_carro.jpg','img/load/boss.jpg','img/load/city.jpg'],
-  bunker:'img/map_bunker.jpg',hosp:'img/map_hosp.jpg',farm:'img/map_farm.jpg',tz:'img/map_tz.jpg',city:'img/load/city.jpg'};
+const MLD_PICS={all:['img/load/cine_carro.jpg','img/load/cine_bunker.jpg','img/load/cine_maquina.jpg','img/load/cine_hosp.jpg','img/load/cine_farm.jpg','img/load/cine_tz.jpg','img/load/cine_fun.jpg','img/load/cine_cidade.jpg','img/load/cine_x1.jpg'],
+  bunker:'img/load/cine_bunker.jpg',hosp:'img/load/cine_hosp.jpg',farm:'img/load/cine_farm.jpg',tz:'img/load/cine_tz.jpg',city:'img/load/cine_cidade.jpg',fun:'img/load/cine_fun.jpg',x1:'img/load/cine_x1.jpg',lab:'img/load/cine_maquina.jpg'};
 const MLD_SUB={bunker:'Segure as janelas. Ninguém vem te buscar.',hosp:'Os corredores ainda cheiram a desinfetante. E a sangue.',farm:'A colheita deste ano anda sozinha.',tz:'Linha 115. Destino: o fim do mundo.',city:'O que sobrou da cidade ainda está com fome.',fun:'Neon, apostas e portais. Divirta-se enquanto dá.',x1:'Só um sai vivo da arena.'};
 
 v9Css(`

@@ -76,9 +76,16 @@ function zrBone(z,key){ if(key[1]!=='.') return z[key]; const side=key[0]==='R',
 function zrRestPivot(z,o){ const p=new THREE.Vector3(); for(let n=o;n&&n!==z.g;n=n.parent){ if(n===z.hips) p.y+=0.95, p.x+=n.position.x, p.z+=n.position.z; else p.add(n.position); } return p; }
 function zrVisible(o,g){ for(let n=o;n&&n!==g;n=n.parent) if(!n.visible) return false; return true; }
 const _zq=new THREE.Quaternion(), _zp=new THREE.Vector3(), _zs=new THREE.Vector3();
+// o ragdoll só começa se o tronco estiver livre de paredes e móveis num raio de ~0,45 m (senão a separação inicial arremessa o corpo)
+function zrClear(z){ try{ const x=z.pos.x, q=z.pos.z, r=0.45; for(const [dx,dz] of [[0,0],[r,0],[-r,0],[0,r],[0,-r]]){ const cx0=Math.floor((x+dx)/S), cz0=Math.floor((q+dz)/S); const c=at(cx0,cz0); if(c==='#'||c==='W'||c==='o') return false; }
+  for(const b of propBoxes){ if(!b.on) continue; if(x>b.x0-0.3&&x<b.x1+0.3&&q>b.z0-0.3&&q<b.z1+0.3) return false; } }catch(e){} return true; }
 function zrEligible(z){ if(!ZRAG.on||!z||z.kind==='dog'||z.kind==='mega'||z.crawl||!z.hips||!z.spine||!z.legL||!z.armL||!z.root) return false;
   if(z.dcause) return false;
-  if(ZRAG.active.length>=(CFG.potato?6:ZRAG.hard)&&!zrEvictable()) return false;   // muitos corpos ainda caindo ao mesmo tempo: este usa a queda animada (nunca fica congelado de pé) try{ if(CUR==='tz'&&typeof tzInBus==='function'&&tzInBus(z.pos.x,z.pos.z,0.6)) return false; }catch(e){} const c=typeof deathCause==='function'?deathCause(z):''; if(c) return false;
+  if(ZRAG.active.length>=(CFG.potato?6:ZRAG.hard)&&!zrEvictable()) return false;   // muitos corpos ainda caindo ao mesmo tempo: este usa a queda animada (nunca fica congelado de pé)
+  try{ if(CUR==='tz'&&typeof tzInBus==='function'&&tzInBus(z.pos.x,z.pos.z,0.6)) return false; }catch(e){} const c=typeof deathCause==='function'?deathCause(z):''; if(c) return false;
+  if(z.state==='tear'||z.state==='climb'||z.state==='wait') return false;   // morreu na janela: queda animada (a física começava dentro da parede e arremessava o corpo)
+  if(z.state!=='inside'&&z.win){ const w=z.win, wx=(w.x+0.5)*S, wz=(w.z+0.5)*S; if(Math.hypot(z.pos.x-wx,z.pos.z-wz)<2.4) return false; }
+  if(!zrClear(z)) return false;
   if(typeof camera!=='undefined'){ const d=Math.hypot(z.pos.x-camera.position.x,z.pos.z-camera.position.z); if(d>(CFG.potato?26:42)) return false; }
   return true; }
 function zrStart(z){
@@ -172,6 +179,8 @@ function zrTopple(E){ const N=RMPH.byName; let dx=0, dz=0; const lh=E.z._lh; if(
 function zrTick(E,dt){ if(E.frozen) return; dt=Math.min(dt,0.05); const t0=performance.now(), k0=rmInst0(); rmUse(E.I);
   try{ E.t+=dt; RM.t+=dt; rmCtrl(dt); rmPhysStep(dt); zrBlood(E,dt);
     let mv=0; const cd=E.t>1?Math.exp(-3*dt):1; for(const b of RMPH.B){ if(b.kin) continue; if(cd<1){ b.w.x*=cd; b.w.y*=cd; b.w.z*=cd; } mv=Math.max(mv,vlen(b.v),vlen(b.w)*0.06); }
+    // trava de segurança: um corpo que dispara (separação de colisão ruim) perde a velocidade em vez de voar longe
+    for(const b of RMPH.B){ if(b.kin) continue; const sp=vlen(b.v); if(sp>14){ const k=14/sp; b.v.x*=k; b.v.y*=k; b.v.z*=k; } }
     E.still=mv<0.1?E.still+dt:0; } catch(e){ console.warn('[Bunker] ragdoll do zumbi',e); E.err=1; }
   finally{ rmUse(k0); }
   zrWrite(E); ZRAG.ms+=performance.now()-t0;

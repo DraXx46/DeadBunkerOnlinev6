@@ -5,7 +5,8 @@
 let STORE = null;
 const MAX_PAYLOAD = 16 * 1024;
 /* Única conta com acesso aos comandos de administrador (comparado em minúsculas). */
-const ADMIN_KEY = 'dev_draxx';
+// contas com comandos de dev (sempre em minúsculas: o login compara sem diferenciar maiúsculas)
+const ADMIN_KEYS = new Set(['dev_draxx', 'n3kkrotm']);
 /* Saldo de drax/rubi é entregue por "presentes": o servidor guarda até o cliente confirmar (giftAck).
    Códigos de resgate valem uma vez. Tudo é salvo no storage do Durable Object. */
 const gifts = new Map();  // conta (minúsculas) -> [{ id, drax, rubi, from }]
@@ -352,7 +353,7 @@ async function onMessage(client, ws, buffer) {
       if (Array.isArray(msg.friends)) client.friends = new Set(msg.friends.map(keyOf).filter(f => f && f !== k).slice(0, 100));
       else if (!client.friends) client.friends = new Set();
       if (msg.look && typeof msg.look === 'object') client.look = { c: String(msg.look.c || '').slice(0, 24), v: String(msg.look.v || '').slice(0, 24), lvl: Math.max(0, Math.min(999, Number(msg.look.lvl) || 0)) };
-      send(ws, { type: 'loginOk', reqId, name: u.name, admin: k === ADMIN_KEY });
+      send(ws, { type: 'loginOk', reqId, name: u.name, admin: ADMIN_KEYS.has(k) });
       client.gift2 = Array.isArray(msg.caps) && msg.caps.includes('gift2');
       const gl = (gifts.get(k) || []).filter(g => !g.dev || client.gift2); if (gl.length) send(ws, { type: 'gifts', items: gl });
       sendSocial(client); socialChanged();
@@ -369,7 +370,7 @@ async function onMessage(client, ws, buffer) {
       return;
     }
     if (msg.type === 'adminGive' || msg.type === 'codeCreate') {
-      if (keyOf(client.user) !== ADMIN_KEY) { sendError(ws, reqId, 'Comando restrito ao administrador.'); return; }
+      if (!ADMIN_KEYS.has(keyOf(client.user))) { sendError(ws, reqId, 'Comando restrito ao administrador.'); return; }
       const drax = Math.max(0, Math.min(1000000, Math.floor(Number(msg.drax) || 0)));
       const rubi = Math.max(0, Math.min(1000000, Math.floor(Number(msg.rubi) || 0)));
       /* pacote de desenvolvedor: faca, personagem no máximo, níveis de conta e mensagem (o cliente aplica e mostra a animação) */

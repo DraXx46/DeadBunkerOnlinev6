@@ -1,12 +1,17 @@
 /* ================= v9 · LUNETA REAL DA BARRETT =================
    A arma sobe de verdade até o olho: a ocular da luneta 3D vem para o centro e encosta no olho, e a imagem
    ampliada aparece DENTRO da ocular (uma segunda câmera desenhada só onde está o vidro, como nos jogos grandes).
-   Ao soltar a mira o caminho é o inverso, sem corte. Faca, troca de arma, beber/upar ou cair cancelam na hora.
+   Ao soltar a mira o caminho é o inverso, sem corte.
+   · um movimento só, estilo CoD: subir até o olho, alinhar, encostar e a lente abrir acontecem juntos numa curva suave
+     (BSC_IN para entrar, BSC_OUT para sair); a mira da arma (P.ads) segue a mesma curva, então zoom e campo de visão também Faca, troca de arma, beber/upar ou cair cancelam na hora.
    · lente: distorção nas bordas, franja de cor (forte enquanto chega), vinheta, reflexo, sombra do olho
    · retículo duplex com mil-dots e ponto vermelho, preso à luneta (inclina junto se a arma inclinar)
    · coice: a luneta pula para cima e vem contra o olho; respiração leve
    · o resto da tela continua sendo o desenho normal do jogo (mesma qualidade), só escurece perto do fim */
-const BSC={q:0,qv:0,w:0,cut:false,lens:false,e:0,sx:0,sy:0,vx:0,vy:0,ly:0,lp:0,t:0,mat:null,rti:null,w0:0,h0:0,fail:false,fovOut:null,rawQ:null,rawSet:false,ks:1};
+const BSC={p:0,q:0,qv:0,w:0,cut:false,lens:false,e:0,sx:0,sy:0,vx:0,vy:0,ly:0,lp:0,t:0,mat:null,rti:null,w0:0,h0:0,fail:false,fovOut:null,rawQ:null,rawSet:false,ks:1};
+const BSC_IN=0.42, BSC_OUT=0.24;   // segundos para abrir / fechar a mira da Barrett
+const bscEase=x=>x*x*x*(x*(x*6-15)+10);   // começa e termina com velocidade zero (sem tranco)
+function bscDrives(){ return !BSC.fail&&bscActiveGun(); }
 const BSC_Y=0.104, BSC_HZ=0.2125, BSC_HR=0.021;
 v9Css(`#bscope .tube,#bscope .ret{display:none!important}
 #bscope .glass{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:none!important;box-shadow:none!important;transform:none!important}
@@ -72,13 +77,15 @@ v9On('frame',dt=>{ if(BSC.vmHid){ vmScene.visible=true; BSC.vmHid=false; } dt=Ma
   // 48_heavy escondia a arma e a luneta 3D ao mirar: agora a arma vai até o olho
   HV.coverVm=false; const g3=gunModel&&gunModel.userData.scope3d; if(g3) g3.visible=true;
   // faca/troca/etc.: corta na hora; depois a correção volta suave (sem tranco se o jogador continuar mirando)
-  if(cancel){ BSC.q=0; BSC.qv=0; BSC.wc=0; } else BSC.wc=Math.min(1,(BSC.wc==null?1:BSC.wc)+dt/0.28);
-  const intent=!cancel&&IN.ads&&!Wp.reloading&&V9B.cyc<=0&&P.ads>0.5;
-  if(!cancel){
-    if(Wp.scoped){ BSC.q=1; BSC.qv=0; }
-    else if(intent){ const tq=V9B.open*V9B.open*(3-2*V9B.open); BSC.qv+=((tq-BSC.q)*260-BSC.qv*30)*dt; BSC.q=Math.max(0,Math.min(1,BSC.q+BSC.qv*dt)); }
-    else { BSC.q=Math.max(0,BSC.q-dt/0.18); BSC.qv=0; } }
-  const a=Math.max(0,Math.min(1,(P.ads-0.08)/0.85)), wc=BSC.wc==null?1:BSC.wc; BSC.w=a*a*(3-2*a)*wc*wc*(3-2*wc);
+  if(cancel){ BSC.q=0; BSC.qv=0; BSC.wc=0; BSC.p=0; } else BSC.wc=Math.min(1,(BSC.wc==null?1:BSC.wc)+dt/0.28);
+  const wc=BSC.wc==null?1:BSC.wc, wce=wc*wc*(3-2*wc);
+  if(!BSC.fail){ const e=bscEase(BSC.p); if(!cancel) BSC.q=Wp.scoped?1:e; BSC.w=Math.min(1,e*1.12)*wce; }
+  else {   // reserva (lente renderizada desligada): comportamento antigo, preso ao P.ads
+    const intent=!cancel&&IN.ads&&!Wp.reloading&&V9B.cyc<=0&&P.ads>0.5;
+    if(!cancel){ if(Wp.scoped){ BSC.q=1; BSC.qv=0; }
+      else if(intent){ const tq=V9B.open*V9B.open*(3-2*V9B.open); BSC.qv+=((tq-BSC.q)*260-BSC.qv*30)*dt; BSC.q=Math.max(0,Math.min(1,BSC.q+BSC.qv*dt)); }
+      else { BSC.q=Math.max(0,BSC.q-dt/0.18); BSC.qv=0; } }
+    const a=Math.max(0,Math.min(1,(P.ads-0.08)/0.85)); BSC.w=a*a*(3-2*a)*wce; }
   // sombra do olho: atraso do olho ao girar, passada, respiração e coice
   const dy=angLerp(BSC.ly,P.yaw,1)-BSC.ly, dp=P.pitch-BSC.lp; BSC.ly=P.yaw; BSC.lp=P.pitch;
   const mv=Math.min(1,Math.hypot(P.vx||0,P.vz||0)/4);
@@ -88,6 +95,15 @@ v9On('frame',dt=>{ if(BSC.vmHid){ vmScene.visible=true; BSC.vmHid=false; } dt=Ma
   BSC.vx+=((tx-BSC.sx)*90-BSC.vx*13)*dt; BSC.vy+=((ty-BSC.sy)*90-BSC.vy*13)*dt; BSC.sx+=BSC.vx*dt; BSC.sy+=BSC.vy*dt;
   if(!isB) BSC.lens=false;
 });
+/* ---- tempo da mira: um único progresso (BSC.p) dirige a mira da arma, a abertura da luneta e a pose ---- */
+{ const uw0=updateWeapons; updateWeapons=function(dt){ const r=uw0.apply(this,arguments);
+    try{ if(bscDrives()&&!Wp.knifeOut){ dt=Math.min(dt||0.016,0.05);
+        if(bscCancel()) BSC.p=0;
+        else { const want=IN.ads&&!P.sprinting&&!busy()&&!Wp.reloading&&V9B.cyc<=0;
+          BSC.p=want?Math.min(1,BSC.p+dt/BSC_IN):Math.max(0,BSC.p-dt/BSC_OUT); P.ads=bscEase(BSC.p); }
+        V9B.open=BSC.p; }
+      else BSC.p=0; }catch(e){}
+    return r; }; }
 /* ---- pose: leva a ocular até o eixo do olho (distância diminui com a abertura), sem inclinação, com coice ---- */
 const _bq=new THREE.Quaternion(), _bq2=new THREE.Quaternion(), _bv=new THREE.Vector3(), _bv2=new THREE.Vector3(), _bI=new THREE.Quaternion(), _bx=new THREE.Quaternion();
 // raio real do vidro no mundo da arma (o modelo pode estar em escala)

@@ -66,7 +66,7 @@ v9On('frame',dt=>{
     if(s&&s.id==='ptrs'){ const k=1-V9B.cyc/1.25; if(k>0.18&&V9B.snd===0){ V9B.snd=1; try{ Snd.rl('boltUp'); }catch(e){} } if(k>0.34&&V9B.snd===1){ V9B.snd=2; try{ Snd.rl('boltBack'); Snd.casing(false); }catch(e){} } if(k>0.62&&V9B.snd===2){ V9B.snd=3; try{ Snd.rl('boltFwd'); }catch(e){} } if(k>0.8&&V9B.snd===3){ V9B.snd=4; try{ Snd.rl('boltDown'); }catch(e){} } } }
   // abertura lenta da luneta: a mira só "entra" quando o anel termina de abrir
   const scoping=!!(s&&s.id==='ptrs'&&IN.ads&&!busy()&&!Wp.reloading&&V9B.cyc<=0&&P.ads>0.5);
-  V9B.open=scoping?Math.min(1,V9B.open+dt/0.6):0;
+  if(!(typeof bscDrives==='function'&&bscDrives())) V9B.open=scoping?Math.min(1,V9B.open+dt/0.6):0;   // com a luneta 3D, quem anda é o 61_bscope
   const el=document.getElementById('scope'); if(el) el.style.setProperty('--v9open',(s&&s.id==='ptrs'?V9B.open:1).toFixed(3));
 });
 function v9ScopeReady(s){ return !(s&&s.id==='ptrs')||(V9B.cyc<=0&&V9B.open>=0.98); }

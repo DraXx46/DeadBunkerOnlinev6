@@ -68,7 +68,7 @@ V9VM.push(dt=>{
   const s=curSlot(); if(!s) return;
   if(s.id==='ptrs'){
     if(HV.vm>0){ const a=Math.sin(Math.min(1,HV.vm)*Math.PI*0.5); vmRoot.position.z+=a*0.12; vmRoot.position.y+=a*0.015; vmRoot.rotation.x+=a*0.31; vmRoot.rotation.z+=a*0.06; vmRoot.rotation.y+=a*0.03; }
-    if(IN.ads&&V9B.cyc<=0&&!Wp.scoped){ const a=Math.max(0,P.ads-0.3); vmRoot.rotation.z+=a*0.09*(1-V9B.open); vmRoot.position.z-=a*0.04*V9B.open; vmRoot.position.y+=Math.sin(G.t*14)*0.002*a; }
+    if(IN.ads&&V9B.cyc<=0&&!Wp.scoped&&!(typeof bscDrives==='function'&&bscDrives())){ const a=Math.max(0,P.ads-0.3); vmRoot.rotation.z+=a*0.09*(1-V9B.open); vmRoot.position.z-=a*0.04*V9B.open; vmRoot.position.y+=Math.sin(G.t*14)*0.002*a; }
   } else if(s.id==='m1911'&&HV.glock>0){ const a=HV.glock*HV.glock; vmRoot.rotation.x+=a*0.22; vmRoot.position.z+=a*0.05; vmRoot.position.y+=a*0.012; }
 });
 // o ombro é empurrado para trás no coice sem luneta

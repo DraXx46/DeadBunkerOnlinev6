@@ -20525,7 +20525,7 @@ CMDS.zrag={d:'zrag [on|off|max N|status] · ragdoll dos zumbis ao morrer',f:a=>{
    · coice: a luneta pula para cima e vem contra o olho; respiração leve
    · o resto da tela continua sendo o desenho normal do jogo (mesma qualidade), só escurece perto do fim */
 const BSC={p:0,q:0,qv:0,w:0,cut:false,lens:false,e:0,sx:0,sy:0,vx:0,vy:0,ly:0,lp:0,t:0,mat:null,rti:null,w0:0,h0:0,fail:false,fovOut:null,rawQ:null,rawSet:false,ks:1};
-const BSC_IN=0.6, BSC_OUT=0.3;   // segundos para abrir / fechar a mira da Barrett
+const BSC_IN=1.52, BSC_OUT=0.3;   // segundos para abrir / fechar a mira da Barrett
 // curva da abertura (desenhada pelo Drax): sai devagar, sobe forte no primeiro terço e pousa longo e macio no fim.
 // É uma cubic-bezier(x1,y1,x2,y2) como no CSS; troque os 4 números para mudar o jeito.
 const BSC_CURVE=[0.42,0.3,0,1];

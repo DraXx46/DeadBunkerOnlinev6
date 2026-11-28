@@ -2,7 +2,7 @@
    nitidez, granulação e aberração cromática (um pós-processamento único e barato, só liga o que estiver marcado) ================= */
 const PP={rt:null,accA:null,accB:null,q:null,mat:null,cam:null,scn:null,lastYaw:0,lastPitch:0,w:0,h:0,t:0};
 const V9BLUR={k:0};   // desfoque do mundo por trás da arma (0 a 1): inspecionar
-function v9PostOn(){ return !!(CFG.mblur||CFG.bloom||CFG.sharp||CFG.grain||CFG.chroma||V9BLUR.k>0.001)&&!CFG.potato; }
+function v9PostOn(){ return (!!(CFG.mblur||CFG.bloom||CFG.sharp||CFG.grain||CFG.chroma)&&!CFG.potato)||V9BLUR.k>0.001; }   // o desfoque do inspecionar vale até no modo batata
 function ppEnsure(){ const sz=renderer.getDrawingBufferSize(new THREE.Vector2()); const w=sz.x|0, h=sz.y|0;
   if(PP.rt&&PP.w===w&&PP.h===h) return; PP.w=w; PP.h=h; for(const r of [PP.rt,PP.accA,PP.accB]) if(r) r.dispose();
   const o={minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat};
@@ -17,7 +17,7 @@ function ppEnsure(){ const sz=renderer.getDrawingBufferSize(new THREE.Vector2())
         float rnd(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
         void main(){ vec2 px=1./uRes; vec2 d=vUv-.5; vec3 c;
           if(uChroma>0.){ float k=dot(d,d)*uChroma*0.012; c=vec3(texture2D(tCol,vUv+d*k).r,texture2D(tCol,vUv).g,texture2D(tCol,vUv-d*k).b); } else c=texture2D(tCol,vUv).rgb;
-          if(uBlur>0.001){ vec3 a=vec3(0.); for(int i=0;i<20;i++){ float an=float(i)*2.39996, r=sqrt(float(i)+.5)*.5*uBlur*3.2; a+=texture2D(tCol,vUv+vec2(cos(an),sin(an))*r*px).rgb; } c=mix(c,a/20.,min(1.,uBlur*1.4)); }   // desfoque do mundo (inspecionar a arma)
+          if(uBlur>0.001){ vec3 a=vec3(0.); float R=uBlur*uRes.y*0.012; for(int i=0;i<32;i++){ float an=float(i)*2.39996, r=sqrt((float(i)+.5)/32.)*R; a+=texture2D(tCol,vUv+vec2(cos(an),sin(an))*r*px).rgb; } c=mix(c,a/32.,min(1.,uBlur*1.3))*(1.-0.12*uBlur); }   // desfoque do mundo ao inspecionar a arma (raio proporcional à altura da tela)
           if(uSharp>0.){ vec3 n=texture2D(tCol,vUv+vec2(px.x,0.)).rgb+texture2D(tCol,vUv-vec2(px.x,0.)).rgb+texture2D(tCol,vUv+vec2(0.,px.y)).rgb+texture2D(tCol,vUv-vec2(0.,px.y)).rgb; c=c+(c-n*.25)*.55*uSharp; }
           if(uBloom>0.){ vec3 b=vec3(0.); float tw=0.; for(int i=-3;i<=3;i++) for(int j=-3;j<=3;j++){ vec2 o=vec2(float(i),float(j))*px*3.5; vec3 s=texture2D(tCol,vUv+o).rgb; float l=max(max(s.r,s.g),s.b); float w=1./(1.+float(i*i+j*j)*.25); b+=max(vec3(0.),s-vec3(.62))*w*smoothstep(.55,1.,l); tw+=w; } c+=b/tw*2.6*uBloom; }
           if(uGrain>0.){ c+= (rnd(vUv*uRes+fract(uT)*91.)-.5)*.07*uGrain; }

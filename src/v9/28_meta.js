@@ -310,6 +310,14 @@ function kbCapture(btn){ if(KBIND.cap) return; KBIND.cap=true; btn.textContent='
     KBIND.map[d]=e.code; if(other) KBIND.map[other[0]]=old;   // troca com a ação que usava essa tecla
     for(const k in KBIND.map) if(KBIND.map[k]===k) delete KBIND.map[k]; KBIND.save(); try{ Snd.ui('confirm'); }catch(_){} done(); };
   addEventListener('keydown',on,true); setTimeout(()=>{ if(!KBIND.cap) return; addEventListener('mousedown',onM,true); addEventListener('wheel',onW,{capture:true,passive:false}); addEventListener('auxclick',noAux,true); },0); }
+/* tecla presa (agachar no Ctrl ficava travado): o navegador às vezes engole o "soltar" do Ctrl/Shift/Alt quando ele vira atalho.
+   Todo movimento de mouse e toda tecla trazem o estado real desses modificadores; se ele diz "solto", solta aqui também.
+   (Não mexe no modificador que virou destino de uma tecla remapeada.) Perder a mira do mouse ou a aba solta tudo. */
+function kbMods(e){ if(!e.isTrusted) return; const M=[['ctrlKey','ControlLeft','ControlRight'],['shiftKey','ShiftLeft','ShiftRight'],['altKey','AltLeft','AltRight']];
+  for(const [f,a,b] of M){ if(e[f]!==false) continue; for(const k of [a,b]) if(keys[k]&&!KBIND.block.has(k)&&!Object.values(KBIND.fwd).includes(k)) keys[k]=false; } }
+addEventListener('mousemove',kbMods,true); addEventListener('mousedown',kbMods,true); addEventListener('keydown',kbMods,true); addEventListener('keyup',kbMods,true);
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) for(const k in keys) keys[k]=false; });
+document.addEventListener('pointerlockchange',()=>{ if(!document.pointerLockElement&&!isTouch) for(const k of ['KeyC','ControlLeft','ControlRight']) keys[k]=false; });
 /* botões do mouse e rodinha como teclas: viram a tecla padrão da ação, do mesmo jeito que as teclas remapeadas */
 const KB_MBTN={1:'Mouse3',3:'Mouse4',4:'Mouse5'};
 function kbMouseKey(code,down){ const to=KBIND.fwd[code]; if(!to) return false; dispatchEvent(new KeyboardEvent(down?'keydown':'keyup',{code:to,key:KBIND.keyOf(to),bubbles:true,cancelable:true})); return true; }

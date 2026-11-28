@@ -20519,14 +20519,20 @@ CMDS.zrag={d:'zrag [on|off|max N|status] · ragdoll dos zumbis ao morrer',f:a=>{
    ampliada aparece DENTRO da ocular (uma segunda câmera desenhada só onde está o vidro, como nos jogos grandes).
    Ao soltar a mira o caminho é o inverso, sem corte.
    · um movimento só, estilo CoD: subir até o olho, alinhar, encostar e a lente abrir acontecem juntos numa curva suave
-     (BSC_IN para entrar, BSC_OUT para sair); a mira da arma (P.ads) segue a mesma curva, então zoom e campo de visão também Faca, troca de arma, beber/upar ou cair cancelam na hora.
+     (BSC_IN para entrar, BSC_OUT para sair, forma da curva em BSC_CURVE); a mira da arma (P.ads) segue a mesma curva, então zoom e campo de visão também Faca, troca de arma, beber/upar ou cair cancelam na hora.
    · lente: distorção nas bordas, franja de cor (forte enquanto chega), vinheta, reflexo, sombra do olho
    · retículo duplex com mil-dots e ponto vermelho, preso à luneta (inclina junto se a arma inclinar)
    · coice: a luneta pula para cima e vem contra o olho; respiração leve
    · o resto da tela continua sendo o desenho normal do jogo (mesma qualidade), só escurece perto do fim */
 const BSC={p:0,q:0,qv:0,w:0,cut:false,lens:false,e:0,sx:0,sy:0,vx:0,vy:0,ly:0,lp:0,t:0,mat:null,rti:null,w0:0,h0:0,fail:false,fovOut:null,rawQ:null,rawSet:false,ks:1};
-const BSC_IN=0.42, BSC_OUT=0.24;   // segundos para abrir / fechar a mira da Barrett
-const bscEase=x=>x*x*x*(x*(x*6-15)+10);   // começa e termina com velocidade zero (sem tranco)
+const BSC_IN=0.6, BSC_OUT=0.3;   // segundos para abrir / fechar a mira da Barrett
+// curva da abertura (desenhada pelo Drax): sai devagar, sobe forte no primeiro terço e pousa longo e macio no fim.
+// É uma cubic-bezier(x1,y1,x2,y2) como no CSS; troque os 4 números para mudar o jeito.
+const BSC_CURVE=[0.42,0.3,0,1];
+const bscEase=(()=>{ const [x1,y1,x2,y2]=BSC_CURVE, N=256, L=new Float32Array(N+1);
+  const bz=(t,a,b)=>3*(1-t)*(1-t)*t*a+3*(1-t)*t*t*b+t*t*t;
+  for(let i=0;i<=N;i++){ const x=i/N; let lo=0,hi=1; for(let k=0;k<30;k++){ const m=(lo+hi)/2; if(bz(m,x1,x2)<x) lo=m; else hi=m; } L[i]=bz((lo+hi)/2,y1,y2); }
+  return x=>{ x=Math.max(0,Math.min(1,x))*N; const i=Math.min(N-1,x|0), f=x-i; return L[i]+(L[i+1]-L[i])*f; }; })();
 function bscDrives(){ return !BSC.fail&&bscActiveGun(); }
 const BSC_Y=0.104, BSC_HZ=0.2125, BSC_HR=0.021;
 v9Css(`#bscope .tube,#bscope .ret{display:none!important}

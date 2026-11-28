@@ -23,9 +23,9 @@ const INS_O=[0,0,0,0,0,0];
 // cancela ao levar dano
 { const hp0=hurtPlayer; hurtPlayer=function(){ if(INS.on) insStop(); return hp0.apply(this,arguments); }; }
 // desfoque do mundo e mira escondida enquanto inspeciona
-v9On('always',dt=>{ const want=INS.on?Math.sin(Math.min(1,INS.t/INS.dur)*Math.PI)*1.6:0; const tg=Math.min(1,want)*0.85;
-  V9BLUR.k+=(tg-V9BLUR.k)*Math.min(1,(dt||0.016)*8); if(V9BLUR.k<0.002&&!INS.on) V9BLUR.k=0;
-  document.body.classList.toggle('v9insp',INS.on); });
+v9On('always',dt=>{ const ck=typeof chkBlur==='function'?chkBlur():0; const want=INS.on?Math.sin(Math.min(1,INS.t/INS.dur)*Math.PI)*1.6:ck; const tg=Math.min(1,want)*0.85;
+  V9BLUR.k+=(tg-V9BLUR.k)*Math.min(1,(dt||0.016)*(ck>0?4:8)); if(V9BLUR.k<0.002&&!INS.on&&!ck) V9BLUR.k=0;
+  document.body.classList.toggle('v9insp',INS.on||ck>0); });
 v9Css(`body.v9insp #cross{visibility:hidden!important}`);
 try{ const i=KB_ACT.findIndex(a=>a[0]==='KeyF'); KB_ACT.splice(i+1,0,['KeyT','Inspecionar a arma']); kbRender(); }catch(e){}
 CMDS.inspecionar={d:'inspecionar · inspeciona a arma atual (o mesmo que T)',f:()=>insStart()};

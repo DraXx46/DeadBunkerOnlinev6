@@ -23253,9 +23253,9 @@ const INS_O=[0,0,0,0,0,0];
 // cancela ao levar dano
 { const hp0=hurtPlayer; hurtPlayer=function(){ if(INS.on) insStop(); return hp0.apply(this,arguments); }; }
 // desfoque do mundo e mira escondida enquanto inspeciona
-v9On('always',dt=>{ const want=INS.on?Math.sin(Math.min(1,INS.t/INS.dur)*Math.PI)*1.6:0; const tg=Math.min(1,want)*0.85;
-  V9BLUR.k+=(tg-V9BLUR.k)*Math.min(1,(dt||0.016)*8); if(V9BLUR.k<0.002&&!INS.on) V9BLUR.k=0;
-  document.body.classList.toggle('v9insp',INS.on); });
+v9On('always',dt=>{ const ck=typeof chkBlur==='function'?chkBlur():0; const want=INS.on?Math.sin(Math.min(1,INS.t/INS.dur)*Math.PI)*1.6:ck; const tg=Math.min(1,want)*0.85;
+  V9BLUR.k+=(tg-V9BLUR.k)*Math.min(1,(dt||0.016)*(ck>0?4:8)); if(V9BLUR.k<0.002&&!INS.on&&!ck) V9BLUR.k=0;
+  document.body.classList.toggle('v9insp',INS.on||ck>0); });
 v9Css(`body.v9insp #cross{visibility:hidden!important}`);
 try{ const i=KB_ACT.findIndex(a=>a[0]==='KeyF'); KB_ACT.splice(i+1,0,['KeyT','Inspecionar a arma']); kbRender(); }catch(e){}
 CMDS.inspecionar={d:'inspecionar · inspeciona a arma atual (o mesmo que T)',f:()=>insStart()};
@@ -23318,7 +23318,7 @@ CMDS.aquecer={d:'aquecer · mostra o que foi pré-carregado na última tela de c
    · Kar98k: ergue o ferrolho e puxa um pouco · escopeta: abre um pouco a telha · Ray Gun: abre a trava
    · Python: abre o tambor, olha e fecha com um tranco
    Atirar, mirar, correr, recarregar, trocar de arma ou a faca cancelam na hora. */
-const CHK={pend:false,hold:0,HOLD:0.3};
+const CHK={pend:false,hold:0,HOLD:0.3,SLOW:1.35};   // SLOW: armas sem carregador tocam 35% mais devagar (a do carregador já é longa e detalhada por si)
 function chkHeld(){ if(keys.KeyR) return true;
   try{ if(typeof PAD!=='undefined'&&PAD.sqUsed) return false; const gs=navigator.getGamepads?navigator.getGamepads():[]; for(const g of gs) if(g&&g.connected&&g.buttons[2]&&g.buttons[2].pressed) return true; }catch(e){}
   return false; }
@@ -23327,28 +23327,43 @@ function chkCan(){ const s=curSlot(); return G.state==='playing'&&s&&!P.down&&!W
 /* ---- carregador + press check ---- */
 function chkPress(G,c,t0,trk){
   const P=G[c.part]; if(!P) return t0; const B=pbox(P), k=c.k||0.45, pull=[c.pull[0]*k,c.pull[1]*k,c.pull[2]*k], h=c.hand(B,c.part), T=c.tilt||T_CHR, HT=c.side==='R'?trk.R:trk.L;
-  trk.parts[c.part]=[[0,null],[t0+0.32,null],[t0+0.48,{t:pull},'o'],[t0+0.9,{t:pull}],[t0+1.0,null,'i3']];
-  trk.gun.push([t0+0.28,T,'io'],[t0+0.48,Object.assign({},T,{z:(T.z||0)+0.006}),'o'],[t0+0.9,T],[t0+1.02,Object.assign({},T,{z:(T.z||0)-0.005,rx:(T.rx||0)-0.025}),'o'],[t0+1.1,T]);
-  if(c.side==='R'){ HT.push([t0+0.06,'g']); trk.L.push([t0+0.22,'g','io']); }
-  HT.push([t0+0.32,h,'io'],[t0+0.98,h]);
-  trk.ev.push([t0+0.3,'grab',0.6],[t0+0.46,'chBack',0.5],[t0+1.0,'chFwd',0.8]);
-  return t0+1.1; }
+  const peek=Object.assign({},T,{y:(T.y||0)+0.012,rx:(T.rx||0)+0.1,rz:(T.rz||0)+0.12});   // inclina para olhar dentro da câmara
+  trk.parts[c.part]=[[0,null],[t0+0.5,null],[t0+0.78,{t:pull},'o'],[t0+1.6,{t:pull}],[t0+1.74,null,'i3']];
+  trk.gun.push([t0+0.42,T,'io'],[t0+0.8,Object.assign({},T,{z:(T.z||0)+0.006}),'o'],[t0+1.12,peek,'io'],[t0+1.5,peek],[t0+1.62,T,'io'],
+    [t0+1.76,Object.assign({},T,{z:(T.z||0)-0.005,rx:(T.rx||0)-0.025}),'o'],[t0+1.88,T]);
+  if(c.side==='R'){ HT.push([t0+0.1,'g']); trk.L.push([t0+0.34,'g','io']); }
+  HT.push([t0+0.5,h,'io'],[t0+1.72,h]);
+  trk.ev.push([t0+0.48,'grab',0.6],[t0+0.74,'chBack',0.45],[t0+1.72,'chFwd',0.8]);
+  return t0+1.9; }
 function chkMag(G,o,s){
   const B=pbox(G.mag), TL=o.tilt||{x:-0.06,y:0.055,z:0.03,rx:0.14,ry:0.36,rz:-0.5};
-  const LK=Object.assign({},TL,{y:(TL.y||0)+0.012,ry:(TL.ry||0)+0.14,rz:(TL.rz||0)-0.22});
-  const out=o.out||{t:[0,-0.05,0.006],r:[-7,0,0]}, hm=H.magSide(B,'mag');
-  const gun=[[0,{}],[0.34,TL,'o'],[0.62,TL],[0.84,LK,'io'],[1.32,LK],[1.5,TL,'io'],[1.6,Object.assign({},TL,{y:(TL.y||0)+0.008,rx:(TL.rx||0)+0.04}),'o'],[1.68,TL]];
-  const trk={gun,L:[[0,'g'],[0.38,hm,'io'],[1.58,hm]],R:[[0,'g']],parts:{mag:[[0,null],[0.52,null],[0.7,out,'o'],[1.38,out],[1.58,null,'i3']]},
-    ev:[[0.36,'grab',0.7],[0.52,'magRel',0.8],[0.64,'magOut',0.55],[0.9,()=>chkAmmoFlash()],[1.52,'magIn',0.8],[1.58,'magSeat',0.9]]};
-  let t=1.62;
-  if(o.slap!==false){ trk.L.push([t+0.08,H.magUnder(B,'mag',0.03),'o'],[t+0.14,H.magUnder(B,'mag',0),'i3']); trk.ev.push([t+0.14,'slap',0.7]);
-    gun.push([t+0.14,Object.assign({},TL,{y:(TL.y||0)+0.01})],[t+0.2,TL]); t+=0.2; }
-  if(o.ch&&s.mag>0) t=chkPress(G,o.ch,t+0.04,trk);   // sem munição o ferrolho já está travado atrás: não faz o press check
-  return chkEnd(trk,t); }
+  const LK=Object.assign({},TL,{y:(TL.y||0)+0.014,ry:(TL.ry||0)+0.16,rz:(TL.rz||0)-0.26});
+  const out=o.out||{t:[0,-0.05,0.006],r:[-7,0,0]}, ot=out.t, orr=out.r||[0,0,0];
+  // carregador fora: vira a boca para a câmera, depois duas batidinhas para assentar os cartuchos
+  const show={t:[ot[0]-0.008,ot[1]-0.018,ot[2]+0.012],r:[orr[0]-14,orr[1],orr[2]-24]};
+  const tapA={t:[show.t[0],show.t[1]+0.006,show.t[2]],r:show.r}, tapB={t:show.t,r:show.r};
+  const hm=H.magSide(B,'mag');
+  const gun=[[0,{}],[0.5,TL,'o'],[0.9,TL],[1.3,LK,'io'],[2.1,LK],[2.18,Object.assign({},LK,{y:LK.y+0.004}),'o'],[2.26,LK],[2.34,Object.assign({},LK,{y:LK.y+0.004}),'o'],[2.42,LK],
+    [2.8,TL,'io'],[3.06,TL],[3.14,Object.assign({},TL,{y:(TL.y||0)+0.008,rx:(TL.rx||0)+0.04}),'o'],[3.24,TL]];
+  const trk={gun,L:[[0,'g'],[0.56,hm,'io'],[3.1,hm]],R:[[0,'g']],
+    parts:{mag:[[0,null],[0.78,null],[1.02,out,'o'],[1.5,show,'io'],[2.1,show],[2.18,tapA,'o'],[2.26,tapB,'i'],[2.34,tapA,'o'],[2.42,tapB,'i'],[2.78,out,'io'],[3.1,null,'i3']]},
+    ev:[[0.54,'grab',0.7],[0.78,'magRel',0.8],[0.94,'magOut',0.5],[1.55,()=>chkAmmoFlash()],[2.26,'grab',0.35],[2.42,'grab',0.35],[3.02,'magIn',0.8],[3.1,'magSeat',0.9]]};
+  let t=3.16;
+  if(o.slap!==false){ trk.L.push([t+0.14,H.magUnder(B,'mag',0.035),'o'],[t+0.24,H.magUnder(B,'mag',0),'i3']); trk.ev.push([t+0.24,'slap',0.7]);
+    gun.push([t+0.24,Object.assign({},TL,{y:(TL.y||0)+0.01})],[t+0.32,TL]); t+=0.34; }
+  if(o.ch&&s.mag>0) t=chkPress(G,o.ch,t+0.08,trk);   // sem munição o ferrolho já está travado atrás: não faz o press check
+  trk.slow=1; return chkOutro(trk,t); }
+// fecho: vira a arma para o outro lado, olha mais um pouco e volta
+function chkOutro(trk,t){ const T2={x:0.03,y:0.045,z:0.03,rx:0.06,ry:-0.34,rz:0.4};
+  const lastL=trk.L[trk.L.length-1], lastR=trk.R[trk.R.length-1];
+  if(lastL&&lastL[1]!=='g') trk.L.push([t+0.36,'g','io']); if(lastR&&lastR[1]!=='g') trk.R.push([t+0.36,'g','io']);
+  trk.gun.push([t+0.7,T2,'io'],[t+1.4,T2],[t+1.52,Object.assign({},T2,{rz:T2.rz+0.07}),'o'],[t+1.66,T2]);
+  trk.ev.push([t+0.6,'grab',0.25]);
+  return chkEnd(trk,t+1.66); }
 // volta suave para a pegada
-function chkEnd(trk,t){ const E=Math.max(t+0.5,trk.len||0);
-  trk.L.push([E-0.4,'g','io'],[E,'g']); if(trk.R.length>1) trk.R.push([Math.max(E-0.32,trk.R[trk.R.length-1][0]+0.02),'g','io'],[E,'g']);
-  trk.gun.push([E-0.36,{},'io'],[E,{}]); trk.len=E; return trk; }
+function chkEnd(trk,t){ const E=Math.max(t+0.7,trk.len||0);
+  trk.L.push([E-0.55,'g','io'],[E,'g']); if(trk.R.length>1) trk.R.push([Math.max(E-0.45,trk.R[trk.R.length-1][0]+0.02),'g','io'],[E,'g']);
+  trk.gun.push([E-0.6,{},'io'],[E,{}]); trk.len=E; return trk; }
 function chkAmmoFlash(){ try{ const el=document.getElementById('ammo'); if(!el) return; el.classList.remove('chkf'); void el.offsetWidth; el.classList.add('chkf'); hudAmmo(); }catch(e){} }
 v9Css(`#ammo.chkf{animation:chkf 1.1s ease-out}@keyframes chkf{0%{filter:brightness(1)}18%{filter:brightness(2.2) drop-shadow(0 0 8px rgba(255,220,150,.8));transform:scale(1.08)}100%{filter:brightness(1);transform:scale(1)}}`);
 /* ---- por arma ---- */
@@ -23366,24 +23381,24 @@ const CHK_SPEC={
 };
 const CHK_BUILD={
   kar98k(G){ if(!G.bolt) return null; const b=pbox(G.bolt), T={x:-0.1,y:0.04,z:0,rx:-0.06,ry:0.35,rz:-0.5}, LK=Object.assign({},T,{y:T.y+0.01,rz:T.rz-0.16}), up=rlBoltOff(G,0), bk=rlBoltOff(G,0.03), knob=rlBoltKnob(b,'bolt');
-    return chkEnd({gun:[[0,{}],[0.3,T,'o'],[0.6,T],[0.82,LK,'io'],[1.3,LK],[1.46,T,'io'],[1.6,T],[1.66,Object.assign({},T,{z:T.z-0.008}),'o'],[1.74,T]],
+    return chkOutro({gun:[[0,{}],[0.3,T,'o'],[0.6,T],[0.82,LK,'io'],[1.3,LK],[1.46,T,'io'],[1.6,T],[1.66,Object.assign({},T,{z:T.z-0.008}),'o'],[1.74,T]],
       R:[[0,'g'],[0.1,'g'],[0.32,knob,'io'],[1.64,knob]],L:[[0,'g']],
       parts:{bolt:[[0,null],[0.34,null],[0.44,up,'o'],[0.6,bk,'io'],[1.42,bk],[1.52,up,'i'],[1.62,null,'o']]},
       ev:[[0.32,'grab',0.6],[0.42,'boltUp',0.7],[0.58,'boltBack',0.55],[0.9,()=>chkAmmoFlash()],[1.5,'boltFwd',0.8],[1.62,'boltDown',0.8]]},1.76); },
   trench(G){ if(!G.fore) return null; const T={x:-0.07,y:0.05,z:0.02,rx:0.12,ry:0.3,rz:-0.7}, LK=Object.assign({},T,{ry:T.ry+0.1,rz:T.rz-0.2}), pb={t:[0,0,0.032]}, grip={g:1,rel:'fore'};
-    return chkEnd({gun:[[0,{}],[0.3,T,'o'],[0.55,T],[0.76,LK,'io'],[1.26,LK],[1.44,T,'io'],[1.5,T]],
+    return chkOutro({gun:[[0,{}],[0.3,T,'o'],[0.55,T],[0.76,LK,'io'],[1.26,LK],[1.44,T,'io'],[1.5,T]],
       L:[[0,'g'],[0.2,grip],[1.46,grip]],R:[[0,'g']],parts:{fore:[[0,null],[0.4,null],[0.58,pb,'o'],[1.3,pb],[1.42,null,'i3']]},
       ev:[[0.44,'chBack',0.5],[0.9,()=>chkAmmoFlash()],[1.4,'chFwd',0.8]]},1.5); },
   ray(G){ if(!G.latch) return null; const Lb=pbox(G.latch), T={x:-0.06,y:0.05,z:0.02,rx:0.1,ry:0.45,rz:-0.4}, LK=Object.assign({},T,{y:T.y+0.01,rz:T.rz-0.2}), open={r:[0,0,60],pv:[Lb.x1,Lb.y0,Lb.cz]};
     const flick=HP([Lb.x0-0.004,Lb.y1+0.004,Lb.z0+0.012],[0.3,-0.3,-0.9],[-0.9,0.35,0.2],'thumbPush','latch');
-    return chkEnd({gun:[[0,{}],[0.26,T,'o'],[0.5,T],[0.72,LK,'io'],[1.2,LK],[1.38,T,'io'],[1.5,Object.assign({},T,{x:T.x+0.006}),'o'],[1.58,T]],
+    return chkOutro({gun:[[0,{}],[0.26,T,'o'],[0.5,T],[0.72,LK,'io'],[1.2,LK],[1.38,T,'io'],[1.5,Object.assign({},T,{x:T.x+0.006}),'o'],[1.58,T]],
       L:[[0,'g'],[0.22,flick,'io'],[1.36,flick],[1.5,HP(flick.p,flick.f,flick.b,'push','latch'),'i3']],R:[[0,'g']],
       parts:{latch:[[0,null],[0.3,null],[0.42,open,'o'],[1.4,open],[1.5,null,'i3']]},
       ev:[[0.22,'grab',0.6],[0.38,'magRel',0.6],[0.9,()=>chkAmmoFlash()],[1.5,'magSeat',0.8]]},1.6); },
   python(G){ if(!G.crane||!G.cyl) return null; const Bc=pbox(G.crane), Cy=pbox(G.cyl), open={r:[0,0,RV_ANG],pv:[Bc.x0+0.003,Bc.y0+0.003,Bc.cz]};
     const T0={x:-0.07,y:0.07,z:-0.05,rx:0.15,ry:0.5,rz:-0.45}, LK={x:-0.07,y:0.08,z:-0.05,rx:0.35,ry:0.55,rz:-0.62};
     const th=HP([Cy.x0-0.006,Cy.cy+0.004,Cy.cz+0.03],[0.1,-0.2,-1],[-1,0.15,0.05],'thumbPush','crane'), thO=HP(th.p,th.f,th.b,'open','crane'), push=HP([Cy.x0-0.012,Cy.cy,Cy.cz],[0.15,-0.15,-1],[-1,0.1,0.1],'push','crane');
-    return chkEnd({gun:[[0,{}],[0.24,T0,'o'],[0.4,T0],[0.64,LK,'io'],[1.2,LK],[1.38,T0,'io'],[1.48,Object.assign({},T0,{rz:T0.rz+0.12}),'o'],[1.58,T0]],
+    return chkOutro({gun:[[0,{}],[0.24,T0,'o'],[0.4,T0],[0.64,LK,'io'],[1.2,LK],[1.38,T0,'io'],[1.48,Object.assign({},T0,{rz:T0.rz+0.12}),'o'],[1.58,T0]],
       L:[[0,'g'],[0.2,th,'io'],[0.3,th],[0.46,thO,'o'],[1.3,thO],[1.42,push,'io'],[1.5,push,'i3']],R:[[0,'g']],
       parts:{crane:[[0,null],[0.3,null],[0.42,open,'o'],[1.42,open],[1.5,null,'i3']]},
       ev:[[0.24,'grab',0.6],[0.32,'cylOut',0.8],[0.9,()=>chkAmmoFlash()],[1.48,'cylIn',0.9]]},1.6); }
@@ -23399,7 +23414,9 @@ function chkBuild(s){ const G=gunModel.userData.vmp;
 function chkStart(){ if(!chkCan()) return false; const s=curSlot(); if(!gripGet(s.id)) return false;
   let A=null; try{ A=chkBuild(s); }catch(e){ console.warn('[Bunker] conferir arma',e); A=null; }
   if(!A) return false; if(typeof INS!=='undefined'&&INS.on) INS.on=false;
-  return vmaStart('check',A,A.len); }
+  return vmaStart('check',A,A.len*(A.slow||CHK.SLOW)); }
+// desfoque do fundo (o mesmo do inspecionar, T): entra devagar, segura e sai no fim
+function chkBlur(){ if(!(VMA.on&&VMA.kind==='check'&&VMA.A)) return 0; const ta=VMA.ta, L=VMA.A.len; return Math.min(1,ta/0.5,Math.max(0,(L-ta)/0.6))*1.2; }
 /* ---- entrada: separa toque (recarrega) de segurar (confere) ---- */
 { const uw=updateWeapons; updateWeapons=function(dt){
     try{ const E=IN.edges, s=curSlot(); dt=Math.min(dt||0.016,0.1);
